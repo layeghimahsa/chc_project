@@ -3,34 +3,30 @@
 #include <unistd.h> 
 #include <pthread.h>
 
+#include "cpu.h"
+#include "2by2sim.h"
 
-extern int main_mem[mem_size];
 
-struct memory{
+
+void *CPU_start(){
 	
-	static unsigned int MAX_MEM = 1024 * 64;
-	int data[MAX_MEM];
-	
-};
+	struct memory *mem;
+        struct cpu CPU;
 
-struct cpu{
-	
-	
-	unsigned int PC;
-	unsigned int SP;
-	unsigned int BP;
-	
-	struct memory cpu_memory;
-		
-	struct cpu *next; // in case we need to have access to other cpus, but because we use threads it might not be needed... not sure!
-
-};
+	execute(mem);
 
 
-void execute(memory &mem)
+}
+
+void execute(struct memory *mem)
 {
-    sleep(1);
+    //sleep(1);
     /** to be implemented **/
+    printf("CPU Start!");
+    
+    pthread_mutex_lock(&mem_lock);
+    printf("TEST MAIN MEM ACCES: main_mem[0] -> %s\n",main_mem[0]);
+    pthread_mutex_unlock(&mem_lock);
     return;
 }
    

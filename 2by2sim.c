@@ -1,48 +1,87 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <assert.h>
+#include <string.h>
 
-const mem_size = 1024;
-const data_size = 64; //64-bit instructions 
-int main_mem [mem_size];
-//extern void execute(memory &);
+#include "2by2sim.h"
+#include "cpu.h"
+
+//array of 1024 lines with 64 bit words
+char main_mem[MAIN_MEM_SIZE][INSTRUCTION_SIZE];
+
+pthread_mutex_t mem_lock;  //main mem mutex
+
+/* MUTEX commands
+
+int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+
+*/
 
 
-void populate(){
+
+int populate(){
 
 
-    int data;
-    int index = 0;
     
-    FILE *fptr;
-  
-    fptr = fopen("code.txt", "r") ;
+    int index = 0;
 
-    if ( fptr == NULL )
+    char buffer[INSTRUCTION_SIZE];
+    FILE *file;
+  
+    file = fopen("../code.txt", "r");
+
+    if ( file == NULL )
     {
-        printf( "the file failed to open." ) ;
+        printf( "the file failed to open \n" ) ;
+	return 0;
     }
-  
 
-    while ( fgets (data, data_size, fptr) != NULL ) {
-    	main_mem [index] = data;
+
+    while( fgets(buffer, INSTRUCTION_SIZE, file) != NULL ) {
+
+	//printf("%s\n", buffer);
+    	strcpy(main_mem[index],buffer);
     	index++;
     }
        
-    fclose(fptr) ;
-          
-    
-    return 0;   
-	
+    fclose(file) ;
+    return 1;
 	
 }
 
-/*
+
 int main()
 {
+    printf("***SIMULATION START***\n\n");
+
+    if(populate() == 0){
+	printf("Failed to populate memory\n");
+	printf("\n\n***SIMULATION EXIT WITH ERROR***\n\n");
+	return 0;
+    }
+
+    //create mutex
+    if (pthread_mutex_init(&mem_lock, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
+  
+    
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL, execute, NULL);
+    pthread_create(&thread_id, NULL, &CPU_start, NULL);
+
+    pthread_join(thread_id, NULL);
+    pthread_mutex_destroy(&mem_lock);
+
+    printf("***SIMULATION COMPLETE***\n\n");
+    
     return 0;
 }
-*/
+
 
 
