@@ -78,6 +78,15 @@ int main()
     pthread_create(&(thread_id[2]), NULL, &CPU_start, NULL);
     pthread_create(&(thread_id[3]), NULL, &CPU_start, NULL);
 
+    /***********************/
+    /*** task scheduling ***/
+    /***********************/
+
+	
+    /***********************/
+    /**** Simulation end ***/
+    /***********************/
+	
     pthread_join(thread_id[0], NULL);
     pthread_join(thread_id[1], NULL);
     pthread_join(thread_id[2], NULL);
