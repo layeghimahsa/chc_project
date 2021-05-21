@@ -72,10 +72,17 @@ int main()
     }
   
     
-    pthread_t thread_id;
-    pthread_create(&thread_id, NULL, &CPU_start, NULL);
+    pthread_t thread_id[4];
+    pthread_create(&(thread_id[0]), NULL, &CPU_start, NULL);
+    pthread_create(&(thread_id[1]), NULL, &CPU_start, NULL);
+    pthread_create(&(thread_id[2]), NULL, &CPU_start, NULL);
+    pthread_create(&(thread_id[3]), NULL, &CPU_start, NULL);
 
-    pthread_join(thread_id, NULL);
+    pthread_join(thread_id[0], NULL);
+    pthread_join(thread_id[1], NULL);
+    pthread_join(thread_id[2], NULL);
+    pthread_join(thread_id[3], NULL);
+
     pthread_mutex_destroy(&mem_lock);
 
     printf("***SIMULATION COMPLETE***\n\n");
