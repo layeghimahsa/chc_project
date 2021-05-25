@@ -1,3 +1,12 @@
-# chc-public-release
-This repository accompanies our paper "Arbitrarily Parallelizable Code: A Model of Computation", submitted for consideration at ACM TACO.
-chc is an experimental compiler that generates multithreaded code at compile time, based on a new model of computation. Code in this repository is experimental and represents a prototype implementation: we make no assurances about the quality of the code or the generated executables.  
+# chc_project
+chc_project
+
+This is a simulation of a 2 by 
+
+how to compile and run: 
+
+ 1. Open a teminal in the root directory
+ 2. Type: make clean; make sim
+ 3. Either cd or open a new terminal in bin
+ 4. Type: ./2BY2_SIM 
+
