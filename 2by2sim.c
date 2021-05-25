@@ -82,11 +82,12 @@ int populate(){
        
     fclose(file) ; 
 */
-
-    for(int i = 0; i<25; i++){
+    int i;
+    for( i = 0; i<25; i++){
 	main_mem[i] = code[i];
     } 
-    
+    main_mem[i+1] = -99;
+
     return 1;
 	
 }
@@ -96,18 +97,17 @@ int populate(){
 
 int select_task(){
 	
-	struct cpu *CPU = (struct cpu *)malloc(sizeof(struct cpu));
-	
-	
-	for(int i = 0; i < MAIN_MEM_SIZE; i++){
+	int i = 0;
+	while(main_mem[i] != -99){
 		if(main_mem[i] == 2147483647){  //0x7ffffffff
 			if(main_mem[i+1] == 0){
-				
+				main_mem[i+1] = -1; //assigned
 				return i;
 			}else{
-				i += 6;
+				i += 5;
 			}	
 		}
+		i++;
 	}
 	printf("no task found\n");
 	return -1;
@@ -138,7 +138,7 @@ int main()
     }
    
     
-    for(int i = 0; i<25; i++){
+    for(int i = 0; i<30; i++){
 	printf("code[%d]: %d\n", i ,main_mem[i]); 
     }
     
