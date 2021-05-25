@@ -1,27 +1,26 @@
 CC=gcc
+CFLAGS=-g -I. -lpthread -lrt
+DEPS = parser.tab.h ast.h display.h semantics.h ir_generator.h hr_interpreter.h code_generator.h code_interpreter.h code_output.h chc_project/cpu.h chc_project/2by2sim.h
+OBJ = lex.yy.o parser.tab.o chc.o ast.o display.o semantics.o ir_generator.o hr_interpreter.o code_generator.o code_interpreter.o code_output.o chc_project/cpu.o chc_project/2by2sim.o
 
-#CREATE BIN AND BUILD FOLDERS TO SAVE THE COMPILED FILES DURING RUNTIME
-bin_folder := $(shell mkdir -p bin)
-build_folder := $(shell mkdir -p build)
-#results_folder := $(shell mkdir -p simulation_results)
+lex.yy.c:	scanner.l $(DEPS)
+	flex scanner.l
 
-#TARGET TO COMPILE ALL THE TESTS TOGETHER 
-# Data Structures
+parser.tab.c: parser.y
+	bison -d parser.y
 
-2by2sim.o: 2by2sim.c
-	$(CC) -g -c 2by2sim.c -o build/2by2sim.o
+parser.tab.h: parser.y
+	bison -d parser.y
 
-cpu.o: cpu.c
-	$(CC) -g -c cpu.c -o build/cpu.o
+parser.tab.o:	parser.tab.c
+	$(CC) -c parser.tab.c $(CFLAGS)
 
-#Compile sim
-sim: 2by2sim.o cpu.o
-	$(CC) -pthread -g -o bin/2BY2_SIM build/2by2sim.o build/cpu.o
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-#CLEAN COMMANDS
+chc: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) 
+	rm -f *.o  lex.yy.c parser.tab.h parser.tab.c  
+	
 clean:
-	rm -f bin/* build/*
-
-
-
-
+	rm -f *.o lex.yy.c parser.tab.h parser.tab.c chc chc_output.c output
