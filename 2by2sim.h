@@ -17,6 +17,6 @@ extern int cpu_generated;
 //function to populate main mem with instruction set of function
 int populate();
 
-//char* select_task();
+int select_task();
 
 #endif

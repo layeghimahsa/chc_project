@@ -52,6 +52,7 @@ int code[] = {//End main:
 0x0
 //Start main @(0):
 };
+int num_nodes = 3;
 
 int populate(){
 
@@ -93,16 +94,23 @@ int populate(){
 
 
 
-struct cpu *select_task(){
+int select_task(){
 	
 	struct cpu *CPU = (struct cpu *)malloc(sizeof(struct cpu));
 	
-
+	
 	for(int i = 0; i < MAIN_MEM_SIZE; i++){
 		if(main_mem[i] == 2147483647){  //0x7ffffffff
-			
+			if(main_mem[i+1] == 0){
+				
+				return i;
+			}else{
+				i += 6;
+			}	
 		}
 	}
+	printf("no task found\n");
+	return -1;
 
 }
 
@@ -129,7 +137,10 @@ int main()
         return 1;
     }
    
-
+    
+    for(int i = 0; i<25; i++){
+	printf("code[%d]: %d\n", i ,main_mem[i]); 
+    }
     
     cpu_generated = 0;
     pthread_t thread_id[NUM_CPU];
@@ -139,21 +150,27 @@ int main()
 	if(cpu_generated == NUM_CPU){
 		//sleep(0.01);
 	}else{
-		struct cpu *task = select_task();
-		if(task == NULL){
-
+		//struct cpu *task = select_task();
+		struct cpu *task = (struct cpu *)malloc(sizeof(struct cpu));
+		task->addr = select_task();
+		
+		if(task->addr == -1){
 		}else{
-			int ready;
+			int ready = 0;
 			for(ready = 0; ready<NUM_CPU; ready++){
-				if(cpu_available[ready] == 0)
+				if(cpu_available[ready] == 0){
+					cpu_available[ready] = 1;					
 					break;
+				}
+					
 			} 
 			task->cpu_num = ready;
-			cpu_available[ready] = 1;
-			pthread_create(&(thread_id[ready]), NULL, &CPU_start, &task);
+			pthread_create(&(thread_id[ready]), NULL, &CPU_start, task);
 			cpu_generated++;
 		}
 	}
+	if(cpu_generated == 2)
+		not_last_node = 0;
 	sleep(0.01);
 
 
@@ -211,12 +228,11 @@ int main()
     /***********************/
     /**** Simulation end ***/
     /***********************/
-	
-    pthread_join(thread_id[0], NULL);
-    pthread_join(thread_id[1], NULL);
-    pthread_join(thread_id[2], NULL);
-    pthread_join(thread_id[3], NULL);
-
+    for(int i = 0; i<NUM_CPU; i++){
+	if(cpu_available[i] != 0){
+    		pthread_join(thread_id[i], NULL);
+	}
+    }
     pthread_mutex_destroy(&mem_lock);
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
