@@ -6,7 +6,7 @@
 #define MAIN_MEM_SIZE 1024
 //instruction set size in bytes
 #define INSTRUCTION_SIZE 8
-#define NUM_CPU 4;
+#define NUM_CPU 4
 
 //variables shared to CPU
 extern int main_mem[MAIN_MEM_SIZE];

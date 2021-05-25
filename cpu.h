@@ -21,7 +21,7 @@ struct cpu{
 
 
 void *CPU_start();
-void execute(struct memory *mem,struct cpu *CPU);
+//void execute(struct memory *mem,struct cpu *CPU);
 void fetch_task();
 
 #endif

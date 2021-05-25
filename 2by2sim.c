@@ -13,7 +13,6 @@ int main_mem[MAIN_MEM_SIZE];
 int cpu_generated;
 int cpu_available[NUM_CPU] = {0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
-bool not_last_node;
 
 
 /* MUTEX commands
@@ -134,7 +133,7 @@ int main()
     
     cpu_generated = 0;
     pthread_t thread_id[NUM_CPU];
-    not_last_node = true;
+    int not_last_node = 1;
     while(not_last_node){
 	
 	if(cpu_generated == NUM_CPU){
@@ -149,7 +148,7 @@ int main()
 				if(cpu_available[ready] == 0)
 					break;
 			} 
-			task.cpu_num = ready;
+			task->cpu_num = ready;
 			cpu_available[ready] = 1;
 			pthread_create(&(thread_id[ready]), NULL, &CPU_start, &task);
 			cpu_generated++;

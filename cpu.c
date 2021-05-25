@@ -16,11 +16,11 @@ void *CPU_start(struct cpu CPU){
 
 
 }
-
+/*
 void execute(struct memory *mem, struct cpu *CPU)
 {
     //sleep(1);
-    /** to be implemented **/
+    to be implemented 
     printf("CPU Start!  \n");
     
     //printf("TEST MAIN MEM ACCES: main_mem[0] -> %s\n",main_mem[0]);
@@ -29,7 +29,7 @@ void execute(struct memory *mem, struct cpu *CPU)
 
     return;
 }
-   
+  */ 
 void fetch_task(){
 	printf("CPU %d fetching task\n",cpu_num);
 	pthread_mutex_lock(&mem_lock);
