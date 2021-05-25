@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -I. -lpthread -lrt
-DEPS = parser.tab.h ast.h display.h semantics.h ir_generator.h hr_interpreter.h code_generator.h code_interpreter.h code_output.h chc_project/cpu.h chc_project/2by2sim.h
-OBJ = lex.yy.o parser.tab.o chc.o ast.o display.o semantics.o ir_generator.o hr_interpreter.o code_generator.o code_interpreter.o code_output.o chc_project/cpu.o chc_project/2by2sim.o
+DEPS = parser.tab.h ast.h display.h semantics.h ir_generator.h hr_interpreter.h code_generator.h code_interpreter.h code_output.h chc_proj/cpu.h chc_proj/2by2sim.h
+OBJ = lex.yy.o parser.tab.o chc.o ast.o display.o semantics.o ir_generator.o hr_interpreter.o code_generator.o code_interpreter.o code_output.o chc_proj/cpu.o chc_proj/2by2sim.o
 
 lex.yy.c:	scanner.l $(DEPS)
 	flex scanner.l
