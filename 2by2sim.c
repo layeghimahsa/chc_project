@@ -96,12 +96,13 @@ int populate(){
 
 
 int select_task(){
-	
 	int i = 0;
 	while(main_mem[i] != -99){
 		if(main_mem[i] == 2147483647){  //0x7ffffffff
 			if(main_mem[i+1] == 0){
 				main_mem[i+1] = -1; //assigned
+				
+				
 				return i;
 			}else{
 				i += 5;
@@ -115,7 +116,16 @@ int select_task(){
 }
 
 
-
+int size(int addr){
+	//find size
+	int i = addr + 1;
+	int size = 1;
+	while(main_mem[i] != 2147483647){
+		size++;
+		i++;
+	}
+	return size;
+}
 
 
 
@@ -153,7 +163,7 @@ int main()
 		//struct cpu *task = select_task();
 		struct cpu *task = (struct cpu *)malloc(sizeof(struct cpu));
 		task->addr = select_task();
-		
+		task->size = size(task->addr);
 		if(task->addr == -1){
 		}else{
 			int ready = 0;

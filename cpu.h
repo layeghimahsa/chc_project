@@ -11,6 +11,7 @@ struct cpu{
 	
 	int addr;
 
+	int size;
 };
 
 
