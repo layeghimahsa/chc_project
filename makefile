@@ -12,4 +12,4 @@ sim: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) 
 	
 clean:
-	rm -f *.o 
+	rm -f *.o sim

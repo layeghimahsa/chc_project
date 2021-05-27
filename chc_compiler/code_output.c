@@ -24,7 +24,7 @@ void generate_output()
 	FILE *source_fp = fopen("startup/startup.c","r");
 
 	/////////////////////////////////////////////
-	FILE *code_fp = fopen("../test_write.c","r");
+	FILE *code_fp = fopen("../2by2sim.c","r");
 	FILE *temp_fp = fopen("../temp.c","w");
 	char buffer[256];
 	while(fgets(buffer, 256, code_fp) != NULL ) {
@@ -130,7 +130,7 @@ void generate_output()
     	}
 	fclose(code_fp);
 	fclose(temp_fp);
-	code_fp = fopen("../test_write.c","w");
+	code_fp = fopen("../2by2sim.c","w");
 	temp_fp = fopen("../temp.c","r");
 	while(fgets(buffer, 256, temp_fp) != NULL ) {
 	//printf("%s\n", buffer);

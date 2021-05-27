@@ -53,9 +53,12 @@ int code[] = {//End main:
 0x0
 //Start main @(0):
 };
-int num_nodes = 3;
 int code_size = 25;
+int dictionary[][3] = {{0,25,3}
+};
 //CODE END//
+
+
 int populate(){
 
     int i;

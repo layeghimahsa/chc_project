@@ -11,7 +11,7 @@ int cpu_num;
 
 void *CPU_start(struct cpu *CPU){
 	
-	printf("\nCPU NUM %d\n",CPU->cpu_num);
+	/*printf("\nCPU NUM %d\n",CPU->cpu_num);
 	printf("	Task Addr: %d\n",CPU->addr);
 	printf("	Task size: %d\n\n",CPU->size);
 
@@ -35,7 +35,7 @@ void *CPU_start(struct cpu *CPU){
         }
 	//execute(mem, CPU);
 	//print_code_stack();
-	//struct datum_ir *IR_node;
+	//struct datum_ir *IR_node; */
 }
 
 
