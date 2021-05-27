@@ -23,6 +23,19 @@ void generate_output()
 	FILE *fp = fopen("chc_output.c","w");
 	FILE *source_fp = fopen("startup/startup.c","r");
 
+	/////////////////////////////////////////////
+	FILE *code_fp = fopen("../test_write.c","r");
+	FILE *temp_fp = fopen("../temp.c","w");
+	char buffer[256];
+	while(fgets(buffer, 256, code_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(temp_fp,"%s",buffer);
+		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
+			break;
+		}
+    	}
+	/////////////////////////////////////////////
+
 	struct code_scope *main_finder = program_code;
 
 	int main_addr;
@@ -36,8 +49,9 @@ void generate_output()
 
 	fprintf(fp,"#include<stdio.h>\n #include<stdlib.h>\n#include<time.h>\n");
 
-	fprintf(fp,"int code[] = {");
-
+	fprintf(fp,"int code[] = {"); 
+	fprintf(temp_fp,"int code[] = {");
+	
 	int total_code_size = 0;
 
 
@@ -55,43 +69,77 @@ void generate_output()
 		int *ip = code_ptr->code_ptr;
 		int ctr = 0;
 
-		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
+		fprintf(fp,"//End %s:\n",code_ptr->scope_name); 
+		fprintf(temp_fp,"//End %s:\n",code_ptr->scope_name);
 
 
 		while(length > 0)
 		{
-			if((code_ptr->next == (struct code_scope *)0) && (length == 1))
-				fprintf(fp,"0x%x\n",*ip);
-			else		
-				fprintf(fp,"0x%x,\n",*ip);
+			if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
+				fprintf(fp,"0x%x\n",*ip); 
+				fprintf(temp_fp,"0x%x\n",*ip);
+			}else{		
+				fprintf(fp,"0x%x,\n",*ip); 
+				fprintf(temp_fp,"0x%x,\n",*ip);
+			}
 			ip++;
 			length--;
 			total_code_size++;
 		}
-		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
+		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address); 
+		fprintf(temp_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 		
 
 		code_ptr = code_ptr->next;
 	}
 
-	fprintf(fp,"};\n");
-	fprintf(fp,"int code_size = %d;\n",total_code_size);
+	fprintf(fp,"};\n"); 
+	fprintf(temp_fp,"};\n");
+	fprintf(fp,"int code_size = %d;\n",total_code_size); 
+	fprintf(temp_fp,"int code_size = %d;\n",total_code_size);
 
 
 	//create subgraph dictionary
-	fprintf(fp,"int dictionary[][3] = {");
+	fprintf(fp,"int dictionary[][3] = {"); 
+	fprintf(temp_fp,"int dictionary[][3] = {");
 
 	code_ptr = program_code;
 	while(code_ptr != (struct code_scope *)0)
 	{
-		if((code_ptr->next == (struct code_scope *)0))
-			fprintf(fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-		else
-			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+		if((code_ptr->next == (struct code_scope *)0)){
+			fprintf(fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes); fprintf(temp_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+		}else{
+			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes); fprintf(temp_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+		}
 		code_ptr = code_ptr->next;
+		
 	}
 
-	fprintf(fp,"};\n");
+	fprintf(fp,"};\n"); fprintf(temp_fp,"};\n");
+
+	/////////////////////////////////////////////////
+	while(fgets(buffer, 256, code_fp) != NULL ) {
+		if(strcmp(buffer,"//CODE END//\n") == 0){
+			fprintf(temp_fp,"%s",buffer);
+			break;
+		}
+	}
+	while(fgets(buffer, 256, code_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(temp_fp,"%s",buffer);
+    	}
+	fclose(code_fp);
+	fclose(temp_fp);
+	code_fp = fopen("../test_write.c","w");
+	temp_fp = fopen("../temp.c","r");
+	while(fgets(buffer, 256, temp_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(code_fp,"%s",buffer);
+    	}
+	fclose(code_fp);
+	fclose(temp_fp);
+	remove("../temp.c");
+	/////////////////////////////////////////////////
 
 
 	char tmp;

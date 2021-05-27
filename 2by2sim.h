@@ -18,5 +18,7 @@ extern int cpu_generated;
 int populate();
 
 int select_task();
+int size(int addr);
+struct cpu *generate_list();
 
 #endif

@@ -7,11 +7,15 @@ int cpu_num;
 
 
 struct cpu{
-	int cpu_num;
+	int assinged_cpu;
+	int cpu_dest; 
 	
-	int addr;
+	int dest_node;
 
-	int size;
+	int code[64];
+	int node_size;
+
+	struct cpu *next;
 };
 
 
