@@ -62,10 +62,10 @@ int dictionary[][3] = {{0,25,3}
 int populate(){
 
     int i;
-    for( i = 0; i<25; i++){
+    for( i = 0; i<code_size; i++){
 	main_mem[i] = code[i];
     } 
-    main_mem[i+1] = -99;
+    main_mem[i] = -99; //i is 25 now.
 
     return 1;
 	
@@ -117,29 +117,36 @@ int find_dest_node(int end){
 	return count;
 }
 
+
 struct cpu *generate_list(int i){
 
 	if(i >= code_size){
-	return NULL;
-	}else{
-	struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
-	return_node->node_size = size(i); 
-	
-	for(int j=0; j<return_node->node_size; j++){
-		return_node->code[j] = code[i];
-		i++;
-	}
-	
-	return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
-	
-	return_node->assinged_cpu = -1;
-	return_node->cpu_dest = -1;
+		return NULL;
+	} else {
+		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
+		return_node->cpu_number= cpu_num; //allocation of each node to a cpu (assuming the number of cpus are greather than nodes)
+		return_node->node_size = size(i); 
+		
+		for(int j=0; j<return_node->node_size; j++){
+			return_node->code[j] = code[i];
+			i++;
+		}
+		
+		if (return_node->code[1] != 0){ //code[1] determines dependency 
+			return_node->has_dependent = true;
+			return_node->dependents_num = code[1];
+		}
+		
+		return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
+		
+		return_node->assinged_cpu = -1;
+		return_node->cpu_dest = -1;
 
-	
-	return_node->next = generate_list(i);
-	
+		cpu_num++; //go to the next available cpu in which a node can be assigned to
+		return_node->next = generate_list(i);
+		
 
-	return return_node;
+		return return_node;
 	}
 }
 
