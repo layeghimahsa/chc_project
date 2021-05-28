@@ -2,7 +2,7 @@
 #define CPU_H
 
 #define MAX_MEM 1024*64
-#include <stdio.h>
+#include <stdbool.h>
 
 int cpu_num;
 
