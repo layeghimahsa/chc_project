@@ -23,7 +23,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 int pthread_mutex_destroy(pthread_mutex_t *mutex);
 
 */
-
+//DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
 int code[] = {//End main:
 0x7fffffff,
@@ -57,7 +57,7 @@ int code_size = 25;
 int dictionary[][3] = {{0,25,3}
 };
 //CODE END//
-
+//DO NOT REMOVE THE LINE ABOVE!!//
 
 int populate(){
 
