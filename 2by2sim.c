@@ -32,7 +32,7 @@ int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0x24,
+0xc,
 0x7fffffff,
 0x0,
 0x7,
@@ -40,27 +40,21 @@ int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0x20,
+0x8,
 0x7fffffff,
 0x2,
 0xfffffffc,
-0x24,
+0x28,
 0x3,
 0x2,
 0x0,
 0x0,
-0x0,
-0x7fffffff,
-0x0,
-0x16,
-0x1c,
-0xc,
-0x0,
-0x0
+0x1,
+0xffffffff
 //Start main @(0):
 };
-int code_size = 32;
-int dictionary[][3] = {{0,32,4}
+int code_size = 26;
+int dictionary[][3] = {{0,26,3}
 };
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
@@ -77,8 +71,6 @@ int size(int addr){
 }
 
 int find_dest_node(int end){
-	if(end == 0)
-		return 0;
 
 	int dest = code_size - (end/4);
 	int count = 0;
@@ -109,7 +101,14 @@ struct cpu *generate_list(int i){
 			return_node->dependents_num = code[1];
 		}
 		
-		return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
+		if(return_node->code[return_node->node_size-1] == 0){
+			return generate_list(i);//dont create a useless node
+		}else if(return_node->code[return_node->node_size-1] == -1){
+			return_node->dest_node = -99; //write to mem
+		}else{
+			return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
+		}
+		
 		
 		return_node->assigned_cpu = -1;
 		return_node->cpu_dest = -1;
@@ -141,7 +140,7 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 	if(current == NULL){
 
 	}else{
-		if(current->dest_node == 0){ //return to main mem since there are no dependants
+		if(current->dest_node == -99){ //return to main mem since there are no dependants
 			current->cpu_dest = -99; //main mem
 		}else{
 			struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
