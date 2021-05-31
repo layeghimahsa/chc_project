@@ -256,6 +256,16 @@ int main()
     refactor_destinations(graph, graph, 1);
     print_nodes(graph);
 
+    printf("\n\nLAUNCHING THREADS!!!\n\n"); 
+    //simple thread launch since we know more core than nodes 
+    struct cpu *list = graph; 
+    while(cpu_generated < NUM_CPU && list != NULL){
+	pthread_create(&(thread_id[list->assigned_cpu]), NULL, &CPU_start, list);
+	cpu_available[list->assigned_cpu] = 1;
+	cpu_generated++;
+	list = list->next;
+    }
+
     /***********************/
     /**** Simulation end ***/
     /***********************/

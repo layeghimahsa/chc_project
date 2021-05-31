@@ -9,7 +9,7 @@
 
 void *CPU_start(struct cpu *CPU){
 	
-	
+	printf("CPU %d 	START!!\n",CPU->assigned_cpu);
 	struct cpu_out *output;
 	output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
 	
