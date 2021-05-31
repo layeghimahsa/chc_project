@@ -1,0 +1,6 @@
+SUBGRAPH(main)
+	CONST(x,7);
+        CONST(y,7);
+        DATUM(z);
+	OPERATOR(z,op_PLUS,x,y);
+	CONST(h,22);

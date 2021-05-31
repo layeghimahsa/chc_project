@@ -9,7 +9,6 @@
 #include "cpu.h"
 
 //array of 1024 lines with 64 bit words
-int main_mem[MAIN_MEM_SIZE];
 int cpu_generated;
 int cpu_available[NUM_CPU] = {0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
@@ -33,7 +32,7 @@ int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0x8,
+0x24,
 0x7fffffff,
 0x0,
 0x7,
@@ -41,7 +40,7 @@ int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0x4,
+0x20,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -50,50 +49,21 @@ int code[] = {//End main:
 0x2,
 0x0,
 0x0,
+0x0,
+0x7fffffff,
+0x0,
+0x16,
+0x1c,
+0xc,
+0x0,
 0x0
 //Start main @(0):
 };
-int code_size = 25;
-int dictionary[][3] = {{0,25,3}
+int code_size = 32;
+int dictionary[][3] = {{0,32,4}
 };
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
-
-int populate(){
-
-    int i;
-    for( i = 0; i<code_size; i++){
-	main_mem[i] = code[i];
-    } 
-    main_mem[i] = -99; //i is 25 now.
-
-    return 1;
-	
-}
-
-
-
-
-int select_task(){
-	int i = 0;
-	while(main_mem[i] != -99){
-		if(main_mem[i] == 2147483647){  //0x7ffffffff
-			if(main_mem[i+1] == 0){
-				main_mem[i+1] = -1; //assigned
-				
-				
-				return i;
-			}else{
-				i += 5;
-			}	
-		}
-		i++;
-	}
-	printf("no task found\n");
-	return -1;
-
-}
-
 
 int size(int addr){
 	//find size
@@ -107,6 +77,9 @@ int size(int addr){
 }
 
 int find_dest_node(int end){
+	if(end == 0)
+		return 0;
+
 	int dest = code_size - (end/4);
 	int count = 0;
 	for(int i = 0; i <= dest; i++){
@@ -124,7 +97,6 @@ struct cpu *generate_list(int i){
 		return NULL;
 	} else {
 		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
-		return_node->cpu_number= cpu_num; //allocation of each node to a cpu (assuming the number of cpus are greather than nodes)
 		return_node->node_size = size(i); 
 		
 		for(int j=0; j<return_node->node_size; j++){
@@ -139,10 +111,9 @@ struct cpu *generate_list(int i){
 		
 		return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
 		
-		return_node->assinged_cpu = -1;
+		return_node->assigned_cpu = -1;
 		return_node->cpu_dest = -1;
 
-		cpu_num++; //go to the next available cpu in which a node can be assigned to
 		return_node->next = generate_list(i);
 		
 
@@ -150,12 +121,65 @@ struct cpu *generate_list(int i){
 	}
 }
 
-void print_list(struct cpu *list){
+//this is the function that mappes nodes to cpu
+//likely the root of any preformance
+//first iteration is very simple and mappes in a linear fassion; node 1 -> cpu 1 , node 2 -> cpu 2 ... node n -> cpu -> n
+void schedule_nodes(struct cpu *list){
+	
+	int cpu_scheduled = 0;
+	struct cpu *current = list;
+
+	while(current != NULL && cpu_scheduled <= NUM_CPU){
+		printf("cpu_scheduled: %d\n",cpu_scheduled);
+		current->assigned_cpu = cpu_scheduled + 1;
+		cpu_scheduled++;
+		current = current->next;
+	}
+}
+
+void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
+	if(current == NULL){
+
+	}else{
+		if(current->dest_node == 0){ //return to main mem since there are no dependants
+			current->cpu_dest = -99; //main mem
+		}else{
+			struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
+			int node_count;
+			if(node_num < current->dest_node){
+				temp = current;
+				node_count = node_num;
+			}else{
+				temp = top;
+				node_count = 1;
+			}
+			
+			while(node_count != current->dest_node){
+				temp = temp->next; node_count++;
+			}
+			current->cpu_dest = temp->assigned_cpu;
+			
+			//now we must cange the satck destination to match the node stack rather than the full code stack
+			
+			int dest = code_size - (current->code[current->node_size-1]/4);
+			int count = 0;
+			while(code[dest] != 2147483647){
+				count++; dest--;
+			}
+			dest = (current->node_size - count + 1)*4;
+			printf("DEST: %d\n", dest);
+			current->code[current->node_size-1] = dest;
+		}
+		refactor_destinations(current->next, top, node_num+1);
+	}
+}
+
+void print_nodes(struct cpu *list){
 	if(list == NULL){
 
 	}else{
 		printf("\n\nNODE: \n");
-		printf(" - CPU assigned: %d\n",list->assinged_cpu);
+		printf(" - CPU assigned: %d\n",list->assigned_cpu);
 		printf(" - result dest CPU: %d\n",list->cpu_dest);
 		printf(" - node size: %d\n",list->node_size);
 		printf(" - dest node: %d\n",list->dest_node);
@@ -163,19 +187,13 @@ void print_list(struct cpu *list){
 		for(int i = 0; i< list->node_size; i++){
 			printf("    code[%d]: %d\n",i,list->code[i]);
 		}
-		print_list(list->next);
+		print_nodes(list->next);
 	}
 }
 
 int main()
 {
     printf("***SIMULATION START***\n\n");
-
-    if(populate() == 0){
-	printf("Failed to populate memory\n");
-	printf("\n\n***SIMULATION EXIT WITH ERROR***\n\n");
-	return 0;
-    }
 
     //create mutex
     if (pthread_mutex_init(&mem_lock, NULL) != 0)
@@ -185,59 +203,22 @@ int main()
     }
    
     
-    for(int i = 0; i<30; i++){
-	printf("code[%d]: %d\n", i ,main_mem[i]); 
+    for(int i = 0; i<code_size; i++){
+	printf("code[%d]: %d\n", i ,code[i]); 
     }
     
     cpu_generated = 0;
     pthread_t thread_id[NUM_CPU];
     int not_last_node = 1;
 
+    printf("\n\nCREATING NODE LIST\n\n"); 
     struct cpu *graph = generate_list(0);
-    print_list(graph);
+    print_nodes(graph);
 
-
-
-
-
-
-    /*
-    while(not_last_node){
-	
-	if(cpu_generated == NUM_CPU){
-		//sleep(0.01);
-	}else{
-		//struct cpu *task = select_task();
-		struct cpu *task = (struct cpu *)malloc(sizeof(struct cpu));
-		task->addr = select_task();
-		task->size = size(task->addr);
-		if(task->addr == -1){
-		}else{
-			int ready = 0;
-			for(ready = 0; ready<NUM_CPU; ready++){
-				if(cpu_available[ready] == 0){
-					cpu_available[ready] = 1;					
-					break;
-				}
-					
-			} 
-			task->cpu_num = ready;
-			pthread_create(&(thread_id[ready]), NULL, &CPU_start, task);
-			cpu_generated++;
-		}
-	}
-	if(cpu_generated == 2)
-		not_last_node = 0;
-	sleep(0.01);
-	
-
-
-    }*/
 
     /***********************/
     /*** task scheduling ***/
     /***********************/
-
     /*
 	-64:	0x7fffffff      //new node label
 	-60:	0x0		//number of dependencies 
@@ -265,11 +246,22 @@ int main()
 	-8:	0x0
 	-4:	0x0
     */
-    //printf("CPU num: %d\n" , thread_id[0].cpu_num);
-    //char* selected_task = select_task();
+
+    printf("\n\nSCHEDULING NODES\n\n");    
+    //fuction that schedules nodes to cpu (currently very simple)
+    //this function is likely going to determine the preformance of the whole design
+    schedule_nodes(graph);
+    print_nodes(graph);
+
+    printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
+    refactor_destinations(graph, graph, 1);
+    print_nodes(graph);
+
     /***********************/
     /**** Simulation end ***/
     /***********************/
+
+    //wait for all active cpu threads to finish 
     for(int i = 0; i<NUM_CPU; i++){
 	if(cpu_available[i] != 0){
     		pthread_join(thread_id[i], NULL);
@@ -278,10 +270,6 @@ int main()
     pthread_mutex_destroy(&mem_lock);
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
-
-    //for(int i = 0; i<25; i++){
-//	printf("code[%d]: %x\n", i ,code[i]); 
-    //}
     return 0;
 }
 

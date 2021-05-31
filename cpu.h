@@ -24,18 +24,14 @@
 
 
 
-int cpu_num = 1; //starts from first cpu
-
-
 struct cpu{
 
-	int cpu_number;
 	int code[64]; //chunk of code
 	int node_size; //actual the size of stack/code
 	bool has_dependent;
 	int dependents_num; //specify the number of dependency if has any
 
-	int assinged_cpu; //cpu the node is assinged to or currently being processed on 
+	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
 	int cpu_dest; 	//destination cpu
 	int dest_node;  //destination in node list (used in allocation)
 
@@ -45,10 +41,9 @@ struct cpu{
 };
 
 struct cpu_out{
-
 	int value;
 	int dest;
-	int addr; //destination could also be a tuppl, but ulimately we need cpu num and its stack destination address
+	int addr; //destination could also be a tuppl, but we need cpu num and its stack destination address
 };
 
 /*struct cpu{
