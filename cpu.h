@@ -21,7 +21,11 @@
 #define code_identity	12
 
 #define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
-
+#define NAV			0xFFFFFFFC
+//Dead operator: remove it
+#define DEAD 		0xFFFFFFFF
+//Can process corresponding operation and send result to destinations (all arguments resolved)
+#define READY 		0
 
 
 struct cpu{
@@ -46,17 +50,6 @@ struct cpu_out{
 	int addr; //destination could also be a tuppl, but we need cpu num and its stack destination address
 };
 
-/*struct cpu{
-	int assinged_cpu;
-	int cpu_dest; 
-	
-	int dest_node;
-
-	int code[64];
-	int node_size;
-
-	struct cpu *next;
-};*/
 
 
 void *CPU_start();

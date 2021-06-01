@@ -16,40 +16,41 @@ void *CPU_start(struct cpu *CPU){
 	
 	/* ************ returning cpu_output value ********************** */
 	
-	if(CPU->has_dependent){
+	if(CPU->has_dependent == true){
 		int operation = CPU->code[4];
 		switch(operation)
 		{
-			//case code_input: 		printf("\t<< "); scanf("%d",(sp + 2)); break;
+			case code_input: 		printf("\t<< "); scanf("%d", CPU->code[2]); break;
 			case code_plus: 		CPU->code[2] = CPU->code[6]+ CPU->code[7]; break;
+			case code_minus:		CPU->code[2] = CPU->code[6] - CPU->code[7]; break;
 			case code_times:		CPU->code[2] = CPU->code[6] * CPU->code[7]; break;
 			case code_is_equal:		(CPU->code[6] == CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
 			case code_is_less:		(CPU->code[6] < CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
 			case code_is_greater:	(CPU->code[6] > CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
-			/*case code_if:			if((code[6] != 0))
+			case code_if:			if((CPU->code[6] != 0))
 									{ 
-										(code[2]=code[7]);
+										(CPU->code[2] = CPU->code[7]);
 									}
 									else
 									{ 
 										
-										propagate_death(sp);
-										*(sp+1) = DEAD; 
+										//propagate_death(CPU->code[0]); 
+										CPU->code[1] = DEAD; 
 									} break; 
-			case code_else:			if(*(sp + 6) == 0)
+			case code_else:			if(CPU->code[6] == 0)
 									{
-										(*(sp + 2)=*(sp + 7));
+										(CPU->code[2] = CPU->code[7]);
 									}
 									else
 									{ 
 										
-										propagate_death(sp);
-										*(sp+1) = DEAD; 
-									} break; */
-			case code_minus:		CPU->code[2] = CPU->code[6] - CPU->code[7]; break;
+										//propagate_death(CPU->code[0]);
+										CPU->code[1] = DEAD; 
+									} break;
+
 			//TODO: Fix merge so it has a single argument
-			/*case code_merge:		*(sp + 2) = (*(sp + 6) | *(sp + 7)); break;
-			case code_identity:		*(sp + 2) = *(sp + 6); break;*/
+			case code_merge:		CPU->code[2] = (CPU->code[6] | CPU->code[7]); break;
+			//case code_identity:		CPU->code[2] = CPU->code[6]; break;
 			default: printf("Error: unknown code found during interpretation\n");
 		}
 		
@@ -60,16 +61,16 @@ void *CPU_start(struct cpu *CPU){
 	}
 	
 	
-	/* ************ returning cpu_output result ********************** */
-	while(CPU->next != NULL){
+	/* ************ returning cpu_output destination and address ********************** */
+	
+	output->dest = CPU->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
+	output->addr = CPU->code[CPU->node_size-1];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
+	
+	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 
+	printf("\t CPU %d 's VALUE: %d\n", CPU->assigned_cpu, output->value);
+	printf("\t CPU %d 's DEST: %d\n", CPU->assigned_cpu, output->dest);
+	printf("\t CPU %d 's ADDR: %d\n", CPU->assigned_cpu, output->addr);
 		
-		if(CPU->has_dependent == false){
-			CPU = CPU->next;
-		}
-			
-		//to be implemented!
-		
-	}
 	
 	return output;
 	
