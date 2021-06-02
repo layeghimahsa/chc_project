@@ -83,6 +83,35 @@ int find_dest_node(int end){
 }
 
 
+void initialize_connection(struct cpu *list){
+
+	struct cpu *current = list;
+	
+	if(current->assigned_cpu == 1){
+		current->connection[0] = 1;
+		current->connection[1] = 1;
+		current->connection[2] = 1;
+		current->connection[3] = 0;
+	} else if (list->assigned_cpu == 2){
+		current->connection[0] = 1;
+		current->connection[1] = 1;
+		current->connection[2] = 0;
+		current->connection[3] = 1;
+	} else if (list->assigned_cpu == 3){
+		current->connection[0] = 1;
+		current->connection[1] = 0; 
+		current->connection[2] = 1; 
+		current->connection[3] = 1;
+	} else if (list->assigned_cpu == 4){
+		current->connection[0] = 0; 
+		current->connection[1] = 1;
+		current->connection[2] = 1;
+		current->connection[3] = 1;
+	}	
+}
+
+
+
 struct cpu *generate_list(int i){
 
 	if(i >= code_size){
@@ -90,16 +119,17 @@ struct cpu *generate_list(int i){
 	} else {
 		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
 		return_node->node_size = size(i); 
+		return_node->code_address = i;
 		
 		for(int j=0; j<return_node->node_size; j++){
 			return_node->code[j] = code[i];
 			i++;
 		}
 		
-		if (return_node->code[1] != 0){ //code[1] determines dependency 
+		/*if (return_node->code[1] != 0){ //code[1] determines dependency 
 			return_node->has_dependent = true;
 			return_node->dependents_num = code[1];
-		}
+		}*/
 		
 		if(return_node->code[return_node->node_size-1] == 0){
 			return generate_list(i);//dont create a useless node
@@ -160,7 +190,7 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 			
 			//now we must cange the satck destination to match the node stack rather than the full code stack
 			
-			int dest = code_size - (current->code[current->node_size-1]/4);
+			int dest = code_size - (current->code[current->node_size-1]/4) - 1;
 			int count = 0;
 			while(code[dest] != 2147483647){
 				count++; dest--;
@@ -251,6 +281,9 @@ int main()
     //this function is likely going to determine the preformance of the whole design
     schedule_nodes(graph);
     print_nodes(graph);
+    
+    //initializing connections between cpus
+    initialize_connection(graph);
 
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
     refactor_destinations(graph, graph, 1);

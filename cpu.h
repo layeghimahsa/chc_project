@@ -2,7 +2,7 @@
 #define CPU_H
 
 #define MAX_MEM 1024*64
-#include <stdbool.h>
+//#include <stdbool.h>
 
 
 
@@ -28,13 +28,30 @@
 #define READY 		0
 
 
+// A linked list node
+struct QNode {
+    int value;
+    struct QNode* next;
+};
+  
+// The queue which is a pointer to the front and rear node
+struct Queue {
+    int size;
+    struct QNode *front, *rear;
+};
+
 struct cpu{
 
 	int code[64]; //chunk of code
 	int node_size; //actual the size of stack/code
-	bool has_dependent;
-	int dependents_num; //specify the number of dependency if has any
+	int code_address;
+	//bool has_dependent;
+	//int dependents_num; //specify the number of dependency if has any
 
+	//int cpu_queue[4]; // each cpu has its own queue
+	int connection[4]; //this is used for connection purpose between CPUs (e.g. connection[1,1,1,0] means that cpu 1 is connected to itself, cpu 2, cpu 3, but not to cpu 4)
+	
+	
 	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
 	int cpu_dest; 	//destination cpu
 	int dest_node;  //destination in node list (used in allocation)
@@ -44,8 +61,10 @@ struct cpu{
 	struct cpu *next;
 };
 
+
 struct cpu_out{
 	int value;
+	struct Queue* cpu_queue;
 	int dest;
 	int addr; //destination could also be a tuppl, but we need cpu num and its stack destination address
 };
@@ -54,6 +73,13 @@ struct cpu_out{
 
 void *CPU_start();
 //void execute(struct memory *mem,struct cpu *CPU);
-void fetch_task();
+//void fetch_task();
+
+struct QNode* newNode(int val);
+struct Queue* createQueue();
+void enQueue(struct Queue* q, int val);
+int deQueue(struct Queue* q);
+
+
 
 #endif
