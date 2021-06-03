@@ -21,6 +21,7 @@ void *CPU_start(struct cpu *CPU){
 	while(CPU->code[1] > 0){ //while waiting for dependent
 		sleep(0.01);
 		// -check port for dependent! (checking the queue) , reset the count and reducce the number of dependents 
+		//setting up the queue and periodically checking them
 		
 		switch(CPU->assigned_cpu){
 		
@@ -194,11 +195,6 @@ void *CPU_start(struct cpu *CPU){
 		
 		}
 		
-		/*if(cpu_queue->size > 0){
-			//int val = deQueue(cpu_queue);
-			count = 0;
-			CPU->code[1]--;
-		}*/
 		
 		if(count > 500){
 			printf("CPU %d TIMER TIMEOUT!\n", CPU->assigned_cpu );
@@ -208,11 +204,7 @@ void *CPU_start(struct cpu *CPU){
 		count++;
 	}
 	
-	
-	/*if(CPU->dest_node != -99){ // if the node has no dependent, its value is ready and in hand. (I checked it by dest_node because eventually, number of dependents are reaching to zero),
-					// , so it is not a good indicator
-		output->value = CPU->code[2]; //if there is no dependendent, just assign the value.	
-	}*/
+
 	
 	
 	/* ************ returning cpu_output destination and address ********************** */
@@ -383,9 +375,6 @@ void *CPU_start(struct cpu *CPU){
 		printf("RESULT: %d\n", CPU->code[2]);
 		output->value = CPU->code[2];
 	}
-	
-	
-	//setting up the queue and periodically checking them
 	
 	
 	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 

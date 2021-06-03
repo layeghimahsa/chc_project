@@ -12,10 +12,6 @@
 int cpu_generated;
 int cpu_available[NUM_CPU] = {0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
-/*int queue_cpu1[QUEUE_LENGTH];
-int queue_cpu2[QUEUE_LENGTH];
-int queue_cpu3[QUEUE_LENGTH];
-int queue_cpu4[QUEUE_LENGTH];*/
 
 struct Queue* cpu_queue1;
 struct Queue* cpu_queue2;
@@ -31,6 +27,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 int pthread_mutex_destroy(pthread_mutex_t *mutex);
 
 */
+
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
 int code[] = {//End main:
@@ -92,35 +89,6 @@ int find_dest_node(int end){
 }
 
 
-void initialize_connection(struct cpu *list){
-
-	struct cpu *current = list;
-	
-	if(current->assigned_cpu == 1){
-		current->connection[0] = 1;
-		current->connection[1] = 1;
-		current->connection[2] = 1;
-		current->connection[3] = 0;
-	} else if (list->assigned_cpu == 2){
-		current->connection[0] = 1;
-		current->connection[1] = 1;
-		current->connection[2] = 0;
-		current->connection[3] = 1;
-	} else if (list->assigned_cpu == 3){
-		current->connection[0] = 1;
-		current->connection[1] = 0; 
-		current->connection[2] = 1; 
-		current->connection[3] = 1;
-	} else if (list->assigned_cpu == 4){
-		current->connection[0] = 0; 
-		current->connection[1] = 1;
-		current->connection[2] = 1;
-		current->connection[3] = 1;
-	}	
-}
-
-
-
 struct cpu *generate_list(int i){
 
 	if(i >= code_size){
@@ -134,11 +102,6 @@ struct cpu *generate_list(int i){
 			return_node->code[j] = code[i];
 			i++;
 		}
-		
-		/*if (return_node->code[1] != 0){ //code[1] determines dependency 
-			return_node->has_dependent = true;
-			return_node->dependents_num = code[1];
-		}*/
 		
 		if(return_node->code[return_node->node_size-1] == 0){
 			return generate_list(i);//dont create a useless node
@@ -298,9 +261,6 @@ int main()
     //this function is likely going to determine the preformance of the whole design
     schedule_nodes(graph);
     print_nodes(graph);
-    
-    //initializing connections between cpus
-    initialize_connection(graph);
 
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
     refactor_destinations(graph, graph, 1);

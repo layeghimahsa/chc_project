@@ -33,19 +33,12 @@ struct cpu{
 	int code[64]; //chunk of code
 	int node_size; //actual the size of stack/code
 	int code_address;
-	//bool has_dependent;
-	//int dependents_num; //specify the number of dependency if has any
-
-	//int cpu_queue[4]; // each cpu has its own queue
-	int connection[4]; //this is used for connection purpose between CPUs (e.g. connection[1,1,1,0] means that cpu 1 is connected to itself, cpu 2, cpu 3, but not to cpu 4)
 	
 	
 	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
 	int cpu_dest; 	//destination cpu
 	int dest_node;  //destination in node list (used in allocation)
 
-	//struct cpu *cpu_source;
-	//struct cpu *cpu_dest;
 	struct cpu *next;
 };
 
