@@ -1,27 +1,15 @@
 CC=gcc
+CFLAGS=-g -I. -lpthread -lrt
 
-#CREATE BIN AND BUILD FOLDERS TO SAVE THE COMPILED FILES DURING RUNTIME
-bin_folder := $(shell mkdir -p bin)
-build_folder := $(shell mkdir -p build)
-#results_folder := $(shell mkdir -p simulation_results)
+DEPS = chc_compiler/parser.tab.h chc_compiler/ast.h chc_compiler/display.h chc_compiler/semantics.h chc_compiler/ir_generator.h chc_compiler/hr_interpreter.h chc_compiler/code_generator.h chc_compiler/code_interpreter.h chc_compiler/code_output.h cpu.h 2by2sim.h
 
-#TARGET TO COMPILE ALL THE TESTS TOGETHER 
-# Data Structures
+OBJ = cpu.o 2by2sim.o
 
-2by2sim.o: 2by2sim.c
-	$(CC) -g -c 2by2sim.c -o build/2by2sim.o
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-cpu.o: cpu.c
-	$(CC) -g -c cpu.c -o build/cpu.o
-
-#Compile sim
-sim: 2by2sim.o cpu.o
-	$(CC) -pthread -g -o bin/2BY2_SIM build/2by2sim.o build/cpu.o
-
-#CLEAN COMMANDS
+sim: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) 
+	
 clean:
-	rm -f bin/* build/*
-
-
-
-
+	rm -f *.o sim
