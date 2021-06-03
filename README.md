@@ -1,7 +1,7 @@
 # chc_project
 chc_project
 
-This is a simulation of a 2 by 
+This is a simulation of a 2 by 2 CPU array
 
 how to compile and run: 
 
