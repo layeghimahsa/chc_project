@@ -10,8 +10,7 @@
 void *CPU_start(struct cpu *CPU){
 	
 	printf("CPU %d 	START!!\n",CPU->assigned_cpu);
-	struct cpu_out *output;
-	output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
+	
 	
 	
 	/* ************ returning cpu_output value ********************** */
@@ -27,164 +26,112 @@ void *CPU_start(struct cpu *CPU){
 		
 			struct cpu_out *temp;
 			
-			case 1: // 1. cpu1 is checking the queues
+			case 1: // 1. cpu1 is checking their queue
 				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-				
-					//direct connections
-					if(cpu_queue2->size > 0){ //2. if there is something in queue2, 
-						if(cpu_queue2->front->dest == 1){ //, 3. and its destination is cpu1
-							temp = deQueue(cpu_queue2); // 4. dequeue it 
-							printf("dequeued element from cpu_queue2: %d\n", temp->value); //print it
-							enQueue(cpu_queue1, temp); // 5. enqueue it to cpu1 queue
+					//check your queue
+					if(cpu_queue1->size > 0){ //2. if there is something in queue1,
+						temp = deQueue(cpu_queue1); // 3. dequeue it
+						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
+						//, 3. is its destination for cpu1
+						if(temp->dest == 2){  //no its for 2
+						 	enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 3){ //no its for 3
+							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu3 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 4){ //not its for 4
+							enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue since not connected to 4
+							count = 0; //6.reset the count
+						}else{
+							int addr = CPU->node_size - (temp->addr/4) - 1;
+							CPU->code[addr] = temp->value;
 							count = 0; //6.reset the count
 							CPU->code[1]--; //7. decrese the number of dependents
 							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
 						}
-						
-					} else if(cpu_queue3->size > 0){ //same steps for the next connected cpu
-					
-						if(cpu_queue3->front->dest == 1){
-							temp = deQueue(cpu_queue3);
-							printf("dequeued element from cpu_queue3: %d\n", temp->value);
-							enQueue(cpu_queue1, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
 					}
-					
-					//indirect connections
-					else if(cpu_queue4->size > 0){ //this is for indirect connections where one cpu needs to pass the result to an intermediate cpu
-					
-						if(cpu_queue4->front->dest == 1){
-							temp = deQueue(cpu_queue4);
-							printf("dequeued element from cpu_queue4: %d\n", temp->value);
-							enQueue(cpu_queue3, temp); //dequeue it to an intermediate cpu, but we are not decreasing the number of dependents yet!
-							count = 0;
-						}
-					}
-				
 				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
-				
 				break;
 				
 			case 2:
-				pthread_mutex_lock(&mem_lock);
-				
-					//direct connections
-					if(cpu_queue1->size > 0){
-						if(cpu_queue1->front->dest == 2){
-							temp = deQueue(cpu_queue1);
-							printf("dequeued element from cpu_queue1: %d\n", temp->value);
-							enQueue(cpu_queue2, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					} else if(cpu_queue4->size > 0){
-					
-						if(cpu_queue4->front->dest == 2){
-							temp = deQueue(cpu_queue4);
-							printf("dequeued element from cpu_queue4: %d\n", temp->value);
-							enQueue(cpu_queue2, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					}
-					
-					//indirect connections
-					else if(cpu_queue3->size > 0){ 
-					
-						if(cpu_queue3->front->dest == 2){
-							temp = deQueue(cpu_queue3);
-							printf("dequeued element from cpu_queue3: %d\n", temp->value);
-							enQueue(cpu_queue1, temp); 
-							count = 0;
+				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
+					//check your queue
+					if(cpu_queue2->size > 0){ //2. if there is something in queue1,
+						temp = deQueue(cpu_queue2); // 3. dequeue it
+						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
+						//, 3. is its destination for cpu1
+						if(temp->dest == 1){  //no its for 2
+						 	enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 4){ //no its for 3
+							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu3 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 3){ //not its for 4
+							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu2 queue since not connected to 4
+							count = 0; //6.reset the count
+						}else{
+							int addr = CPU->node_size - (temp->addr/4) - 1;
+							CPU->code[addr] = temp->value;
+							count = 0; //6.reset the count
+							CPU->code[1]--; //7. decrese the number of dependents
+							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
 						}
 					}
-				
-				pthread_mutex_unlock(&mem_lock);
-				
+				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
 				break;
 			case 3:
-				pthread_mutex_lock(&mem_lock);
-			
-					//direct connections
-					if(cpu_queue1->size > 0){
-						if(cpu_queue1->front->dest == 3){
-							temp = deQueue(cpu_queue1);
-							printf("dequeued element from cpu_queue1: %d\n", temp->value);
-							enQueue(cpu_queue3, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					} else if(cpu_queue4->size > 0){
-					
-						if(cpu_queue4->front->dest == 3){
-							temp = deQueue(cpu_queue4);
-							printf("dequeued element from cpu_queue4: %d\n", temp->value);
-							enQueue(cpu_queue3, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					}
-					
-					
-					//indirect connections
-					else if(cpu_queue2->size > 0){
-					
-						if(cpu_queue2->front->dest == 3){
-							temp = deQueue(cpu_queue2);
-							printf("dequeued element from cpu_queue2: %d\n", temp->value);
-							enQueue(cpu_queue4, temp);
-							count = 0;
+				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
+					//check your queue
+					if(cpu_queue3->size > 0){ //2. if there is something in queue1,
+						temp = deQueue(cpu_queue3); // 3. dequeue it
+						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
+						//, 3. is its destination for cpu1
+						if(temp->dest == 1){  //no its for 2
+						 	enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 4){ //no its for 3
+							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu3 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 2){ //not its for 4
+							enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue since not connected to 4
+							count = 0; //6.reset the count
+						}else{
+							int addr = CPU->node_size - (temp->addr/4) - 1;
+							CPU->code[addr] = temp->value;
+							count = 0; //6.reset the count
+							CPU->code[1]--; //7. decrese the number of dependents
+							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
 						}
 					}
-					
+				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
 				
-				pthread_mutex_unlock(&mem_lock);
 				break;
 			case 4:
 			
-				pthread_mutex_lock(&mem_lock);
-				
-					//direct connections
-					if(cpu_queue2->size > 0){
-						if(cpu_queue2->front->dest == 4){
-							temp = deQueue(cpu_queue2);
-							printf("dequeued element from cpu_queue2: %d\n", temp->value);
-							enQueue(cpu_queue4, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					} else if(cpu_queue3->size > 0){
-					
-						if(cpu_queue3->front->dest == 4){
-							temp = deQueue(cpu_queue3);
-							printf("dequeued element from cpu_queue3: %d\n", temp->value);
-							enQueue(cpu_queue4, temp);
-							count = 0;
-							CPU->code[1]--;
-							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]);
-						}
-					}
-					
-					//indirect connections
-					else if(cpu_queue1->size > 0){
-					
-						if(cpu_queue1->front->dest == 4){
-							temp = deQueue(cpu_queue1);
-							printf("dequeued element from cpu_queue1: %d\n", temp->value);
-							enQueue(cpu_queue3, temp);
-							count = 0;
+				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
+					//check your queue
+					if(cpu_queue4->size > 0){ //2. if there is something in queue1,
+						temp = deQueue(cpu_queue4); // 3. dequeue it
+						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
+						//, 3. is its destination for cpu1
+						if(temp->dest == 2){  //no its for 2
+						 	enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 3){ //no its for 3
+							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu3 queue
+							count = 0; //6.reset the count
+						}else if(temp->dest == 1){ //not its for 4
+							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu2 queue since not connected to 4
+							count = 0; //6.reset the count
+						}else{
+							int addr = CPU->node_size - (temp->addr/4) - 1;
+							CPU->code[addr] = temp->value;
+							count = 0; //6.reset the count
+							CPU->code[1]--; //7. decrese the number of dependents
+							printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
 						}
 					}
-				
-				pthread_mutex_unlock(&mem_lock);
+				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
 				
 				break;
 				
@@ -205,6 +152,49 @@ void *CPU_start(struct cpu *CPU){
 	}
 	
 
+	int operation = CPU->code[4];
+	//printf("OPERATION: %d\n",operation);	
+	switch(operation)
+	{
+		//case code_input: 		printf("\t<< "); scanf("%d", CPU->code[2]); break;
+		case code_plus: 		CPU->code[2] = CPU->code[6]+ CPU->code[7]; break;
+		case code_minus:		CPU->code[2] = CPU->code[6] - CPU->code[7]; break;
+		case code_times:		CPU->code[2] = CPU->code[6] * CPU->code[7]; break;
+		case code_is_equal:		(CPU->code[6] == CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
+		case code_is_less:		(CPU->code[6] < CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
+		case code_is_greater:	(CPU->code[6] > CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
+		case code_if:			if((CPU->code[6] != 0))
+								{ 
+									(CPU->code[2] = CPU->code[7]);
+								}
+								else
+								{ 
+									
+									//propagate_death(CPU->code[0]); 
+									CPU->code[1] = DEAD; 
+								} break; 
+		case code_else:			if(CPU->code[6] == 0)
+								{
+									(CPU->code[2] = CPU->code[7]);
+								}
+								else
+								{ 
+									
+									//propagate_death(CPU->code[0]);
+									CPU->code[1] = DEAD; 
+								} break;
+
+		//TODO: Fix merge so it has a single argument
+		case code_merge:		CPU->code[2] = (CPU->code[6] | CPU->code[7]); break;
+		case code_identity:		break; //do nothing since its an identity
+		default: printf("Error: unknown code found during interpretation\n");
+	}
+		
+	struct cpu_out *output;
+	output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
+	
+	printf("CPU %d RESULT: %d\n", CPU->assigned_cpu, CPU->code[2]);
+	output->value = CPU->code[2];
 	
 	
 	/* ************ returning cpu_output destination and address ********************** */
@@ -213,170 +203,74 @@ void *CPU_start(struct cpu *CPU){
 	/* ************ address translation  ********************** */
 
 	output->addr = CPU->code[CPU->node_size-1];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
-	
-	
-	
+
+
+
 	//if statement that fills in the queue or writing to the memory!
 	
 	//not has dependent and should write its value in the queue
-	if(CPU->code[1] == 0 && CPU->dest_node != -99){
-		//output->cpu_queue = createQueue();
-		//enQueue(output->cpu_queue, CPU->code[2]);
-		output->value = CPU->code[2];
+	if(CPU->dest_node != -99){
 		
 		switch(CPU->assigned_cpu){
 		
 			case 1:
 				pthread_mutex_lock(&mem_lock);
-				
-					enQueue(cpu_queue1, output);
-					printf("CPU %d queue size: %d\n",CPU->assigned_cpu ,cpu_queue1->size);
-				
+					if(output->dest == 2)
+						enQueue(cpu_queue2, output);
+					else if(output->dest == 3)
+						enQueue(cpu_queue3, output);
+					else
+						enQueue(cpu_queue2, output);
+					
+				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
 				pthread_mutex_unlock(&mem_lock);
-				
 				break;
-				
 			case 2:
 				pthread_mutex_lock(&mem_lock);
-				
-					enQueue(cpu_queue2, output);
-					printf("CPU %d queue size: %d\n",CPU->assigned_cpu ,cpu_queue1->size);
+					if(output->dest == 1)
+						enQueue(cpu_queue1, output);
+					else if(output->dest == 4)
+						enQueue(cpu_queue4, output);
+					else
+						enQueue(cpu_queue4, output);
 					
+				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
 				pthread_mutex_unlock(&mem_lock);
-				
 				break;
-			
 			case 3:
 				pthread_mutex_lock(&mem_lock);
-				
-					enQueue(cpu_queue3, output);
-					printf("CPU %d queue size: %d\n",CPU->assigned_cpu ,cpu_queue1->size);
-				
+					if(output->dest == 1)
+						enQueue(cpu_queue1, output);
+					else if(output->dest == 4)
+						enQueue(cpu_queue4, output);
+					else
+						enQueue(cpu_queue1, output);
+					
+				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
 				pthread_mutex_unlock(&mem_lock);
-				
 				break;
-			
 			case 4:
 				pthread_mutex_lock(&mem_lock);
-				
-					enQueue(cpu_queue4, output);
-					printf("CPU %d queue size: %d\n",CPU->assigned_cpu ,cpu_queue1->size);
-				
+					if(output->dest == 2)
+						enQueue(cpu_queue2, output);
+					else if(output->dest == 3)
+						enQueue(cpu_queue3, output);
+					else
+						enQueue(cpu_queue3, output);
+					
+				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
 				pthread_mutex_unlock(&mem_lock);
-				
 				break;
-				
 			default:
 				puts("SHOULD NEVER HAPPEN! \n");
 				break; 
 		
 		}		
-	} else if(CPU->code[1] == 0 && CPU->dest_node == -99){ // we need to calculate stuff here after everything has poped up in the queue
+	}else{ // we need to calculate stuff here after everything has poped up in the queue
 	
-		int operation = CPU->code[4];
-		
-		//dequeuing from the queue
-		switch(CPU->assigned_cpu){
-			struct cpu_out *temp;
-			int array_index;
-			
-			case 1:
-				pthread_mutex_lock(&mem_lock);
-				
-				while(cpu_queue1->size > 0){	
-					temp = deQueue(cpu_queue1);
-					array_index = CPU->node_size - (temp->addr/4) - 1;
-					CPU->code[array_index] = temp->value;
-					printf("code[%d] is : %d\n",array_index ,temp->value);
-				}
-					
-				pthread_mutex_unlock(&mem_lock);
-				
-				break;
-			case 2:
-				pthread_mutex_lock(&mem_lock);
-				
-				while(cpu_queue2->size > 0){	
-					temp = deQueue(cpu_queue2);
-					array_index = CPU->node_size - (temp->addr/4) - 1;
-					CPU->code[array_index] = temp->value;
-					printf("code[%d] is : %d\n",array_index ,temp->value);
-				}
-					
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			case 3:
-				pthread_mutex_lock(&mem_lock);
-				
-				while(cpu_queue3->size > 0){	
-					temp = deQueue(cpu_queue3);
-					array_index = CPU->node_size - (temp->addr/4) - 1;
-					CPU->code[array_index] = temp->value;
-					printf("code[%d] is : %d\n",array_index ,temp->value);
-				}
-					
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			case 4:
-				pthread_mutex_lock(&mem_lock);
-				
-				while(cpu_queue4->size > 0){	
-					temp = deQueue(cpu_queue4);
-					array_index = CPU->node_size - (temp->addr/4) - 1;
-					CPU->code[array_index] = temp->value;
-					printf("code[%d] is : %d\n",array_index ,temp->value);
-				}
-					
-				pthread_mutex_unlock(&mem_lock);
-				break;
-				
-			default:
-				puts("SHOULD NEVER HAPPEN! \n");
-				break;
-		
-		}
-		
-		switch(operation)
-		{
-			//case code_input: 		printf("\t<< "); scanf("%d", CPU->code[2]); break;
-			case code_plus: 		CPU->code[2] = CPU->code[6]+ CPU->code[7]; break;
-			case code_minus:		CPU->code[2] = CPU->code[6] - CPU->code[7]; break;
-			case code_times:		CPU->code[2] = CPU->code[6] * CPU->code[7]; break;
-			case code_is_equal:		(CPU->code[6] == CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
-			case code_is_less:		(CPU->code[6] < CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
-			case code_is_greater:	(CPU->code[6] > CPU->code[7]) ? (CPU->code[2]=1): (CPU->code[2]=0); break;
-			case code_if:			if((CPU->code[6] != 0))
-									{ 
-										(CPU->code[2] = CPU->code[7]);
-									}
-									else
-									{ 
-										
-										//propagate_death(CPU->code[0]); 
-										CPU->code[1] = DEAD; 
-									} break; 
-			case code_else:			if(CPU->code[6] == 0)
-									{
-										(CPU->code[2] = CPU->code[7]);
-									}
-									else
-									{ 
-										
-										//propagate_death(CPU->code[0]);
-										CPU->code[1] = DEAD; 
-									} break;
-
-			//TODO: Fix merge so it has a single argument
-			case code_merge:		CPU->code[2] = (CPU->code[6] | CPU->code[7]); break;
-			//case code_identity:		CPU->code[2] = CPU->code[6]; break;
-			default: printf("Error: unknown code found during interpretation\n");
-		}
-		
-		printf("RESULT: %d\n", CPU->code[2]);
-		output->value = CPU->code[2];
+		printf("CPU %d Writing to Main MEM!!\n",CPU->assigned_cpu);
 	}
-	
-	
+
 	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 
 	printf("\t CPU %d 's VALUE: %d\n", CPU->assigned_cpu, output->value);
 	printf("\t CPU %d 's DEST: %d\n", CPU->assigned_cpu, output->dest);

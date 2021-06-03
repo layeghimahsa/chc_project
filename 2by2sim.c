@@ -131,7 +131,7 @@ void schedule_nodes(struct cpu *list){
 	struct cpu *current = list;
 
 	while(current != NULL && cpu_scheduled <= NUM_CPU){
-		printf("cpu_scheduled: %d\n",cpu_scheduled);
+		printf("cpu_scheduled: %d\n",cpu_scheduled+1);
 		current->assigned_cpu = cpu_scheduled + 1;
 		cpu_scheduled++;
 		current = current->next;
@@ -216,7 +216,7 @@ int main()
 
     printf("\n\nCREATING NODE LIST\n\n"); 
     struct cpu *graph = generate_list(0);
-    print_nodes(graph);
+    //print_nodes(graph);
 
 
     //creating cpu queues
@@ -260,11 +260,11 @@ int main()
     //fuction that schedules nodes to cpu (currently very simple)
     //this function is likely going to determine the preformance of the whole design
     schedule_nodes(graph);
-    print_nodes(graph);
+    //print_nodes(graph);
 
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
     refactor_destinations(graph, graph, 1);
-    print_nodes(graph);
+    //print_nodes(graph);
 
     printf("\n\nLAUNCHING THREADS!!!\n\n"); 
     //simple thread launch since we know more core than nodes 
@@ -275,6 +275,7 @@ int main()
 	cpu_generated++;
 	list = list->next;
     }
+    
 
     /***********************/
     /**** Simulation end ***/
@@ -282,7 +283,7 @@ int main()
 
     //wait for all active cpu threads to finish 
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] != 0){
+	if(cpu_available[i] == 1){
     		pthread_join(thread_id[i], NULL);
 	}
     }
