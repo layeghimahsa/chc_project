@@ -10,7 +10,7 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
-int cpu_available[NUM_CPU] = {0,0,0,0};
+int cpu_available[NUM_CPU+1] = {0,0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
 
 struct Queue* cpu_queue1;
@@ -275,7 +275,20 @@ int main()
 	cpu_generated++;
 	list = list->next;
     }
-    
+    int count = 1;
+    while(cpu_generated < NUM_CPU){
+	if(cpu_available[count] == 0){
+		struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
+		temp->assigned_cpu = count;
+		temp->code[1] = 1;
+		pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
+		cpu_available[count] = 2;
+		cpu_generated++;
+	}
+	count++;
+	
+	
+    }
 
     /***********************/
     /**** Simulation end ***/
@@ -285,6 +298,11 @@ int main()
     for(int i = 0; i<NUM_CPU; i++){
 	if(cpu_available[i] == 1){
     		pthread_join(thread_id[i], NULL);
+	}
+    }
+    for(int i = 0; i<NUM_CPU; i++){
+	if(cpu_available[i] == 2){
+    		pthread_cancel(thread_id[i]);
 	}
     }
     pthread_mutex_destroy(&mem_lock);
