@@ -12,6 +12,15 @@
 int cpu_generated;
 int cpu_available[NUM_CPU] = {0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
+/*int queue_cpu1[QUEUE_LENGTH];
+int queue_cpu2[QUEUE_LENGTH];
+int queue_cpu3[QUEUE_LENGTH];
+int queue_cpu4[QUEUE_LENGTH];*/
+
+struct Queue* cpu_queue1;
+struct Queue* cpu_queue2;
+struct Queue* cpu_queue3;
+struct Queue* cpu_queue4;
 
 
 /* MUTEX commands
@@ -220,6 +229,7 @@ void print_nodes(struct cpu *list){
 	}
 }
 
+
 int main()
 {
     printf("***SIMULATION START***\n\n");
@@ -240,10 +250,17 @@ int main()
     pthread_t thread_id[NUM_CPU];
     int not_last_node = 1;
 
+
     printf("\n\nCREATING NODE LIST\n\n"); 
     struct cpu *graph = generate_list(0);
     print_nodes(graph);
 
+
+    //creating cpu queues
+    cpu_queue1 = createQueue();
+    cpu_queue2 = createQueue();
+    cpu_queue3 = createQueue();
+    cpu_queue4 = createQueue();
 
     /***********************/
     /*** task scheduling ***/

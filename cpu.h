@@ -28,18 +28,6 @@
 #define READY 		0
 
 
-// A linked list node
-struct QNode {
-    int value;
-    struct QNode* next;
-};
-  
-// The queue which is a pointer to the front and rear node
-struct Queue {
-    int size;
-    struct QNode *front, *rear;
-};
-
 struct cpu{
 
 	int code[64]; //chunk of code
@@ -64,9 +52,9 @@ struct cpu{
 
 struct cpu_out{
 	int value;
-	struct Queue* cpu_queue;
 	int dest;
 	int addr; //destination could also be a tuppl, but we need cpu num and its stack destination address
+	struct cpu_out *next;
 };
 
 
@@ -75,10 +63,6 @@ void *CPU_start();
 //void execute(struct memory *mem,struct cpu *CPU);
 //void fetch_task();
 
-struct QNode* newNode(int val);
-struct Queue* createQueue();
-void enQueue(struct Queue* q, int val);
-int deQueue(struct Queue* q);
 
 
 
