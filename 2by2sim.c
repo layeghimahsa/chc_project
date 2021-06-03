@@ -10,7 +10,7 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
-int cpu_available[NUM_CPU+1] = {0,0,0,0,0};
+int cpu_available[NUM_CPU] = {0,0,0,0};
 pthread_mutex_t mem_lock;  //main mem mutex
 
 struct Queue* cpu_queue1;
@@ -270,16 +270,16 @@ int main()
     //simple thread launch since we know more core than nodes 
     struct cpu *list = graph; 
     while(cpu_generated < NUM_CPU && list != NULL){
-	pthread_create(&(thread_id[list->assigned_cpu]), NULL, &CPU_start, list);
-	cpu_available[list->assigned_cpu] = 1;
+	pthread_create(&(thread_id[list->assigned_cpu-1]), NULL, &CPU_start, list);
+	cpu_available[list->assigned_cpu-1] = 1;
 	cpu_generated++;
 	list = list->next;
     }
-    int count = 1;
+    int count = 0;
     while(cpu_generated < NUM_CPU){
 	if(cpu_available[count] == 0){
 		struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
-		temp->assigned_cpu = count;
+		temp->assigned_cpu = count+1;
 		temp->code[1] = 1;
 		pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
 		cpu_available[count] = 2;
