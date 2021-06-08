@@ -274,7 +274,7 @@ void *CPU_start(struct cpu *CPU){
 		
 		//writing back to memory (code array)
 		pthread_mutex_lock(&mem_lock);
-		writeMem(CPU->code_address+1, output->value);
+		writeMem(CPU->code_address+2, output->value);
 		pthread_mutex_unlock(&mem_lock);
 	}
 
