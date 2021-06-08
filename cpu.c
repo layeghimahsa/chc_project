@@ -269,6 +269,13 @@ void *CPU_start(struct cpu *CPU){
 	}else{ // we need to calculate stuff here after everything has poped up in the queue
 	
 		printf("CPU %d Writing to Main MEM!!\n",CPU->assigned_cpu);
+		//updating CPU code (local memory)
+		CPU->code[2] = output->value;
+		
+		//writing back to memory (code array)
+		pthread_mutex_lock(&mem_lock);
+		writeMem(CPU->code_address+1, output->value);
+		pthread_mutex_unlock(&mem_lock);
 	}
 
 	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 
