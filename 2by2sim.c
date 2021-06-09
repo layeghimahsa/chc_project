@@ -10,7 +10,7 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
-int cpu_available[NUM_CPU] = {0,0,0,0};
+int cpu_available[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
 pthread_mutex_t mem_lock;  //main mem mutex
 
 struct Queue* cpu_queue1;
@@ -192,6 +192,14 @@ void print_nodes(struct cpu *list){
 	}
 }
 
+void writeMem(int ind, int val){
+
+	code[ind] = val;
+	printf("WRITING BACK TO MEMORY...\n");
+	printf("code[%d] = %d\n",ind, code[ind]);
+	printf("WRITING BACK TO MEMORY HAS FINISHED\n");
+}
+
 
 int main()
 {
@@ -271,41 +279,48 @@ int main()
     struct cpu *list = graph; 
     while(cpu_generated < NUM_CPU && list != NULL){
 	pthread_create(&(thread_id[list->assigned_cpu-1]), NULL, &CPU_start, list);
-	cpu_available[list->assigned_cpu-1] = 1;
+	cpu_available[list->assigned_cpu-1] = CPU_UNAVAILABLE;
 	cpu_generated++;
 	list = list->next;
     }
     int count = 0;
     while(cpu_generated < NUM_CPU){
-	if(cpu_available[count] == 0){
+	if(cpu_available[count] == CPU_AVAILABLE){
 		struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
 		temp->assigned_cpu = count+1;
 		temp->code[1] = 1;
 		pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
-		cpu_available[count] = 2;
+		cpu_available[count] = CPU_USABLE;
 		cpu_generated++;
 	}
 	count++;
 	
 	
     }
-
+    
     /***********************/
     /**** Simulation end ***/
     /***********************/
 
     //wait for all active cpu threads to finish 
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == 1){
+	if(cpu_available[i] == CPU_UNAVAILABLE){
     		pthread_join(thread_id[i], NULL);
 	}
     }
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == 2){
+	if(cpu_available[i] == CPU_USABLE){
     		pthread_cancel(thread_id[i]);
 	}
     }
     pthread_mutex_destroy(&mem_lock);
+    
+    
+    puts("\nPRINTING CODE ARRAY\n"); // want to check if result 14 is written to memory (code array)
+    for(int i = 0; i<code_size; i++){
+	printf("code[%d]: %d\n", i ,code[i]); 
+    }
+
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
     return 0;

@@ -9,6 +9,10 @@
 #define NUM_CPU 4
 #define QUEUE_LENGTH 10
 
+#define CPU_AVAILABLE 0
+#define CPU_UNAVAILABLE 1
+#define CPU_USABLE 2 //I couldn't come up with a suitable name. feel free to change it 
+
 
   
 // The queue which is a pointer to the front and rear node
@@ -36,7 +40,7 @@ struct cpu *generate_list(); //generates a list of cpu strcts that will be used 
 void schedule_nodes(struct cpu *list); //map nodes to cpu's. this is the crux and backbone of the sim
 void refactor_destinations(struct cpu *current, struct cpu *top, int node_num); //set cpu dest and address for destination node stack
 void print_nodes(struct cpu *list); //PRETTY PRINTER! 
-
+void writeMem(int ind, int val);
 //queue related functions
 struct cpu_out* newNode(struct cpu_out *out);
 struct Queue* createQueue();
