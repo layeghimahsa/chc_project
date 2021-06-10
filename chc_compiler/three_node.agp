@@ -2,5 +2,5 @@ SUBGRAPH(main)
 	CONST(x,7);
         CONST(y,7);
         DATUM(z);
-	OPERATOR(z,op_PLUS,x,y);
+	OPERATOR(z,op_PLUS,x,x);
 	OUTPUT(z);

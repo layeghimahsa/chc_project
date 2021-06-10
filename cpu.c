@@ -190,94 +190,115 @@ void *CPU_start(struct cpu *CPU){
 		default: printf("Error: unknown code found during interpretation\n");
 	}
 		
-	struct cpu_out *output;
-	output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
-	
-	printf("CPU %d RESULT: %d\n", CPU->assigned_cpu, CPU->code[2]);
-	output->value = CPU->code[2];
-	
-	
-	/* ************ returning cpu_output destination and address ********************** */
-	output->dest = CPU->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
-	
-	/* ************ address translation  ********************** */
+	struct DEST *dest = CPU->dest;
+	for(int i = 1; i<=CPU->num_dest;i++){
 
-	output->addr = CPU->code[CPU->node_size-1];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
-
-
-
-	//if statement that fills in the queue or writing to the memory!
-	
-	//not has dependent and should write its value in the queue
-	if(CPU->dest_node != -99){
+		struct cpu_out *output;
+		output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
 		
-		switch(CPU->assigned_cpu){
+		//printf("CPU %d RESULT: %d\n", CPU->assigned_cpu, CPU->code[2]);
+		output->value = CPU->code[2];
 		
-			case 1:
-				pthread_mutex_lock(&mem_lock);
-					if(output->dest == 2)
-						enQueue(cpu_queue2, output);
-					else if(output->dest == 3)
-						enQueue(cpu_queue3, output);
-					else
-						enQueue(cpu_queue2, output);
-					
-				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			case 2:
-				pthread_mutex_lock(&mem_lock);
-					if(output->dest == 1)
-						enQueue(cpu_queue1, output);
-					else if(output->dest == 4)
-						enQueue(cpu_queue4, output);
-					else
-						enQueue(cpu_queue4, output);
-					
-				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			case 3:
-				pthread_mutex_lock(&mem_lock);
-					if(output->dest == 1)
-						enQueue(cpu_queue1, output);
-					else if(output->dest == 4)
-						enQueue(cpu_queue4, output);
-					else
-						enQueue(cpu_queue1, output);
-					
-				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			case 4:
-				pthread_mutex_lock(&mem_lock);
-					if(output->dest == 2)
-						enQueue(cpu_queue2, output);
-					else if(output->dest == 3)
-						enQueue(cpu_queue3, output);
-					else
-						enQueue(cpu_queue3, output);
-					
-				printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-				pthread_mutex_unlock(&mem_lock);
-				break;
-			default:
-				puts("SHOULD NEVER HAPPEN! \n");
-				break; 
 		
-		}		
-	}else{ // we need to calculate stuff here after everything has poped up in the queue
-	
-		printf("CPU %d Writing to Main MEM!!\n",CPU->assigned_cpu);
+		/* ************ returning cpu_output destination and address ********************** */
+		output->dest = dest->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
+		
+		/* ************ address translation  ********************** */
+
+		output->addr = CPU->code[CPU->node_size-i];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
+
+		//if statement that fills in the queue or writing to the memory!
+		
+		//not has dependent and should write its value in the queue
+		if(dest->cpu_dest != -99){
+			
+			switch(CPU->assigned_cpu){
+			
+				case 1:
+					pthread_mutex_lock(&mem_lock);
+						if(output->dest == 2)
+							enQueue(cpu_queue2, output);
+						else if(output->dest == 3)
+							enQueue(cpu_queue3, output);
+						else if(output->dest == 1)
+							enQueue(cpu_queue1, output);
+						else
+							enQueue(cpu_queue2, output);
+						
+					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
+					pthread_mutex_unlock(&mem_lock);
+					break;
+				case 2:
+					pthread_mutex_lock(&mem_lock);
+						if(output->dest == 1)
+							enQueue(cpu_queue1, output);
+						else if(output->dest == 4)
+							enQueue(cpu_queue4, output);
+						else if(output->dest == 2)
+							enQueue(cpu_queue2, output);
+						else
+							enQueue(cpu_queue4, output);
+						
+					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
+					pthread_mutex_unlock(&mem_lock);
+					break;
+				case 3:
+					pthread_mutex_lock(&mem_lock);
+						if(output->dest == 1)
+							enQueue(cpu_queue1, output);
+						else if(output->dest == 4)
+							enQueue(cpu_queue4, output);
+						else if(output->dest == 3)
+							enQueue(cpu_queue3, output);
+						else
+							enQueue(cpu_queue1, output);
+						
+					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
+					pthread_mutex_unlock(&mem_lock);
+					break;
+				case 4:
+					pthread_mutex_lock(&mem_lock);
+						if(output->dest == 2)
+							enQueue(cpu_queue2, output);
+						else if(output->dest == 3)
+							enQueue(cpu_queue3, output);
+						else if(output->dest == 4)
+							enQueue(cpu_queue4, output);
+						else
+							enQueue(cpu_queue3, output);
+						
+					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
+					pthread_mutex_unlock(&mem_lock);
+					break;
+				default:
+					puts("SHOULD NEVER HAPPEN! \n");
+					break; 
+			
+			}		
+		}else{ // we need to calculate stuff here after everything has poped up in the queue
+		
+			printf("CPU %d Writing to Main MEM!!\n",CPU->assigned_cpu);
+			//updating CPU code (local memory)
+			CPU->code[2] = output->value;
+			
+			//writing back to memory (code array)
+			pthread_mutex_lock(&mem_lock);
+			writeMem(CPU->code_address+2, output->value);
+			pthread_mutex_unlock(&mem_lock);
+
+			for(int i = 0; i< CPU->node_size; i++){
+			printf("    code[%d]: %d\n",i,CPU->code[i]);
+			}
+		}
+		dest = dest->next;
 	}
-
 	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 
-	printf("\t CPU %d 's VALUE: %d\n", CPU->assigned_cpu, output->value);
+	/*printf("\t CPU %d 's VALUE: %d\n", CPU->assigned_cpu, output->value);
 	printf("\t CPU %d 's DEST: %d\n", CPU->assigned_cpu, output->dest);
 	printf("\t CPU %d 's ADDR: %d\n", CPU->assigned_cpu, output->addr);
-		
+		*/
 	
-	return output;
+	//return 1;
 	
 	
 }

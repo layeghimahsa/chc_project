@@ -10,7 +10,10 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
-int cpu_available[NUM_CPU] = {0,0,0,0};
+int cpu_available[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
+
+int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
+
 pthread_mutex_t mem_lock;  //main mem mutex
 
 struct Queue* cpu_queue1;
@@ -34,19 +37,19 @@ int code[] = {//End main:
 0x7fffffff,
 0x0,
 0x7,
-0x20,
+0x24,
 0xc,
 0x0,
-0x1,
+0x2,
+0x8,
 0xc,
 0x7fffffff,
 0x0,
 0x7,
-0x20,
+0x1c,
 0xc,
 0x0,
-0x1,
-0x8,
+0x0,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -103,18 +106,32 @@ struct cpu *generate_list(int i){
 			i++;
 		}
 		
-		if(return_node->code[return_node->node_size-1] == 0){
+
+		return_node->num_dest = return_node->code[(6+return_node->code[1])];
+	
+		if(return_node->num_dest == 0){
+			nodes_removed++;
 			return generate_list(i);//dont create a useless node
-		}else if(return_node->code[return_node->node_size-1] == -1){
-			return_node->dest_node = -99; //write to mem
 		}else{
-			return_node->dest_node = find_dest_node(return_node->code[return_node->node_size-1]);
+			
+			struct DEST *dest = (struct DEST *)malloc(sizeof(struct DEST));
+			struct DEST *temp = dest;
+
+			for(int i = 1; i <= return_node->num_dest; i++){
+				if(return_node->code[return_node->node_size-i] == -1){
+					temp->node_dest = -99; //write to mem
+				}else{
+					temp->node_dest = find_dest_node(return_node->code[return_node->node_size-i]);
+				}
+				temp->cpu_dest = -1;
+				temp->next = (struct DEST *)malloc(sizeof(struct DEST));
+				temp = temp->next;
+			}
+			temp = NULL;
+			return_node->dest = dest;
 		}
 		
-		
 		return_node->assigned_cpu = -1;
-		return_node->cpu_dest = -1;
-
 		return_node->next = generate_list(i);
 		
 
@@ -131,7 +148,7 @@ void schedule_nodes(struct cpu *list){
 	struct cpu *current = list;
 
 	while(current != NULL && cpu_scheduled <= NUM_CPU){
-		printf("cpu_scheduled: %d\n",cpu_scheduled+1);
+		//printf("cpu_scheduled: %d\n",cpu_scheduled+1);
 		current->assigned_cpu = cpu_scheduled + 1;
 		cpu_scheduled++;
 		current = current->next;
@@ -142,35 +159,46 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 	if(current == NULL){
 
 	}else{
-		if(current->dest_node == -99){ //return to main mem since there are no dependants
-			current->cpu_dest = -99; //main mem
-		}else{
-			struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
-			int node_count;
-			if(node_num < current->dest_node){
-				temp = current;
-				node_count = node_num;
+		struct DEST *dest_struct = current->dest;
+		for(int i = 1; i<=current->num_dest;i++){
+			if(dest_struct->node_dest == -99){ //return to main mem since there are no dependants
+				dest_struct->cpu_dest = -99; //main mem
 			}else{
-				temp = top;
-				node_count = 1;
+				dest_struct->node_dest = dest_struct->node_dest - nodes_removed;
+				struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
+				int node_count;
+				if(node_num < dest_struct->node_dest){
+					temp = current;
+					node_count = node_num;
+				}else{
+					temp = top;
+					node_count = 1;
+				}
+				
+				while(node_count != dest_struct->node_dest){
+					temp = temp->next; node_count++;
+				}
+
+				dest_struct->cpu_dest = temp->assigned_cpu;
+				
+				//now we must cange the satck destination to match the node stack rather than the full code stack
+				
+				int dest = code_size - (current->code[current->node_size-i]/4) - 1;
+				printf("		DEST: %d\n",dest);
+				int count = 0;
+				while(code[dest] != 2147483647){
+					count++; dest--;
+				}
+				dest = (temp->node_size - count -1)*4;
+				printf("DEST: %d\n", dest);
+				current->code[current->node_size-i] = dest;
 			}
+
+			dest_struct = dest_struct->next;
 			
-			while(node_count != current->dest_node){
-				temp = temp->next; node_count++;
-			}
-			current->cpu_dest = temp->assigned_cpu;
-			
-			//now we must cange the satck destination to match the node stack rather than the full code stack
-			
-			int dest = code_size - (current->code[current->node_size-1]/4) - 1;
-			int count = 0;
-			while(code[dest] != 2147483647){
-				count++; dest--;
-			}
-			dest = (current->node_size - count + 1)*4;
-			printf("DEST: %d\n", dest);
-			current->code[current->node_size-1] = dest;
 		}
+
+	
 		refactor_destinations(current->next, top, node_num+1);
 	}
 }
@@ -181,15 +209,28 @@ void print_nodes(struct cpu *list){
 	}else{
 		printf("\n\nNODE: \n");
 		printf(" - CPU assigned: %d\n",list->assigned_cpu);
-		printf(" - result dest CPU: %d\n",list->cpu_dest);
+		printf(" - code main mem addr: %d\n", list->code_address);
 		printf(" - node size: %d\n",list->node_size);
-		printf(" - dest node: %d\n",list->dest_node);
+		printf(" - number of dest: %d\n",list->num_dest);
 		printf(" - code:\n");
 		for(int i = 0; i< list->node_size; i++){
 			printf("    code[%d]: %d\n",i,list->code[i]);
 		}
+		struct DEST *temp = list->dest;
+		for(int i = 0; i < list->num_dest; i++){
+			printf(" - Destination %d:\n    node dest: %d\n    cpu dest: %d\n",i,temp->node_dest, temp->cpu_dest);
+			temp = temp->next;
+		}
 		print_nodes(list->next);
 	}
+}
+
+void writeMem(int ind, int val){
+
+	code[ind] = val;
+	printf("WRITING BACK TO MEMORY...\n");
+	printf("code[%d] = %d\n",ind, code[ind]);
+	printf("WRITING BACK TO MEMORY HAS FINISHED\n");
 }
 
 
@@ -208,7 +249,9 @@ int main()
     for(int i = 0; i<code_size; i++){
 	printf("code[%d]: %d\n", i ,code[i]); 
     }
-    
+
+    nodes_removed = 0;    
+
     cpu_generated = 0;
     pthread_t thread_id[NUM_CPU];
     int not_last_node = 1;
@@ -261,50 +304,59 @@ int main()
     //this function is likely going to determine the preformance of the whole design
     schedule_nodes(graph);
     //print_nodes(graph);
-
+    
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
     refactor_destinations(graph, graph, 1);
-    //print_nodes(graph);
+    print_nodes(graph);
 
     printf("\n\nLAUNCHING THREADS!!!\n\n"); 
     //simple thread launch since we know more core than nodes 
     struct cpu *list = graph; 
     while(cpu_generated < NUM_CPU && list != NULL){
 	pthread_create(&(thread_id[list->assigned_cpu-1]), NULL, &CPU_start, list);
-	cpu_available[list->assigned_cpu-1] = 1;
+	cpu_available[list->assigned_cpu-1] = CPU_UNAVAILABLE;
 	cpu_generated++;
 	list = list->next;
     }
     int count = 0;
     while(cpu_generated < NUM_CPU){
-	if(cpu_available[count] == 0){
+	if(cpu_available[count] == CPU_AVAILABLE){
 		struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
 		temp->assigned_cpu = count+1;
 		temp->code[1] = 1;
 		pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
-		cpu_available[count] = 2;
+		cpu_available[count] = CPU_USABLE;
 		cpu_generated++;
 	}
 	count++;
 	
+	
     }
-
+    
     /***********************/
     /**** Simulation end ***/
     /***********************/
 
-    //wait for all active cpu threads to finish 
+    //wait for all active cpu threads to finish
+    
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == 1){
+	if(cpu_available[i] == CPU_UNAVAILABLE){
     		pthread_join(thread_id[i], NULL);
 	}
     }
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == 2){
+	if(cpu_available[i] == CPU_USABLE){
     		pthread_cancel(thread_id[i]);
 	}
     }
     pthread_mutex_destroy(&mem_lock);
+    
+    
+    puts("\nPRINTING CODE ARRAY\n"); // want to check if result 14 is written to memory (code array)
+    for(int i = 0; i<code_size; i++){
+	printf("code[%d]: %d\n", i ,code[i]); 
+    }
+
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
     return 0;

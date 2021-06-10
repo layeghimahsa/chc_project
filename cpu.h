@@ -27,20 +27,27 @@
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
 
+struct DEST{ //destination
+
+	int cpu_dest;
+	int node_dest;
+
+	struct DEST *next;
+};
 
 struct cpu{
 
 	int code[64]; //chunk of code
 	int node_size; //actual the size of stack/code
 	int code_address;
-	
-	
 	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
-	int cpu_dest; 	//destination cpu
-	int dest_node;  //destination in node list (used in allocation)
-
+	
+	int num_dest;
+	struct DEST *dest; 	//destination cpu
+	
 	struct cpu *next;
 };
+
 
 
 struct cpu_out{
