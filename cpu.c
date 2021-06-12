@@ -12,6 +12,11 @@ void *CPU_start(struct cpu *CPU){
 	printf("CPU %d 	START!!\n",CPU->assigned_cpu);
 	
 	
+	/*while(1){
+		//everything should be in this loop
+		
+		// call schedule_me after returning		
+	}*/
 	
 	/* ************ returning cpu_output value ********************** */
 	

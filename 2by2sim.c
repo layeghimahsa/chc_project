@@ -10,7 +10,7 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
-int cpu_available[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
+int cpu_status[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
 
 int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
 
@@ -127,7 +127,8 @@ struct cpu *generate_list(int i){
 				temp->next = (struct DEST *)malloc(sizeof(struct DEST));
 				temp = temp->next;
 			}
-			temp = NULL;
+			//temp = NULL;
+			free(temp);
 			return_node->dest = dest;
 		}
 		
@@ -159,12 +160,12 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 	if(current == NULL){
 
 	}else{
-		struct DEST *dest_struct = current->dest;
+		struct DEST *dest_struct = current->dest; //getting the list of destinations
 		for(int i = 1; i<=current->num_dest;i++){
 			if(dest_struct->node_dest == -99){ //return to main mem since there are no dependants
 				dest_struct->cpu_dest = -99; //main mem
 			}else{
-				dest_struct->node_dest = dest_struct->node_dest - nodes_removed;
+				dest_struct->node_dest -= nodes_removed; //updating node_dest in case of any removed nodes
 				struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
 				int node_count;
 				if(node_num < dest_struct->node_dest){
@@ -181,7 +182,7 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 
 				dest_struct->cpu_dest = temp->assigned_cpu;
 				
-				//now we must cange the satck destination to match the node stack rather than the full code stack
+				//now we must change the satck destination to match the node stack rather than the full code stack
 				
 				int dest = code_size - (current->code[current->node_size-i]/4) - 1;
 				printf("		DEST: %d\n",dest);
@@ -202,6 +203,84 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 		refactor_destinations(current->next, top, node_num+1);
 	}
 }
+
+
+struct cpu * schedule_me(int cpu_num, struct cpu *list){
+
+	//initial while that we will traverse through and try to find the node we want to schedule
+	//count number of possible to be scheduled nodes!
+	//if count == 0, create dumy cpu (temp->code[1] = 1; seb) struct that has multiple dependencies, set the cpu status cpu_status [cpu_num-1] = IDLE
+	//else (we can schedule), pick the first node we run into (later, nodes which SHOULD be ran, e.g. priority or deadlines) , right now FIFO;  check if -1 ->>> it measns it is still unassigned
+	//runtime refactor -> change dest to either cpu numebr or temp (means hold the value) 
+	//check number of dependencies, if 0 return cpu. if has dependables, do they know their destination? if yes, you can return cpu. if No, make a list of those who have your dependables, return 
+	// structure cpu
+	
+	struct cpu *out = (struct cpu *)malloc(sizeof(struct cpu)); 
+	
+	struct cpu *current = (struct cpu *)malloc(sizeof(struct cpu));
+	current = list;
+	struct cpu *unscheduled_nodes = (struct cpu *)malloc(sizeof(struct cpu));
+	int unode_num = 0; //number of unscheduled nodes
+	
+	/*finding unscheduled nodes and store them into a new list*/
+	while(current != NULL){ 
+		
+		if(current->assigned_cpu == -1){
+			unscheduled_nodes = current;
+			unscheduled_nodes->next = (struct cpu *)malloc(sizeof(struct cpu));
+			unscheduled_nodes = unscheduled_nodes->next;
+			current = current->next;
+			unode_num++;
+		}
+		
+		current = current->next;
+	}
+	
+	//if there is no node to be left to be scheduled
+	if(unode_num == 0){
+		struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
+		dummy->code[1] = 1;
+		cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
+	} else{ //there is some unassigned nodes
+		
+		//picking the first one. FIFO for now
+		current = unscheduled_nodes;
+		while(current != NULL){
+			
+			if(current->assigned_cpu == -1){
+				//runtime_refactor();
+				if(current->code[1] == 0){//if the node has no dependent
+					out = current;
+					return out;
+				} else{
+				
+					/*yet to be implemented*/
+				
+				}
+				current = current->next;
+			}
+			
+			current = current->next;
+		
+		}
+		
+	
+	
+	}
+	
+	return NULL;
+
+}
+
+
+void writeMem(int ind, int val){
+
+	code[ind] = val;
+	printf("WRITING BACK TO MEMORY...\n");
+	printf("code[%d] = %d\n",ind, code[ind]);
+	printf("WRITING BACK TO MEMORY HAS FINISHED\n");
+}
+
 
 void print_nodes(struct cpu *list){
 	if(list == NULL){
@@ -225,14 +304,6 @@ void print_nodes(struct cpu *list){
 	}
 }
 
-void writeMem(int ind, int val){
-
-	code[ind] = val;
-	printf("WRITING BACK TO MEMORY...\n");
-	printf("code[%d] = %d\n",ind, code[ind]);
-	printf("WRITING BACK TO MEMORY HAS FINISHED\n");
-}
-
 
 int main()
 {
@@ -254,7 +325,6 @@ int main()
 
     cpu_generated = 0;
     pthread_t thread_id[NUM_CPU];
-    int not_last_node = 1;
 
 
     printf("\n\nCREATING NODE LIST\n\n"); 
@@ -314,24 +384,30 @@ int main()
     struct cpu *list = graph; 
     while(cpu_generated < NUM_CPU && list != NULL){
 	pthread_create(&(thread_id[list->assigned_cpu-1]), NULL, &CPU_start, list);
-	cpu_available[list->assigned_cpu-1] = CPU_UNAVAILABLE;
+	cpu_status[list->assigned_cpu-1] = CPU_UNAVAILABLE;
 	cpu_generated++;
 	list = list->next;
     }
-    int count = 0;
-    while(cpu_generated < NUM_CPU){
-	if(cpu_available[count] == CPU_AVAILABLE){
-		struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
-		temp->assigned_cpu = count+1;
-		temp->code[1] = 1;
-		pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
-		cpu_available[count] = CPU_USABLE;
-		cpu_generated++;
-	}
-	count++;
-	
-	
+    
+    
+   
+   if(cpu_generated < NUM_CPU){ //more cores than nodes, create idle cpus
+   	    int count = 0;
+	    while(cpu_generated < NUM_CPU){
+		if(cpu_status[count] == CPU_AVAILABLE){
+			struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
+			temp->assigned_cpu = count+1;
+			temp->code[1] = 1;
+			pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
+			cpu_status[count] = CPU_IDLE;
+			cpu_generated++;
+		}
+		count++;
+	    }
     }
+    
+    //checking cpu status, if all of them are idle, cancle threads and end simulation
+    
     
     /***********************/
     /**** Simulation end ***/
@@ -340,12 +416,13 @@ int main()
     //wait for all active cpu threads to finish
     
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == CPU_UNAVAILABLE){
+	if(cpu_status[i] == CPU_UNAVAILABLE){
     		pthread_join(thread_id[i], NULL);
 	}
     }
+    
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_available[i] == CPU_USABLE){
+	if(cpu_status[i] == CPU_IDLE){
     		pthread_cancel(thread_id[i]);
 	}
     }

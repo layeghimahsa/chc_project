@@ -3,15 +3,15 @@
 
 
 //main mem size in bytes
-#define MAIN_MEM_SIZE 1024
+//#define MAIN_MEM_SIZE 1024
 //instruction set size in bytes
-#define INSTRUCTION_SIZE 8
+#//define INSTRUCTION_SIZE 8
 #define NUM_CPU 4
-#define QUEUE_LENGTH 10
+//#define QUEUE_LENGTH 10
 
 #define CPU_AVAILABLE 0
 #define CPU_UNAVAILABLE 1
-#define CPU_USABLE 2 //I couldn't come up with a suitable name. feel free to change it 
+#define CPU_IDLE 2 
 
 
   
@@ -41,6 +41,7 @@ void schedule_nodes(struct cpu *list); //map nodes to cpu's. this is the crux an
 void refactor_destinations(struct cpu *current, struct cpu *top, int node_num); //set cpu dest and address for destination node stack
 void print_nodes(struct cpu *list); //PRETTY PRINTER! 
 void writeMem(int ind, int val);
+struct cpu * schedule_me(int cpu_num);
 //queue related functions
 struct cpu_out* newNode(struct cpu_out *out);
 struct Queue* createQueue();
