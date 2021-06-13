@@ -196,7 +196,11 @@ void *CPU_start(struct cpu *CPU){
 		//TODO: Fix merge so it has a single argument
 		case code_merge:		CPU->code[2] = (CPU->code[6] | CPU->code[7]); break;
 		case code_identity:		break; //do nothing since its an identity
-		default: printf("Error: unknown code found during interpretation\n");
+		default: 
+		{ 
+			printf("Error: unknown code found during interpretation\n	Operation: %d\n",operation);
+			//need a smoother exit 
+		}
 	}
 		
 	struct DEST *dest = CPU->dest;

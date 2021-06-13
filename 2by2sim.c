@@ -147,13 +147,14 @@ struct cpu *generate_list(int i){
 //first iteration is very simple and mappes in a linear fassion; node 1 -> cpu 1 , node 2 -> cpu 2 ... node n -> cpu -> n
 void schedule_nodes(){
 	
-	int cpu_scheduled = 0;
+	int cpu_scheduled = 1;
 	struct cpu *current = list;
 
-	while(current != NULL && cpu_scheduled <= NUM_CPU){
-		//printf("cpu_scheduled: %d\n",cpu_scheduled+1);
-		current->assigned_cpu = cpu_scheduled + 1;
-		cpu_scheduled++;
+	while(cpu_scheduled <= NUM_CPU && current != NULL){
+		
+		printf("NUM CPU SCHEDULED %d VS NUM CPU %d\n",cpu_scheduled,NUM_CPU);
+		current->assigned_cpu = cpu_scheduled;
+		cpu_scheduled = cpu_scheduled+1;
 		current = current->next;
 	}
 }
@@ -161,6 +162,8 @@ void schedule_nodes(){
 void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 	if(current == NULL){
 
+	}else if(current->assigned_cpu == -1){ //dont refactr unscheduled nodes 
+		refactor_destinations(current->next, top, node_num+1);
 	}else{
 		struct DEST *dest_struct = current->dest; //getting the list of destinations
 		for(int i = 1; i<=current->num_dest;i++){
@@ -249,26 +252,22 @@ struct cpu * schedule_me(int cpu_num){
 		
 		//picking the first one. FIFO for now
 		current = unscheduled_nodes;
-		while(current != NULL){
-			
-			if(current->assigned_cpu == -1){
-				//runtime_refactor();
-				if(current->code[1] == 0){//if the node has no dependent
-					out = current;
-					return out;
-				} else{
-				
-					/*yet to be implemented*/
-				
-				}
-				current = current->next;
-			}
-			
-			current = current->next;
 		
+		//runtime_refactor();
+		if(current->code[1] == 0){//if the node has no dependent
+			current->assigned_cpu = cpu_num;
+			out = current;
+			return out;
+		} else{
+		
+			/*yet to be implemented*/
+			printf("NEED TO IMPLEMENT");
+			struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
+			dummy->assigned_cpu = cpu_num;
+			dummy->code[1] = 1;
+			cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
+			return dummy;
 		}
-		
-	
 	
 	}
 	
