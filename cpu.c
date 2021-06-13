@@ -12,11 +12,9 @@ void *CPU_start(struct cpu *CPU){
 	printf("CPU %d 	START!!\n",CPU->assigned_cpu);
 	
 	
-	/*while(1){
-		//everything should be in this loop
-		
-		// call schedule_me after returning		
-	}*/
+	while(1){
+		//everything should be in this loop		
+	
 	
 	/* ************ returning cpu_output value ********************** */
 	
@@ -26,7 +24,11 @@ void *CPU_start(struct cpu *CPU){
 		sleep(0.01);
 		// -check port for dependent! (checking the queue) , reset the count and reducce the number of dependents 
 		//setting up the queue and periodically checking them
-		
+
+		//dissable cancel since it will be using mutexes and we dont wanna cancel while a mutex is locked
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+
 		switch(CPU->assigned_cpu){
 		
 			struct cpu_out *temp;
@@ -147,6 +149,8 @@ void *CPU_start(struct cpu *CPU){
 		
 		}
 		
+		//enable cancelation
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		
 		if(count > 500){
 			printf("CPU %d TIMER TIMEOUT!\n", CPU->assigned_cpu );
@@ -212,7 +216,9 @@ void *CPU_start(struct cpu *CPU){
 
 		output->addr = CPU->code[CPU->node_size-i];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
 
-		//if statement that fills in the queue or writing to the memory!
+
+		//dissable cancel since it will be using mutexes and we dont wanna cancel while a mutex is locked
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		
 		//not has dependent and should write its value in the queue
 		if(dest->cpu_dest != -99){
@@ -295,15 +301,17 @@ void *CPU_start(struct cpu *CPU){
 			printf("    code[%d]: %d\n",i,CPU->code[i]);
 			}
 		}
+		
+		//enable cancelation
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
 		dest = dest->next;
 	}
-	//printf("\n\nTESTING OUTPUT RESULT\n\n"); 
-	/*printf("\t CPU %d 's VALUE: %d\n", CPU->assigned_cpu, output->value);
-	printf("\t CPU %d 's DEST: %d\n", CPU->assigned_cpu, output->dest);
-	printf("\t CPU %d 's ADDR: %d\n", CPU->assigned_cpu, output->addr);
-		*/
-	
-	//return 1;
+
+		//request a new task
+		CPU = schedule_me(CPU->assigned_cpu);
+		//make thread cancelable 
+	}
 	
 	
 }

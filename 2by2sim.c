@@ -14,6 +14,8 @@ int cpu_status[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILAB
 
 int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
 
+struct cpu *list; //the list of tasks 
+
 pthread_mutex_t mem_lock;  //main mem mutex
 
 struct Queue* cpu_queue1;
@@ -143,7 +145,7 @@ struct cpu *generate_list(int i){
 //this is the function that mappes nodes to cpu
 //likely the root of any preformance
 //first iteration is very simple and mappes in a linear fassion; node 1 -> cpu 1 , node 2 -> cpu 2 ... node n -> cpu -> n
-void schedule_nodes(struct cpu *list){
+void schedule_nodes(){
 	
 	int cpu_scheduled = 0;
 	struct cpu *current = list;
@@ -205,7 +207,7 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 }
 
 
-struct cpu * schedule_me(int cpu_num, struct cpu *list){
+struct cpu * schedule_me(int cpu_num){
 
 	//initial while that we will traverse through and try to find the node we want to schedule
 	//count number of possible to be scheduled nodes!
@@ -239,8 +241,10 @@ struct cpu * schedule_me(int cpu_num, struct cpu *list){
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
 		struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
+		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
 		cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
+		return dummy;
 	} else{ //there is some unassigned nodes
 		
 		//picking the first one. FIFO for now
@@ -282,25 +286,25 @@ void writeMem(int ind, int val){
 }
 
 
-void print_nodes(struct cpu *list){
-	if(list == NULL){
+void print_nodes(struct cpu *nodes){
+	if(nodes == NULL){
 
 	}else{
 		printf("\n\nNODE: \n");
-		printf(" - CPU assigned: %d\n",list->assigned_cpu);
-		printf(" - code main mem addr: %d\n", list->code_address);
-		printf(" - node size: %d\n",list->node_size);
-		printf(" - number of dest: %d\n",list->num_dest);
+		printf(" - CPU assigned: %d\n",nodes->assigned_cpu);
+		printf(" - code main mem addr: %d\n", nodes->code_address);
+		printf(" - node size: %d\n",nodes->node_size);
+		printf(" - number of dest: %d\n",nodes->num_dest);
 		printf(" - code:\n");
-		for(int i = 0; i< list->node_size; i++){
-			printf("    code[%d]: %d\n",i,list->code[i]);
+		for(int i = 0; i< nodes->node_size; i++){
+			printf("    code[%d]: %d\n",i,nodes->code[i]);
 		}
-		struct DEST *temp = list->dest;
-		for(int i = 0; i < list->num_dest; i++){
+		struct DEST *temp = nodes->dest;
+		for(int i = 0; i < nodes->num_dest; i++){
 			printf(" - Destination %d:\n    node dest: %d\n    cpu dest: %d\n",i,temp->node_dest, temp->cpu_dest);
 			temp = temp->next;
 		}
-		print_nodes(list->next);
+		print_nodes(nodes->next);
 	}
 }
 
@@ -328,8 +332,8 @@ int main()
 
 
     printf("\n\nCREATING NODE LIST\n\n"); 
-    struct cpu *graph = generate_list(0);
-    //print_nodes(graph);
+    list = generate_list(0);
+    //print_nodes(list);
 
 
     //creating cpu queues
@@ -372,21 +376,21 @@ int main()
     printf("\n\nSCHEDULING NODES\n\n");    
     //fuction that schedules nodes to cpu (currently very simple)
     //this function is likely going to determine the preformance of the whole design
-    schedule_nodes(graph);
-    //print_nodes(graph);
+    schedule_nodes();
+    //print_nodes(list);
     
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
-    refactor_destinations(graph, graph, 1);
-    print_nodes(graph);
+    refactor_destinations(list, list, 1);
+    print_nodes(list);
 
     printf("\n\nLAUNCHING THREADS!!!\n\n"); 
     //simple thread launch since we know more core than nodes 
-    struct cpu *list = graph; 
-    while(cpu_generated < NUM_CPU && list != NULL){
-	pthread_create(&(thread_id[list->assigned_cpu-1]), NULL, &CPU_start, list);
-	cpu_status[list->assigned_cpu-1] = CPU_UNAVAILABLE;
+    struct cpu *graph = list; 
+    while(cpu_generated < NUM_CPU && graph != NULL){
+	pthread_create(&(thread_id[graph->assigned_cpu-1]), NULL, &CPU_start, graph);
+	cpu_status[graph->assigned_cpu-1] = CPU_UNAVAILABLE;
 	cpu_generated++;
-	list = list->next;
+	graph = graph->next;
     }
     
     
@@ -414,18 +418,24 @@ int main()
     /***********************/
 
     //wait for all active cpu threads to finish
-    
-    for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_status[i] == CPU_UNAVAILABLE){
-    		pthread_join(thread_id[i], NULL);
-	}
+    int num_cpu_idle = 0;
+    while(num_cpu_idle < NUM_CPU){
+	num_cpu_idle = 0;
+	for(int i = 0; i<NUM_CPU; i++){
+		if(cpu_status[i] == CPU_IDLE)
+	    		num_cpu_idle++;
+        }
+	
+	//can do other busy work while sim continues '\/('_')\/' 
+	
     }
-    
+
     for(int i = 0; i<NUM_CPU; i++){
-	if(cpu_status[i] == CPU_IDLE){
-    		pthread_cancel(thread_id[i]);
-	}
+	pthread_cancel(thread_id[i]); //cancel all threads 
+	pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely 
+		
     }
+
     pthread_mutex_destroy(&mem_lock);
     
     
