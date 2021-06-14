@@ -26,6 +26,7 @@
 #define DEAD 		0xFFFFFFFF
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
+#define max_expandable 30
 
 struct DEST{ //destination
 
@@ -43,6 +44,8 @@ struct cpu{
 	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
 	
 	int num_dest;
+	int expandables[max_expandable]; //list of all cpus that have current cpu's expandables
+	
 	struct DEST *dest; 	//destination cpu
 	
 	struct cpu *next;

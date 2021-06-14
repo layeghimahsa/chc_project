@@ -234,7 +234,7 @@ struct cpu * schedule_me(int cpu_num){
 			unscheduled_nodes = current;
 			unscheduled_nodes->next = (struct cpu *)malloc(sizeof(struct cpu));
 			unscheduled_nodes = unscheduled_nodes->next;
-			current = current->next;
+			//current = current->next;
 			unode_num++;
 		}
 		
@@ -253,25 +253,46 @@ struct cpu * schedule_me(int cpu_num){
 		//picking the first one. FIFO for now
 		current = unscheduled_nodes;
 		
-		//runtime_refactor();
+		//runtime_refactor(); 
+		
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
+			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 			out = current;
 			return out;
-		} else{
+		} else{ //if the node has dependables
 		
 			/*yet to be implemented*/
-			printf("NEED TO IMPLEMENT");
-			struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
+			//printf("NEED TO IMPLEMENT");
+			struct DEST *dest = (struct DEST *)malloc(sizeof(struct DEST));
+			struct cpu *my_dependables = (struct cpu *)malloc(sizeof(struct cpu)); //list of those who have your dependables
+			dest = current->dest; //list of cpu destinations
+			int udest_count = 0; //number of unknown destinations, it's also used for array index
+			while(dest != NULL){
+				if(dest->cpu_dest != -1){ //if there is already a cpu assigned (cpu_dest is defined)
+					current->expandables[udest_count] = dest->cpu_dest;
+					udest_count++;
+				}
+				
+				dest = dest->next;
+			}
+			
+			//return the cpu.
+			current->assigned_cpu = cpu_num;
+			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
+			out = current;
+			return out;
+			
+			/*struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
 			dummy->assigned_cpu = cpu_num;
 			dummy->code[1] = 1;
 			cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
-			return dummy;
+			return dummy;*/
 		}
 	
 	}
 	
-	return NULL;
+	return out;
 
 }
 
