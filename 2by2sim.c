@@ -10,6 +10,7 @@
 
 //array of 1024 lines with 64 bit words
 int cpu_generated;
+int list_index = 1;
 int cpu_status[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
 
 int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
@@ -102,6 +103,7 @@ struct cpu *generate_list(int i){
 		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
 		return_node->node_size = size(i); 
 		return_node->code_address = i;
+		return_node->node_num = list_index;
 		
 		for(int j=0; j<return_node->node_size; j++){
 			return_node->code[j] = code[i];
@@ -113,6 +115,7 @@ struct cpu *generate_list(int i){
 	
 		if(return_node->num_dest == 0){
 			nodes_removed++;
+			list_index++;
 			return generate_list(i);//dont create a useless node
 		}else{
 			
@@ -135,6 +138,7 @@ struct cpu *generate_list(int i){
 		}
 		
 		return_node->assigned_cpu = -1;
+		list_index++;
 		return_node->next = generate_list(i);
 		
 
@@ -251,31 +255,54 @@ struct cpu * schedule_me(int cpu_num){
 	} else{ //there is some unassigned nodes
 		
 		//picking the first one. FIFO for now
-		current = unscheduled_nodes;
+		current = unscheduled_nodes; //call pick_node function
 		
 		//runtime_refactor(); 
 		
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			out = current;
-			return out;
+			//out = current;
+			return current;
 		} else{ //if the node has dependables
 		
 			/*yet to be implemented*/
 			//printf("NEED TO IMPLEMENT");
 			struct DEST *dest = (struct DEST *)malloc(sizeof(struct DEST));
-			struct cpu *my_dependables = (struct cpu *)malloc(sizeof(struct cpu)); //list of those who have your dependables
 			dest = current->dest; //list of cpu destinations
-			int udest_count = 0; //number of unknown destinations, it's also used for array index
-			while(dest != NULL){
+			int ind = 0; //it's used for array index
+			
+			
+			//to be done
+			struct cpu *temp = list;
+			
+			while(temp != NULL){
+				  for(int i = 0; i< temp->num_dest; i++){
+				      printf("test!!!: %d\n", temp->dest->node_dest);
+				      if(temp->dest->node_dest == current->node_num){
+					  //its a dependency so add temp node cpu num to dependency list
+					  current->dependables[ind] = temp->dest->cpu_dest;  
+					  ind++;
+				      }
+				      dest = dest->next;
+				  }
+				  temp = temp->next;
+			}
+			
+			/*while(dest != NULL){
 				if(dest->cpu_dest != -1){ //if there is already a cpu assigned (cpu_dest is defined)
-					current->expandables[udest_count] = dest->cpu_dest;
+				
+					//having another function: pass the node number and number of nodes that have been removed (from code array)
+					//iterate through the list and find the node which has desired cpu_dest
+									
+					/*			
+					current->dependables[udest_count] = dest->cpu_dest;  
 					udest_count++;
 				}
 				
 				dest = dest->next;
 			}
+			*/
 			
 			//return the cpu.
 			current->assigned_cpu = cpu_num;
@@ -283,11 +310,6 @@ struct cpu * schedule_me(int cpu_num){
 			out = current;
 			return out;
 			
-			/*struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
-			dummy->assigned_cpu = cpu_num;
-			dummy->code[1] = 1;
-			cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
-			return dummy;*/
 		}
 	
 	}
