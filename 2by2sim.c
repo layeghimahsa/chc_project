@@ -224,7 +224,6 @@ struct cpu * schedule_me(int cpu_num){
 	//check number of dependencies, if 0 return cpu. if has dependables, do they know their destination? if yes, you can return cpu. if No, make a list of those who have your dependables, return 
 	// structure cpu
 	
-	struct cpu *out = (struct cpu *)malloc(sizeof(struct cpu)); 
 	
 	struct cpu *current = (struct cpu *)malloc(sizeof(struct cpu));
 	current = list;
@@ -238,7 +237,6 @@ struct cpu * schedule_me(int cpu_num){
 			unscheduled_nodes = current;
 			unscheduled_nodes->next = (struct cpu *)malloc(sizeof(struct cpu));
 			unscheduled_nodes = unscheduled_nodes->next;
-			//current = current->next;
 			unode_num++;
 		}
 		
@@ -262,17 +260,10 @@ struct cpu * schedule_me(int cpu_num){
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			//out = current;
 			return current;
 		} else{ //if the node has dependables
 		
-			/*yet to be implemented*/
-			//printf("NEED TO IMPLEMENT");
-			struct DEST *dest = (struct DEST *)malloc(sizeof(struct DEST));
-			dest = current->dest; //list of cpu destinations
-			int ind = 0; //it's used for array index
-			
-			
+			int ind = 0; //it's used for array index	
 			//to be done
 			struct cpu *temp = list;
 			
@@ -289,32 +280,16 @@ struct cpu * schedule_me(int cpu_num){
 				  temp = temp->next;
 			}
 			
-			/*while(dest != NULL){
-				if(dest->cpu_dest != -1){ //if there is already a cpu assigned (cpu_dest is defined)
-				
-					//having another function: pass the node number and number of nodes that have been removed (from code array)
-					//iterate through the list and find the node which has desired cpu_dest
-									
-					/*			
-					current->dependables[udest_count] = dest->cpu_dest;  
-					udest_count++;
-				}
-				
-				dest = dest->next;
-			}
-			*/
-			
 			//return the cpu.
 			current->assigned_cpu = cpu_num;
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			out = current;
-			return out;
+			return current;
 			
 		}
 	
 	}
 	
-	return out;
+	return current;
 
 }
 

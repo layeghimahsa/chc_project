@@ -26,7 +26,7 @@
 #define DEAD 		0xFFFFFFFF
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
-#define max_expandable 30
+#define max_dependables 30
 
 struct DEST{ //destination
 
@@ -42,9 +42,10 @@ struct cpu{
 	int node_size; //actual the size of stack/code
 	int code_address;
 	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
+	int node_num; //current node number
 	
-	int num_dest;
-	int expandables[max_expandable]; //list of all cpus that have current cpu's expandables
+	int num_dest; //number of node's destinations
+	int dependables[max_dependables]; //list of all cpus that have current cpu's dependables
 	
 	struct DEST *dest; 	//destination cpu
 	
