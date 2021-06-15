@@ -4,3 +4,9 @@ SUBGRAPH(main)
         DATUM(z);
 	OPERATOR(z,op_PLUS,x,y);
 	CONST(h,22);
+	DATUM(d);
+	OPERATOR(d,op_PLUS,z,h);
+	OUTPUT(d);
+	DATUM(f);
+	OPERATOR(f,op_PLUS,x,x);
+	OUTPUT(f);

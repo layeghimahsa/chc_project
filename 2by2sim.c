@@ -40,19 +40,49 @@ int code[] = {//End main:
 0x7fffffff,
 0x0,
 0x7,
-0x24,
+0x28,
 0xc,
 0x0,
-0x2,
+0x3,
 0x8,
 0xc,
+0x7c,
 0x7fffffff,
 0x0,
 0x7,
-0x1c,
+0x20,
 0xc,
 0x0,
+0x1,
+0x78,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
 0x0,
+0x0,
+0x1,
+0x34,
+0x7fffffff,
+0x0,
+0x16,
+0x20,
+0xc,
+0x0,
+0x1,
+0x30,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -65,8 +95,8 @@ int code[] = {//End main:
 0xffffffff
 //Start main @(0):
 };
-int code_size = 26;
-int dictionary[][3] = {{0,26,3}
+int code_size = 56;
+int dictionary[][3] = {{0,56,6}
 };
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
@@ -103,6 +133,7 @@ struct cpu *generate_list(int i){
 		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
 		return_node->node_size = size(i); 
 		return_node->code_address = i;
+		return_node->dependables = NULL;
 		return_node->node_num = list_index;
 		
 		for(int j=0; j<return_node->node_size; j++){
@@ -115,7 +146,6 @@ struct cpu *generate_list(int i){
 	
 		if(return_node->num_dest == 0){
 			nodes_removed++;
-			list_index++;
 			return generate_list(i);//dont create a useless node
 		}else{
 			
@@ -189,10 +219,16 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 					temp = temp->next; node_count++;
 				}
 
-				dest_struct->cpu_dest = temp->assigned_cpu;
+
+
+				//if the destination isnt assigned, the current node must hold the value
+				if(temp->assigned_cpu == -1)
+					dest_struct->cpu_dest = TEMP_A;
+				else
+					dest_struct->cpu_dest = temp->assigned_cpu;
 				
 				//now we must change the satck destination to match the node stack rather than the full code stack
-				
+				//this is done even if the cpu isnt assinged yet
 				int dest = code_size - (current->code[current->node_size-i]/4) - 1;
 				printf("		DEST: %d\n",dest);
 				int count = 0;
@@ -202,6 +238,7 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 				dest = (temp->node_size - count -1)*4;
 				printf("DEST: %d\n", dest);
 				current->code[current->node_size-i] = dest;
+
 			}
 
 			dest_struct = dest_struct->next;
@@ -225,26 +262,22 @@ struct cpu * schedule_me(int cpu_num){
 	// structure cpu
 	
 	
-	struct cpu *current = (struct cpu *)malloc(sizeof(struct cpu));
-	current = list;
-	struct cpu *unscheduled_nodes = (struct cpu *)malloc(sizeof(struct cpu));
+	struct cpu *current = list;
 	int unode_num = 0; //number of unscheduled nodes
 	
 	/*finding unscheduled nodes and store them into a new list*/
 	while(current != NULL){ 
 		
 		if(current->assigned_cpu == -1){
-			unscheduled_nodes = current;
-			unscheduled_nodes->next = (struct cpu *)malloc(sizeof(struct cpu));
-			unscheduled_nodes = unscheduled_nodes->next;
 			unode_num++;
+			break;
 		}
 		
 		current = current->next;
 	}
-	
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
+		printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
 		struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
@@ -252,36 +285,41 @@ struct cpu * schedule_me(int cpu_num){
 		return dummy;
 	} else{ //there is some unassigned nodes
 		
-		//picking the first one. FIFO for now
-		current = unscheduled_nodes; //call pick_node function
-		
 		//runtime_refactor(); 
 		
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
+			refactor_destinations(current, list, current->node_num);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 			return current;
 		} else{ //if the node has dependables
 		
-			int ind = 0; //it's used for array index	
-			//to be done
 			struct cpu *temp = list;
 			
+			struct depend *dep = (struct depend *)malloc(sizeof(struct depend));
+			struct depend *temp_dep = dep;
+			
+
 			while(temp != NULL){
+				  struct DEST *dest = temp->dest;
+				  
 				  for(int i = 0; i< temp->num_dest; i++){
-				      printf("test!!!: %d\n", temp->dest->node_dest);
-				      if(temp->dest->node_dest == current->node_num){
-					  //its a dependency so add temp node cpu num to dependency list
-					  current->dependables[ind] = temp->dest->cpu_dest;  
-					  ind++;
+				      if(dest->node_dest == current->node_num){
+					  temp_dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+					  temp_dep->node_num = temp->node_num; //variable name to be requested
+					  temp_dep->next = (struct depend *)malloc(sizeof(struct depend));
+					  temp_dep = temp_dep->next;
 				      }
 				      dest = dest->next;
 				  }
 				  temp = temp->next;
 			}
-			
+			temp_dep = NULL;
+			free(temp_dep);
+			current->dependables = dep;
 			//return the cpu.
 			current->assigned_cpu = cpu_num;
+			refactor_destinations(current, list, current->node_num);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 			return current;
 			
@@ -309,6 +347,7 @@ void print_nodes(struct cpu *nodes){
 	}else{
 		printf("\n\nNODE: \n");
 		printf(" - CPU assigned: %d\n",nodes->assigned_cpu);
+		printf(" - Node number: %d\n",nodes->node_num);
 		printf(" - code main mem addr: %d\n", nodes->code_address);
 		printf(" - node size: %d\n",nodes->node_size);
 		printf(" - number of dest: %d\n",nodes->num_dest);

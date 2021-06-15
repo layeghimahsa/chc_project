@@ -28,6 +28,10 @@
 #define READY 		0
 #define max_dependables 30
 
+
+#define RESULT 0
+#define REQUEST 1
+
 struct DEST{ //destination
 
 	int cpu_dest;
@@ -36,6 +40,12 @@ struct DEST{ //destination
 	struct DEST *next;
 };
 
+struct depend{ //this is a list of all variable a cpu must call upon to get their variable 
+	int node_num; //this is technically the variable name 
+	int cpu_num;  //cpu the request must be sent to 
+		
+	struct depend *next;
+};
 struct cpu{
 
 	int code[64]; //chunk of code
@@ -45,10 +55,9 @@ struct cpu{
 	int node_num; //current node number
 	
 	int num_dest; //number of node's destinations
-	int dependables[max_dependables]; //list of all cpus that have current cpu's dependables
 	
 	struct DEST *dest; 	//destination cpu
-	
+	struct depend *dependables; //list of all cpu that contain your dependables and need var request
 	struct cpu *next;
 };
 
@@ -57,7 +66,12 @@ struct cpu{
 struct cpu_out{
 	int value;
 	int dest;
-	int addr; //destination could also be a tuppl, but we need cpu num and its stack destination address
+	int addr; 
+
+	int node_num; //variable name!
+
+	int message_type; //result, request...
+
 	struct cpu_out *next;
 };
 

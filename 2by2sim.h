@@ -13,6 +13,7 @@
 #define CPU_UNAVAILABLE 1
 #define CPU_IDLE 2 
 
+#define TEMP_A 0 //tells cpu thats its destination node hasent been assinged yet
 
   
 // The queue which is a pointer to the front and rear node
