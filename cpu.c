@@ -20,13 +20,13 @@ void *CPU_start(struct cpu *CPU){
 		cache[0][i] = -1;//node number (technically the variable name)
 		cache[1][i] = -1;//node stack address for its dest node
 		cache[2][i] = -1;//node value
-		//cache[3][i] = -1;
+		cache[3][i] = -1;
 	}
 	
 	while(1){
 		//everything should be in this loop		
 	
-	
+	printf("CPU %d DOING NODE %d\n",CPU->assigned_cpu,CPU->node_num);
 	//check if there are requests to make, and if yes make em
 	struct depend *dep = CPU->dependables;
 	while(dep != NULL){ //should be null if no requests to make 
@@ -131,13 +131,13 @@ void *CPU_start(struct cpu *CPU){
 									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
 									//addr is the requested node num (node name)
 									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr){
+										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
 											output->value = cache[2][i];
 											output->dest = temp->value;
 											output->addr = cache[1][i]; 
 											output->node_num = temp->node_num;
 											output->message_type = RESULT;
-											
+											cache[0][i] = -1; //remove val
 											break;
 										}
 									}
@@ -190,13 +190,13 @@ void *CPU_start(struct cpu *CPU){
 									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
 									//addr is the requested node num (node name)
 									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr){
+										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
 											output->value = cache[2][i];
 											output->dest = temp->value;
 											output->addr = cache[1][i]; 
 											output->node_num = temp->node_num;
 											output->message_type = RESULT;
-											
+											cache[0][i] = -1; //remove val
 											break;
 										}
 									}
@@ -247,13 +247,13 @@ void *CPU_start(struct cpu *CPU){
 									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
 									//addr is the requested node num (node name)
 									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr){
+										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
 											output->value = cache[2][i];
 											output->dest = temp->value;
 											output->addr = cache[1][i]; 
 											output->node_num = temp->node_num;
 											output->message_type = RESULT;
-											 
+											cache[0][i] = -1; //remove val
 											break;
 										}
 									}
@@ -307,12 +307,13 @@ void *CPU_start(struct cpu *CPU){
 									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
 									//addr is the requested node num (node name)
 									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr){
+										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
 											output->value = cache[2][i];
 											output->dest = temp->value;
 											output->addr = cache[1][i]; 
 											output->node_num = temp->node_num;
 											output->message_type = RESULT;
+											cache[0][i] = -1; //remove val
 											break;
 										}
 									}
@@ -447,14 +448,14 @@ void *CPU_start(struct cpu *CPU){
 				cache[0][0] = CPU->node_num;
 				cache[1][0] = output->addr;
 				cache[2][0] = output->value;
-				//cache[3][0] = output->node_num;
+				cache[3][0] = output->node_num;
 				entry_pos = 0;
 			}else{
 				//entry pos + 1 should be technically the oldest entry 
 				cache[0][entry_pos+1] = CPU->node_num;
 				cache[1][entry_pos+1] = output->addr;
 				cache[2][entry_pos+1] = output->value;
-				//cache[3][entry_pos+1] = output->node_num;
+				cache[3][entry_pos+1] = output->node_num;
 				entry_pos++;
 			}
 			
