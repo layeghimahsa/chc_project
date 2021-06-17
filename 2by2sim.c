@@ -11,6 +11,8 @@
 //array of 1024 lines with 64 bit words
 int cpu_generated;
 int list_index = 1;
+
+//TODO: make this changable at runtime 
 int cpu_status[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
 
 int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
@@ -19,6 +21,8 @@ struct cpu *list; //the list of tasks
 
 pthread_mutex_t mem_lock;  //main mem mutex
 
+
+//TODO: instantiated in main 
 struct Queue* cpu_queue1;
 struct Queue* cpu_queue2;
 struct Queue* cpu_queue3;
@@ -105,7 +109,7 @@ int size(int addr){
 	//find size
 	int i = addr + 1;
 	int size = 1;
-	while(code[i] != 2147483647 && i < code_size){
+	while(code[i] != 2147483647 && i < code_size){  //TODO: define as node tag or something 
 		size++;
 		i++;
 	}
@@ -125,7 +129,7 @@ int find_dest_node(int end){
 }
 
 
-struct cpu *generate_list(int i){
+struct cpu *generate_list(int i){  //TODO: change cpu stuct name to AGP_node or something 
 
 	if(i >= code_size){
 		return NULL;
