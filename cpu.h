@@ -55,6 +55,8 @@ struct cpu{
 	int node_num; //current node number
 	
 	int num_dest; //number of node's destinations
+
+	struct Queue *look_up[4]; //lookup queue table
 	
 	struct DEST *dest; 	//destination cpu
 	struct depend *dependables; //list of all cpu that contain your dependables and need var request

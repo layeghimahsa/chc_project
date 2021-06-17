@@ -53,35 +53,9 @@ void *CPU_start(struct cpu *CPU){
 			printf("CPU %d has sent var request to CPU %d\n",CPU->assigned_cpu, output->dest);
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 			pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-			if(CPU->assigned_cpu == 1){
-				if(dep->cpu_num == 2)
-					enQueue(cpu_queue2, output);
-				else if(dep->cpu_num == 3)
-					enQueue(cpu_queue3, output);
-				else // 4
-					enQueue(cpu_queue2, output);
-			}else if(CPU->assigned_cpu == 2){
-				if(dep->cpu_num == 1)
-					enQueue(cpu_queue1, output);
-				else if(dep->cpu_num == 3)
-					enQueue(cpu_queue4, output);
-				else // 4
-					enQueue(cpu_queue4, output);
-			}else if(CPU->assigned_cpu == 3){
-				if(dep->cpu_num == 1)
-					enQueue(cpu_queue1, output);
-				else if(dep->cpu_num == 2)
-					enQueue(cpu_queue1, output);
-				else // 4
-					enQueue(cpu_queue4, output);
-			}else{ // cpu 4
-				if(dep->cpu_num == 1)
-					enQueue(cpu_queue3, output);
-				else if(dep->cpu_num == 2)
-					enQueue(cpu_queue3, output);
-				else // 3
-					enQueue(cpu_queue3, output);
-			}
+
+			enQueue(CPU->look_up[dep->cpu_num-1], output);
+
 			pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
 			//enable cancelation
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -103,251 +77,50 @@ void *CPU_start(struct cpu *CPU){
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
 
-		switch(CPU->assigned_cpu){
-		
+		if(CPU->look_up[CPU->assigned_cpu-1]->size > 0){
+			//printf("CPU %d wawawiwa\n",CPU->assigned_cpu);
 			struct cpu_out *temp;
-			
-			case 1: // 1. cpu1 is checking their queue
-				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-					//check your queue
-					if(cpu_queue1->size > 0){ //2. if there is something in queue1,
-						temp = deQueue(cpu_queue1); // 3. dequeue it
-						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
-						//, 3. is its destination for cpu1
-						if(temp->dest == 2){  //no its for 2
-						 	enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 3){ //no its for 3
-							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu3 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 4){ //not its for 4
-							enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue since not connected to 4
-							count = 0; //6.reset the count
-						}else{
-							if(temp->message_type == REQUEST){
-								if(temp->addr == CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue1, temp);
-								}else{
-									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
-									//addr is the requested node num (node name)
-									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
-											output->value = cache[2][i];
-											output->dest = temp->value;
-											output->addr = cache[1][i]; 
-											output->node_num = temp->node_num;
-											output->message_type = RESULT;
-											cache[0][i] = -1; //remove val
-											break;
-										}
-									}
-									//value is return cpu num
-									if(temp->value == 2)
-										enQueue(cpu_queue2, output);
-									else if(temp->value == 3)
-										enQueue(cpu_queue3, output);
-									else // 4
-										enQueue(cpu_queue2, output);
-								}
-								
-							}else{
-								if(temp->node_num != CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue1, temp);
-								}else{
-									int addr = CPU->node_size - (temp->addr/4) - 1;
-									CPU->code[addr] = temp->value;
-									count = 0; //6.reset the count
-									CPU->code[1]--; //7. decrese the number of dependents
-									printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
-								}
+			pthread_mutex_lock(&mem_lock);
+			temp = deQueue(CPU->look_up[CPU->assigned_cpu-1]);
+			if(CPU->assigned_cpu != temp->dest){
+				enQueue(CPU->look_up[temp->dest-1], temp);
+			}else{
+				if(temp->message_type == REQUEST){
+					if(temp->addr == CPU->node_num){//requesting currently being processed node
+						enQueue(CPU->look_up[CPU->assigned_cpu-1], temp);
+					}else{
+						struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
+						//addr is the requested node num (node name)
+						for(int i = 0; i<8; i++){
+							if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
+								output->value = cache[2][i];
+								output->dest = temp->value;
+								output->addr = cache[1][i]; 
+								output->node_num = temp->node_num;
+								output->message_type = RESULT;
+								cache[0][i] = -1; //remove val
+								break;
 							}
 						}
+						enQueue(CPU->look_up[temp->value-1], output);
 					}
-				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
-				break;
-				
-			case 2:
-				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-					//check your queue
-					if(cpu_queue2->size > 0){ //2. if there is something in queue1,
-						temp = deQueue(cpu_queue2); // 3. dequeue it
-						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
-						//, 3. is its destination for cpu1
-						if(temp->dest == 1){  //no its for 2
-						 	enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 4){ //no its for 3
-							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu3 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 3){ //not its for 4
-							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu2 queue since not connected to 4
-							count = 0; //6.reset the count
-						}else{
-							if(temp->message_type == REQUEST){
-								if(temp->addr == CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue2, temp);
-								}else{
-									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
-									//addr is the requested node num (node name)
-									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
-											output->value = cache[2][i];
-											output->dest = temp->value;
-											output->addr = cache[1][i]; 
-											output->node_num = temp->node_num;
-											output->message_type = RESULT;
-											cache[0][i] = -1; //remove val
-											break;
-										}
-									}
-									if(temp->value == 1)
-										enQueue(cpu_queue1, output);
-									else if(temp->value == 3)
-										enQueue(cpu_queue4, output);
-									else // 4
-										enQueue(cpu_queue4, output);
-								}
-								
-							}else{
-								if(temp->node_num != CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue2, temp);
-								}else{
-									int addr = CPU->node_size - (temp->addr/4) - 1;
-									CPU->code[addr] = temp->value;
-									count = 0; //6.reset the count
-									CPU->code[1]--; //7. decrese the number of dependents
-									printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
-								}
-							}
-						}
+					
+				}else{
+					if(temp->node_num != CPU->node_num){//requesting currently being processed node
+						enQueue(CPU->look_up[CPU->assigned_cpu-1], temp);
+					}else{
+						int addr = CPU->node_size - (temp->addr/4) - 1;
+						CPU->code[addr] = temp->value;
+						count = 0; //6.reset the count
+						CPU->code[1]--; //7. decrese the number of dependents
+						printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
 					}
-				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
-				break;
-			case 3:
-				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-					//check your queue
-					if(cpu_queue3->size > 0){ //2. if there is something in queue1,
-						temp = deQueue(cpu_queue3); // 3. dequeue it
-						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
-						//, 3. is its destination for cpu1
-						if(temp->dest == 1){  //no its for 2
-						 	enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 4){ //no its for 3
-							enQueue(cpu_queue4, temp); // 5. enqueue it to cpu3 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 2){ //not its for 4
-							enQueue(cpu_queue1, temp); // 5. enqueue it to cpu2 queue since not connected to 4
-							count = 0; //6.reset the count
-						}else{
-							if(temp->message_type == REQUEST){
-								if(temp->addr == CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue3, temp);
-								}else{
-									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
-									//addr is the requested node num (node name)
-									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
-											output->value = cache[2][i];
-											output->dest = temp->value;
-											output->addr = cache[1][i]; 
-											output->node_num = temp->node_num;
-											output->message_type = RESULT;
-											cache[0][i] = -1; //remove val
-											break;
-										}
-									}
-									if(temp->value == 2)
-										enQueue(cpu_queue1, output);
-									else if(temp->value == 1)
-										enQueue(cpu_queue1, output);
-									else // 4
-										enQueue(cpu_queue4, output);
-								}
-								
-							}else{
-								if(temp->node_num != CPU->node_num){//requesting currently being processed node
-									printf("NOOOOOT READY YEEEET %d vs %d",temp->node_num, CPU->node_num);
-									enQueue(cpu_queue3, temp);
-								}else{
-									int addr = CPU->node_size - (temp->addr/4) - 1;
-									CPU->code[addr] = temp->value;
-									count = 0; //6.reset the count
-									CPU->code[1]--; //7. decrese the number of dependents
-									printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
-								}
-							}
-						}
-					}
-				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
-				
-				break;
-			case 4:
-			
-				pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-					//check your queue
-					if(cpu_queue4->size > 0){ //2. if there is something in queue1,
-						temp = deQueue(cpu_queue4); // 3. dequeue it
-						printf("CPU %d dequeded element: %d\n",CPU->assigned_cpu, temp->value); //print it 
-						//, 3. is its destination for cpu1
-						if(temp->dest == 2){  //no its for 2
-						 	enQueue(cpu_queue2, temp); // 5. enqueue it to cpu2 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 3){ //no its for 3
-							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu3 queue
-							count = 0; //6.reset the count
-						}else if(temp->dest == 1){ //not its for 4
-							enQueue(cpu_queue3, temp); // 5. enqueue it to cpu2 queue since not connected to 4
-							count = 0; //6.reset the count
-						}else{
-							if(temp->message_type == REQUEST){
-								if(temp->addr == CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue4, temp);
-								}else{
-									struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
-									//addr is the requested node num (node name)
-									for(int i = 0; i<8; i++){
-										if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
-											output->value = cache[2][i];
-											output->dest = temp->value;
-											output->addr = cache[1][i]; 
-											output->node_num = temp->node_num;
-											output->message_type = RESULT;
-											cache[0][i] = -1; //remove val
-											break;
-										}
-									}
-									if(temp->value == 2)
-										enQueue(cpu_queue2, output);
-									else if(temp->value == 3)
-										enQueue(cpu_queue3, output);
-									else // 1
-										enQueue(cpu_queue3, output);
-								}
-								
-							}else{
-								if(temp->node_num != CPU->node_num){//requesting currently being processed node
-									enQueue(cpu_queue4, temp);
-								}else{
-									int addr = CPU->node_size - (temp->addr/4) - 1;
-									CPU->code[addr] = temp->value;
-									count = 0; //6.reset the count
-									CPU->code[1]--; //7. decrese the number of dependents
-									printf("CPU %d dependents: %d\n",CPU->assigned_cpu, CPU->code[1]); //printing the updated dependents number
-								}
-							}
-						}
-					}
-				pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
-				
-				break;
-				
-			default:
-				puts("SHOULD NOT HAPPEN!\n");
-				break;
-				
-		
+				}
+			}
+			pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
 		}
+		
+		
 		
 		//enable cancelation
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -408,16 +181,8 @@ void *CPU_start(struct cpu *CPU){
 
 		struct cpu_out *output;
 		output = (struct cpu_out *)malloc(sizeof(struct cpu_out));
-		
-		//printf("CPU %d RESULT: %d\n", CPU->assigned_cpu, CPU->code[2]);
 		output->value = CPU->code[2];
-		
-		
-		/* ************ returning cpu_output destination and address ********************** */
 		output->dest = dest->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
-		
-		/* ************ address translation  ********************** */
-
 		output->addr = CPU->code[CPU->node_size-i];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
 		output->node_num = dest->node_dest;
 		output->message_type = RESULT;
@@ -438,9 +203,7 @@ void *CPU_start(struct cpu *CPU){
 			for(int i = 0; i< CPU->node_size; i++){
 			printf("    code[%d]: %d\n",i,CPU->code[i]);
 			}
-			
-			
-					
+		
 		}else if(dest->cpu_dest == 0){
 			//save the value and node name (node number) for when its called upon
 			printf("CPU %d STORING MEM!!\n",CPU->assigned_cpu);
@@ -460,71 +223,7 @@ void *CPU_start(struct cpu *CPU){
 			}
 			
 		}else{ // we need to calculate stuff here after everything has poped up in the queue
-		
-			
-
-			switch(CPU->assigned_cpu){
-			
-				case 1:
-					pthread_mutex_lock(&mem_lock);
-						if(output->dest == 2)
-							enQueue(cpu_queue2, output);
-						else if(output->dest == 3)
-							enQueue(cpu_queue3, output);
-						else if(output->dest == 1)
-							enQueue(cpu_queue1, output);
-						else
-							enQueue(cpu_queue2, output);
-						
-					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-					pthread_mutex_unlock(&mem_lock);
-					break;
-				case 2:
-					pthread_mutex_lock(&mem_lock);
-						if(output->dest == 1)
-							enQueue(cpu_queue1, output);
-						else if(output->dest == 4)
-							enQueue(cpu_queue4, output);
-						else if(output->dest == 2)
-							enQueue(cpu_queue2, output);
-						else
-							enQueue(cpu_queue4, output);
-						
-					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-					pthread_mutex_unlock(&mem_lock);
-					break;
-				case 3:
-					pthread_mutex_lock(&mem_lock);
-						if(output->dest == 1)
-							enQueue(cpu_queue1, output);
-						else if(output->dest == 4)
-							enQueue(cpu_queue4, output);
-						else if(output->dest == 3)
-							enQueue(cpu_queue3, output);
-						else
-							enQueue(cpu_queue1, output);
-						
-					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-					pthread_mutex_unlock(&mem_lock);
-					break;
-				case 4:
-					pthread_mutex_lock(&mem_lock);
-						if(output->dest == 2)
-							enQueue(cpu_queue2, output);
-						else if(output->dest == 3)
-							enQueue(cpu_queue3, output);
-						else if(output->dest == 4)
-							enQueue(cpu_queue4, output);
-						else
-							enQueue(cpu_queue3, output);
-						
-					printf("CPU %d sent to CPU queue %d\n",CPU->assigned_cpu ,output->dest);
-					pthread_mutex_unlock(&mem_lock);
-					break;
-				default:
-					puts("SHOULD NEVER HAPPEN! \n");
-					break; 
-				}
+			enQueue(CPU->look_up[output->dest-1], output);
 		}
 		
 		//enable cancelation

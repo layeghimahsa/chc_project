@@ -176,6 +176,40 @@ struct cpu *generate_list(int i){
 	}
 }
 
+void generate_lookup_table(struct cpu *current){
+
+	switch(current->assigned_cpu){
+			
+			case 1:
+				current->look_up[0] = cpu_queue1; //1
+				current->look_up[1] = cpu_queue2; //2
+				current->look_up[2] = cpu_queue3; //3
+				current->look_up[3] = cpu_queue2; //cant send to 4
+				break;
+			case 2:
+				current->look_up[0] = cpu_queue1; 
+				current->look_up[1] = cpu_queue2;
+				current->look_up[2] = cpu_queue4; //cant send to 3
+				current->look_up[3] = cpu_queue4; 
+				break;
+			case 3:
+				current->look_up[0] = cpu_queue1;
+				current->look_up[1] = cpu_queue1; //cant send to 2
+				current->look_up[2] = cpu_queue3;
+				current->look_up[3] = cpu_queue4; 
+				break;
+			case 4:
+				current->look_up[0] = cpu_queue3; //cant send to 1
+				current->look_up[1] = cpu_queue2;
+				current->look_up[2] = cpu_queue3;
+				current->look_up[3] = cpu_queue4; 
+				break;
+			default:
+				printf("shouldn't happen");
+				break;
+		}
+}
+
 //this is the function that mappes nodes to cpu
 //likely the root of any preformance
 //first iteration is very simple and mappes in a linear fassion; node 1 -> cpu 1 , node 2 -> cpu 2 ... node n -> cpu -> n
@@ -189,6 +223,9 @@ void schedule_nodes(){
 		printf("NUM CPU SCHEDULED %d VS NUM CPU %d\n",cpu_scheduled,NUM_CPU);
 		current->assigned_cpu = cpu_scheduled;
 		cpu_scheduled = cpu_scheduled+1;
+		
+		//set up lookup table 
+		generate_lookup_table(current);
 		current = current->next;
 	}
 }
@@ -281,6 +318,8 @@ struct cpu * schedule_me(int cpu_num){
 		struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
+		//set up lookup table 
+		generate_lookup_table(dummy);
 		cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
 	} else{ //there is some unassigned nodes
@@ -290,6 +329,8 @@ struct cpu * schedule_me(int cpu_num){
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
 			refactor_destinations(current, list, current->node_num);
+			//create look up table
+			generate_lookup_table(current);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 			return current;
 		} else{ //if the node has dependables
@@ -320,6 +361,8 @@ struct cpu * schedule_me(int cpu_num){
 			//return the cpu.
 			current->assigned_cpu = cpu_num;
 			refactor_destinations(current, list, current->node_num);
+			//set up lookup table
+			generate_lookup_table(current);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 			return current;
 			
