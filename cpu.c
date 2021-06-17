@@ -38,6 +38,7 @@ void *CPU_start(struct cpu *CPU){
 				if(cache[0][i] == dep->node_num){
 					int addr = CPU->node_size - (cache[1][i]/4) - 1;
 					CPU->code[addr] =  cache[2][i];
+					cache[1][i] = -1;
 					CPU->code[1]--; //7. decrese the number of dependent
 					break;
 				}
@@ -91,6 +92,7 @@ void *CPU_start(struct cpu *CPU){
 					}else{
 						struct cpu_out *output = (struct cpu_out *)malloc(sizeof(struct cpu_out)); 
 						//addr is the requested node num (node name)
+						int found = 0;
 						for(int i = 0; i<8; i++){
 							if(cache[0][i] == temp->addr && cache[3][i] == temp->node_num){
 								output->value = cache[2][i];
@@ -99,10 +101,14 @@ void *CPU_start(struct cpu *CPU){
 								output->node_num = temp->node_num;
 								output->message_type = RESULT;
 								cache[0][i] = -1; //remove val
+								found = 1;
 								break;
 							}
 						}
-						enQueue(CPU->look_up[temp->value-1], output);
+						if(found==1)
+							enQueue(CPU->look_up[temp->value-1], output);
+						else
+							enQueue(CPU->look_up[CPU->assigned_cpu-1], temp);
 					}
 					
 				}else{
