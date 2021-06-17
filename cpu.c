@@ -17,7 +17,7 @@ void *CPU_start(struct cpu *CPU){
 	int cache[4][8]; //this can hold 8 values that have no destination yet so it can move on to new nodes
 	entry_pos = 0;
 	for(int i = 0; i<8; i++){
-		cache[0][i] = -1;//node number (technically the variable name)
+		cache[0][i] = -1;//node number (technically the variable name)   //change name to local mem
 		cache[1][i] = -1;//node stack address for its dest node
 		cache[2][i] = -1;//node value
 		cache[3][i] = -1;
@@ -217,7 +217,7 @@ void *CPU_start(struct cpu *CPU){
 				cache[0][0] = CPU->node_num;
 				cache[1][0] = output->addr;
 				cache[2][0] = output->value;
-				cache[3][0] = output->node_num;
+				cache[3][0] = output->node_num;  //add entry if its been used so we know theres a problem if it was evicted before use 
 				entry_pos = 0;
 			}else{
 				//entry pos + 1 should be technically the oldest entry 
