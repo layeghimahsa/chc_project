@@ -52,11 +52,11 @@ void *CPU_start(struct cpu *CPU){
 			output->message_type = REQUEST;
 			printf("CPU %d has sent var request to CPU %d\n",CPU->assigned_cpu, output->dest);
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+			
 			pthread_mutex_lock(&mem_lock); // locking the mutex for the purpose of reading and writing to the queues
-
 			enQueue(CPU->look_up[dep->cpu_num-1], output);
-
 			pthread_mutex_unlock(&mem_lock); // unlocking the mutex!
+
 			//enable cancelation
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		}
@@ -223,7 +223,9 @@ void *CPU_start(struct cpu *CPU){
 			}
 			
 		}else{ // we need to calculate stuff here after everything has poped up in the queue
+			pthread_mutex_lock(&mem_lock);
 			enQueue(CPU->look_up[output->dest-1], output);
+			pthread_mutex_unlock(&mem_lock);
 		}
 		
 		//enable cancelation

@@ -180,34 +180,34 @@ void generate_lookup_table(struct cpu *current){
 
 	switch(current->assigned_cpu){
 			
-			case 1:
-				current->look_up[0] = cpu_queue1; //1
-				current->look_up[1] = cpu_queue2; //2
-				current->look_up[2] = cpu_queue3; //3
-				current->look_up[3] = cpu_queue2; //cant send to 4
-				break;
-			case 2:
-				current->look_up[0] = cpu_queue1; 
-				current->look_up[1] = cpu_queue2;
-				current->look_up[2] = cpu_queue4; //cant send to 3
-				current->look_up[3] = cpu_queue4; 
-				break;
-			case 3:
-				current->look_up[0] = cpu_queue1;
-				current->look_up[1] = cpu_queue1; //cant send to 2
-				current->look_up[2] = cpu_queue3;
-				current->look_up[3] = cpu_queue4; 
-				break;
-			case 4:
-				current->look_up[0] = cpu_queue3; //cant send to 1
-				current->look_up[1] = cpu_queue2;
-				current->look_up[2] = cpu_queue3;
-				current->look_up[3] = cpu_queue4; 
-				break;
-			default:
-				printf("shouldn't happen");
-				break;
-		}
+		case 1:
+			current->look_up[0] = cpu_queue1; //1
+			current->look_up[1] = cpu_queue2; //2
+			current->look_up[2] = cpu_queue3; //3
+			current->look_up[3] = cpu_queue2; //cant send to 4
+			break;
+		case 2:
+			current->look_up[0] = cpu_queue1; 
+			current->look_up[1] = cpu_queue2;
+			current->look_up[2] = cpu_queue4; //cant send to 3
+			current->look_up[3] = cpu_queue4; 
+			break;
+		case 3:
+			current->look_up[0] = cpu_queue1;
+			current->look_up[1] = cpu_queue1; //cant send to 2
+			current->look_up[2] = cpu_queue3;
+			current->look_up[3] = cpu_queue4; 
+			break;
+		case 4:
+			current->look_up[0] = cpu_queue3; //cant send to 1
+			current->look_up[1] = cpu_queue2;
+			current->look_up[2] = cpu_queue3;
+			current->look_up[3] = cpu_queue4; 
+			break;
+		default:
+			printf("shouldn't happen");
+			break;
+	}
 }
 
 //this is the function that mappes nodes to cpu
