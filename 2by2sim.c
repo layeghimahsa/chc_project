@@ -8,39 +8,23 @@
 #include "2by2sim.h"
 #include "cpu.h"
 
-//array of 1024 lines with 64 bit words
-int cpu_generated;
+//dynamic code array (starts as copy of original code)
+int *runtime_code;
+//cpu status array
+int *cpu_status;
+//used to keep track of node numbers
 int list_index = 1;
+//This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
+int nodes_removed; 
+//the list of all tasks (that have more than 0 destinations)
+struct AGP_node *program_APG_node_list; 
+//main mutex
+pthread_mutex_t mem_lock;  
 
-//TODO: make this changable at runtime 
-int cpu_status[NUM_CPU] = {CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE,CPU_AVAILABLE};
-
-int nodes_removed; //This is the number of dead nodes (0 destinations) that were removed (needed for node_dest allignment
-
-struct cpu *list; //the list of tasks 
-
-pthread_mutex_t mem_lock;  //main mem mutex
-
-
-//TODO: instantiated in main 
-struct Queue* cpu_queue1;
-struct Queue* cpu_queue2;
-struct Queue* cpu_queue3;
-struct Queue* cpu_queue4;
-
-
-/* MUTEX commands
-
-int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);
-int pthread_mutex_lock(pthread_mutex_t *mutex);
-int pthread_mutex_unlock(pthread_mutex_t *mutex);
-int pthread_mutex_destroy(pthread_mutex_t *mutex);
-
-*/
 
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
-int code[] = {//End main:
+const int code[] = {//End main:
 0x7fffffff,
 0x0,
 0x7,
@@ -109,7 +93,7 @@ int size(int addr){
 	//find size
 	int i = addr + 1;
 	int size = 1;
-	while(code[i] != 2147483647 && i < code_size){  //TODO: define as node tag or something 
+	while(code[i] != NODE_BEGIN_FLAG && i < code_size){ 
 		size++;
 		i++;
 	}
@@ -121,7 +105,7 @@ int find_dest_node(int end){
 	int dest = code_size - (end/4);
 	int count = 0;
 	for(int i = 0; i <= dest; i++){
-		if(code[i] == 2147483647){
+		if(code[i] == NODE_BEGIN_FLAG){
 			count++;
 		}
 	}
@@ -129,22 +113,21 @@ int find_dest_node(int end){
 }
 
 
-struct cpu *generate_list(int i){  //TODO: change cpu stuct name to AGP_node or something 
+struct AGP_node *generate_list(int i){  
 
 	if(i >= code_size){
 		return NULL;
 	} else {
-		struct cpu *return_node = (struct cpu *)malloc(sizeof(struct cpu));
+		struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 		return_node->node_size = size(i); 
 		return_node->code_address = i;
-		return_node->dependables = NULL;
+		return_node->depend = NULL;
 		return_node->node_num = list_index;
-		
+		return_node->assigned_cpu = UNDEFINED;
 		for(int j=0; j<return_node->node_size; j++){
 			return_node->code[j] = code[i];
 			i++;
 		}
-		
 
 		return_node->num_dest = return_node->code[(6+return_node->code[1])];
 	
@@ -153,17 +136,17 @@ struct cpu *generate_list(int i){  //TODO: change cpu stuct name to AGP_node or 
 			return generate_list(i);//dont create a useless node
 		}else{
 			
-			struct DEST *dest = (struct DEST *)malloc(sizeof(struct DEST));
-			struct DEST *temp = dest;
+			struct Destination *dest = (struct Destination *)malloc(sizeof(struct Destination));
+			struct Destination *temp = dest;
 
 			for(int i = 1; i <= return_node->num_dest; i++){
 				if(return_node->code[return_node->node_size-i] == -1){
-					temp->node_dest = -99; //write to mem
+					temp->node_dest = OUTPUT; //write to mem
 				}else{
 					temp->node_dest = find_dest_node(return_node->code[return_node->node_size-i]);
 				}
-				temp->cpu_dest = -1;
-				temp->next = (struct DEST *)malloc(sizeof(struct DEST));
+				temp->cpu_dest = UNDEFINED;
+				temp->next = (struct Destination *)malloc(sizeof(struct Destination));
 				temp = temp->next;
 			}
 			//temp = NULL;
@@ -171,42 +154,41 @@ struct cpu *generate_list(int i){  //TODO: change cpu stuct name to AGP_node or 
 			return_node->dest = dest;
 		}
 		
-		return_node->assigned_cpu = -1;
 		list_index++;
 		return_node->next = generate_list(i);
-		
 
 		return return_node;
 	}
 }
 
-void generate_lookup_table(struct cpu *current){
+void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
-	switch(current->assigned_cpu){
+
+	switch(current->cpu_num){
 			
 		case 1:
-			current->look_up[0] = cpu_queue1; //1
-			current->look_up[1] = cpu_queue2; //2
-			current->look_up[2] = cpu_queue3; //3
-			current->look_up[3] = cpu_queue2; //cant send to 4
+			current->look_up[0] = Q[0]; //1
+			current->look_up[1] = Q[1]; //2
+			current->look_up[2] = Q[2]; //3
+			current->look_up[3] = Q[1]; //cant send to 4
 			break;
 		case 2:
-			current->look_up[0] = cpu_queue1; 
-			current->look_up[1] = cpu_queue2;
-			current->look_up[2] = cpu_queue4; //cant send to 3
-			current->look_up[3] = cpu_queue4; 
+			current->look_up[0] = Q[0]; 
+			current->look_up[1] = Q[1];
+			current->look_up[2] = Q[3]; //cant send to 3
+			current->look_up[3] = Q[3]; 
 			break;
 		case 3:
-			current->look_up[0] = cpu_queue1;
-			current->look_up[1] = cpu_queue1; //cant send to 2
-			current->look_up[2] = cpu_queue3;
-			current->look_up[3] = cpu_queue4; 
+			current->look_up[0] = Q[0];
+			current->look_up[1] = Q[0]; //cant send to 2
+			current->look_up[2] = Q[2];
+			current->look_up[3] = Q[3]; 
 			break;
 		case 4:
-			current->look_up[0] = cpu_queue3; //cant send to 1
-			current->look_up[1] = cpu_queue2;
-			current->look_up[2] = cpu_queue3;
-			current->look_up[3] = cpu_queue4; 
+			current->look_up[0] = Q[2]; //cant send to 1
+			current->look_up[1] = Q[1];
+			current->look_up[2] = Q[2];
+			current->look_up[3] = Q[3]; 
 			break;
 		default:
 			printf("shouldn't happen");
@@ -214,66 +196,34 @@ void generate_lookup_table(struct cpu *current){
 	}
 }
 
-//this is the function that mappes nodes to cpu
-//likely the root of any preformance
-//first iteration is very simple and mappes in a linear fassion; node 1 -> cpu 1 , node 2 -> cpu 2 ... node n -> cpu -> n
-void schedule_nodes(){
-	
-	int cpu_scheduled = 1;
-	struct cpu *current = list;
-
-	while(cpu_scheduled <= NUM_CPU && current != NULL){
-		
-		printf("NUM CPU SCHEDULED %d VS NUM CPU %d\n",cpu_scheduled,NUM_CPU);
-		current->assigned_cpu = cpu_scheduled;
-		cpu_scheduled = cpu_scheduled+1;
-		
-		//set up lookup table 
-		generate_lookup_table(current);
-		current = current->next;
-	}
-}
-
-void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
+void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 	if(current == NULL){
-
-	}else if(current->assigned_cpu == -1){ //dont refactr unscheduled nodes 
-		refactor_destinations(current->next, top, node_num+1);
+		printf("cant refactor a null node!!!\n");
 	}else{
-		struct DEST *dest_struct = current->dest; //getting the list of destinations
+		struct Destination *dest_struct = current->dest; //getting the list of destinations
 		for(int i = 1; i<=current->num_dest;i++){
-			if(dest_struct->node_dest == -99){ //return to main mem since there are no dependants
-				dest_struct->cpu_dest = -99; //main mem
+			if(dest_struct->node_dest == OUTPUT){ //return to main mem since there are no dependants
+				dest_struct->cpu_dest = OUTPUT; //main mem
 			}else{
 				dest_struct->node_dest -= nodes_removed; //updating node_dest in case of any removed nodes
-				struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
-				int node_count;
-				if(node_num < dest_struct->node_dest){
-					temp = current;
-					node_count = node_num;
-				}else{
-					temp = top;
-					node_count = 1;
-				}
+				struct AGP_node *temp = top;
+				int node_count = 1;
 				
 				while(node_count != dest_struct->node_dest){
 					temp = temp->next; node_count++;
 				}
 
-
-
 				//if the destination isnt assigned, the current node must hold the value
-				if(temp->assigned_cpu == -1)
-					dest_struct->cpu_dest = TEMP_A;
+				if(temp->assigned_cpu == UNDEFINED)
+					dest_struct->cpu_dest = UNKNOWN;
 				else
 					dest_struct->cpu_dest = temp->assigned_cpu;
 				
 				//now we must change the satck destination to match the node stack rather than the full code stack
 				//this is done even if the cpu isnt assinged yet
 				int dest = code_size - (current->code[current->node_size-i]/4) - 1;
-				printf("		DEST: %d\n",dest);
 				int count = 0;
-				while(code[dest] != 2147483647){
+				while(code[dest] != NODE_BEGIN_FLAG){
 					count++; dest--;
 				}
 				dest = (temp->node_size - count -1)*4;
@@ -285,14 +235,12 @@ void refactor_destinations(struct cpu *current, struct cpu *top, int node_num ){
 			dest_struct = dest_struct->next;
 			
 		}
-
-	
-		refactor_destinations(current->next, top, node_num+1);
+		//refactor_destinations(current->next, top, node_num+1);
 	}
 }
 
 
-struct cpu * schedule_me(int cpu_num){
+struct AGP_node *schedule_me(int cpu_num){
 
 	//initial while that we will traverse through and try to find the node we want to schedule
 	//count number of possible to be scheduled nodes!
@@ -303,13 +251,13 @@ struct cpu * schedule_me(int cpu_num){
 	// structure cpu
 	
 	
-	struct cpu *current = list;
+	struct AGP_node *current = program_APG_node_list;
 	int unode_num = 0; //number of unscheduled nodes
 	
 	/*finding unscheduled nodes and store them into a new list*/
 	while(current != NULL){ 
 		
-		if(current->assigned_cpu == -1){
+		if(current->assigned_cpu == UNDEFINED){
 			unode_num++;
 			break;
 		}
@@ -319,12 +267,10 @@ struct cpu * schedule_me(int cpu_num){
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
 		printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
-		struct cpu *dummy = (struct cpu *)malloc(sizeof(struct cpu));
+		struct AGP_node *dummy = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
-		//set up lookup table 
-		generate_lookup_table(dummy);
-		cpu_status [cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
+		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
 	} else{ //there is some unassigned nodes
 		
@@ -332,63 +278,59 @@ struct cpu * schedule_me(int cpu_num){
 		
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
-			refactor_destinations(current, list, current->node_num);
-			//create look up table
-			generate_lookup_table(current);
+			refactor_destinations(current, program_APG_node_list);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			return current;
+			struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
+			*return_node = *current;
+			return return_node;
 		} else{ //if the node has dependables
 		
-			struct cpu *temp = list;
+			struct AGP_node *temp = program_APG_node_list;
 			
-			struct depend *dep = (struct depend *)malloc(sizeof(struct depend));
-			struct depend *temp_dep = dep;
-			
+			struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
+			struct Dependables *dep = depe;
 
 			while(temp != NULL){
-				  struct DEST *dest = temp->dest;
-				  
-				  for(int i = 0; i< temp->num_dest; i++){
-				      if(dest->node_dest == current->node_num){
-					  temp_dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
-					  temp_dep->node_num = temp->node_num; //variable name to be requested
-					  temp_dep->next = (struct depend *)malloc(sizeof(struct depend));
-					  temp_dep = temp_dep->next;
-				      }
-				      dest = dest->next;
-				  }
-				  temp = temp->next;
+				struct Destination *dest = temp->dest;
+
+				for(int i = 0; i< temp->num_dest; i++){
+					if(dest->node_dest == current->node_num){
+						if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
+							dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+							dep->node_needed = temp->node_num; //variable name to be requested
+							dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
+							dep = dep->next;
+						}
+					}
+					dest = dest->next;
+				}
+				temp = temp->next;
 			}
-			temp_dep = NULL;
-			free(temp_dep);
-			current->dependables = dep;
+			current->depend = depe;
 			//return the cpu.
 			current->assigned_cpu = cpu_num;
-			refactor_destinations(current, list, current->node_num);
-			//set up lookup table
-			generate_lookup_table(current);
+			refactor_destinations(current, program_APG_node_list);
 			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			return current;
+			//return copy of node, not actual node
+			struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
+			*return_node = *current;
+			return return_node;
 			
 		}
 	
 	}
-	
-	return current;
 
 }
 
 
 void writeMem(int ind, int val){
-
-	code[ind] = val;
+	runtime_code[ind] = val;
 	printf("WRITING BACK TO MEMORY...\n");
-	printf("code[%d] = %d\n",ind, code[ind]);
-	printf("WRITING BACK TO MEMORY HAS FINISHED\n");
+	printf("code[%d] = %d\n",ind, runtime_code[ind]);
 }
 
 
-void print_nodes(struct cpu *nodes){
+void print_nodes(struct AGP_node *nodes){
 	if(nodes == NULL){
 
 	}else{
@@ -402,7 +344,7 @@ void print_nodes(struct cpu *nodes){
 		for(int i = 0; i< nodes->node_size; i++){
 			printf("    code[%d]: %d\n",i,nodes->code[i]);
 		}
-		struct DEST *temp = nodes->dest;
+		struct Destination *temp = nodes->dest;
 		for(int i = 0; i < nodes->num_dest; i++){
 			printf(" - Destination %d:\n    node dest: %d\n    cpu dest: %d\n",i,temp->node_dest, temp->cpu_dest);
 			temp = temp->next;
@@ -412,9 +354,15 @@ void print_nodes(struct cpu *nodes){
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
     printf("***SIMULATION START***\n\n");
+
+
+    if(argc < 1){
+	printf("You must enter the number of CPU you want\nex: ./sim 4 (to run a 2x2 sim with 4 cores)");
+	return 1;
+    }
 
     //create mutex
     if (pthread_mutex_init(&mem_lock, NULL) != 0)
@@ -423,98 +371,76 @@ int main()
         return 1;
     }
    
-    
-    for(int i = 0; i<code_size; i++){
-	printf("code[%d]: %d\n", i ,code[i]); 
+    int NUM_CPU = atoi(argv[1]);
+    if(NUM_CPU < 1){
+	printf("NODE NUM %d\n",NUM_CPU);
+	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
+	return 1;
     }
+    
+    printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
 
-    nodes_removed = 0;    
 
-    cpu_generated = 0;
+    printf("\n\nSETTING UP ENVIRONMENT\n\n"); 
+
+
+    //create array of thread id
     pthread_t thread_id[NUM_CPU];
 
+    nodes_removed = 0; 
+
+    //create status array 
+    cpu_status = (int *)malloc(sizeof(int) * NUM_CPU);
+
+    for(int i = 0; i<NUM_CPU; i++){
+	cpu_status[i] = CPU_AVAILABLE;
+    }
+
+    //instantiate queues for all CPUs
+    struct Queue *cpu_queues[NUM_CPU];
+    for(int i = 0; i<NUM_CPU; i++){
+	cpu_queues[i] = createQueue();
+    }
+
+    //create cpu struct 
+    struct CPU *cpus[NUM_CPU];
+    for(int i = 0; i<NUM_CPU; i++){
+	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+        cpu_t->cpu_num = i+1;
+	generate_lookup_table(cpu_t, cpu_queues);
+	cpus[i] = cpu_t;
+    }
+
+    //TODO: copy static code array into a new array that can be modified 
+    runtime_code = (int *)malloc(sizeof(int) *code_size);
+    for(int i = 0; i<code_size; i++){
+	printf("code[%d]: %d\n", i ,code[i]); 
+	runtime_code[i] = code[i];
+    }
 
     printf("\n\nCREATING NODE LIST\n\n"); 
-    list = generate_list(0);
-    //print_nodes(list);
-
-
-    //creating cpu queues
-    cpu_queue1 = createQueue();
-    cpu_queue2 = createQueue();
-    cpu_queue3 = createQueue();
-    cpu_queue4 = createQueue();
-
-    /***********************/
-    /*** task scheduling ***/
-    /***********************/
-    /*
-	-64:	0x7fffffff      //new node label
-	-60:	0x0		//number of dependencies 
-	-5c:	0x7		//value (const 7)
-	-58:	0x20		//end address + 1 (next node in graph)
-	-54:	0xc		//operation
-	-50:	0x0             //number of arguments 
-	-4c:	0x1             //expansion or not flag 
-	-48:	0x8             //result destination
-	-44:	0x7fffffff
-	-40:	0x0
-	-3c:	0x7
-	-38:	0x20
-	-34:	0xc
-	-30:	0x0
-	-2c:	0x1
-	-28:	0x4
-	-24:	0x7fffffff
-	-20:	0x2
-	-1c:	0xfffffffc
-	-18:	0x24
-	-14:	0x3
-	-10:	0x2
-	-c:	0x0
-	-8:	0x0
-	-4:	0x0
-    */
+    program_APG_node_list = generate_list(0);
+    print_nodes(program_APG_node_list);
 
     printf("\n\nSCHEDULING NODES\n\n");    
-    //fuction that schedules nodes to cpu (currently very simple)
-    //this function is likely going to determine the preformance of the whole design
-    schedule_nodes();
-    //print_nodes(list);
-    
+    for(int i = 0; i<NUM_CPU; i++){
+	cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
+    }
+  
     printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
-    refactor_destinations(list, list, 1);
-    print_nodes(list);
+    for(int i = 0; i<NUM_CPU; i++){
+    	refactor_destinations(cpus[i]->node_to_execute, program_APG_node_list);
+    }
+    print_nodes(program_APG_node_list);
 
     printf("\n\nLAUNCHING THREADS!!!\n\n"); 
-    //simple thread launch since we know more core than nodes 
-    struct cpu *graph = list; 
-    while(cpu_generated < NUM_CPU && graph != NULL){
-	pthread_create(&(thread_id[graph->assigned_cpu-1]), NULL, &CPU_start, graph);
-	cpu_status[graph->assigned_cpu-1] = CPU_UNAVAILABLE;
-	cpu_generated++;
-	graph = graph->next;
+    for(int i = 0; i<NUM_CPU; i++){
+	pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
+        if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
+		cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
+	else
+		cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }
-    
-    
-   
-   if(cpu_generated < NUM_CPU){ //more cores than nodes, create idle cpus
-   	    int count = 0;
-	    while(cpu_generated < NUM_CPU){
-		if(cpu_status[count] == CPU_AVAILABLE){
-			struct cpu *temp = (struct cpu *)malloc(sizeof(struct cpu));
-			temp->assigned_cpu = count+1;
-			temp->code[1] = 1;
-			pthread_create(&(thread_id[count]), NULL, &CPU_start, temp);
-			cpu_status[count] = CPU_IDLE;
-			cpu_generated++;
-		}
-		count++;
-	    }
-    }
-    
-    //checking cpu status, if all of them are idle, cancle threads and end simulation
-    
     
     /***********************/
     /**** Simulation end ***/
@@ -544,7 +470,7 @@ int main()
     
     puts("\nPRINTING CODE ARRAY\n"); // want to check if result 14 is written to memory (code array)
     for(int i = 0; i<code_size; i++){
-	printf("code[%d]: %d\n", i ,code[i]); 
+	printf("code[%d]: %d\n", i ,runtime_code[i]); 
     }
 
 
@@ -552,7 +478,36 @@ int main()
     return 0;
 }
 
-
+/***********************/
+    /*** task scheduling ***/
+    /***********************/
+    /*
+	-64:	0x7fffffff      //new node label
+	-60:	0x0		//number of dependencies 
+	-5c:	0x7		//value (const 7)
+	-58:	0x20		//end address + 1 (next node in graph)
+	-54:	0xc		//operation
+	-50:	0x0             //number of arguments 
+	-4c:	0x1             //expansion or not flag 
+	-48:	0x8             //result destination
+	-44:	0x7fffffff
+	-40:	0x0
+	-3c:	0x7
+	-38:	0x20
+	-34:	0xc
+	-30:	0x0
+	-2c:	0x1
+	-28:	0x4
+	-24:	0x7fffffff
+	-20:	0x2
+	-1c:	0xfffffffc
+	-18:	0x24
+	-14:	0x3
+	-10:	0x2
+	-c:	0x0
+	-8:	0x0
+	-4:	0x0
+    */
 
 
 

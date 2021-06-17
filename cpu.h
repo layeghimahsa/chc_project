@@ -4,7 +4,9 @@
 #define MAX_MEM 1024*64
 //#include <stdbool.h>
 
-
+#define UNDEFINED -1
+#define UNKNOWN 0
+#define OUTPUT -99
 
 #define code_expansion 	0
 #define code_input		1
@@ -28,44 +30,54 @@
 #define READY 		0
 #define max_dependables 30
 
+#define LOCAL_STORAGE_SIZE 64
 
 #define RESULT 0
 #define REQUEST 1
 
-struct DEST{ //destination
+struct Destination{ 
 
 	int cpu_dest;
 	int node_dest;
 
-	struct DEST *next;
+	struct Destination *next;
 };
 
-struct depend{ //this is a list of all variable a cpu must call upon to get their variable 
-	int node_num; //this is technically the variable name 
+struct Dependables{ //this is a list of all variable a cpu must call upon to get their variable 
+	int node_needed; //this is technically the variable name 
 	int cpu_num;  //cpu the request must be sent to 
 		
-	struct depend *next;
+	struct Dependables *next;
 };
-struct cpu{
+
+struct CPU{
+	int cpu_num; //the actual cpu number
+
+	int local_mem[5][64]; //local variable storage
+
+	struct Queue *look_up[4]; //lookup queue table. 
+
+	struct AGP_node *node_to_execute; //the node that needs to be executed 
+
+};
+
+struct AGP_node{
+	int assigned_cpu; //the cpu the node was or is run on. This is important for scheduling, destination refactoring, and keeping track of who has what node results
 
 	int code[64]; //chunk of code
 	int node_size; //actual the size of stack/code
-	int code_address;
-	int assigned_cpu; //cpu the node is assinged to or currently being processed on 
+	int code_address; //original code address
 	int node_num; //current node number
 	
 	int num_dest; //number of node's destinations
 
-	struct Queue *look_up[4]; //lookup queue table
-	
-	struct DEST *dest; 	//destination cpu
-	struct depend *dependables; //list of all cpu that contain your dependables and need var request
-	struct cpu *next;
+	struct Destination *dest; 	//destination cpu
+	struct Dependables *depend; //list of all cpu that contain your dependables and need var request
+	struct AGP_node *next;
+
 };
 
-
-
-struct cpu_out{
+struct Message_capsul{
 	int value;
 	int dest;
 	int addr; 
@@ -74,14 +86,12 @@ struct cpu_out{
 
 	int message_type; //result, request...
 
-	struct cpu_out *next;
+	struct Message_capsul *next;
 };
 
 
 
 void *CPU_start();
-//void execute(struct memory *mem,struct cpu *CPU);
-//void fetch_task();
 
 
 

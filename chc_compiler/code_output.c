@@ -50,7 +50,7 @@ void generate_output()
 	fprintf(fp,"#include<stdio.h>\n #include<stdlib.h>\n#include<time.h>\n");
 
 	fprintf(fp,"int code[] = {"); 
-	fprintf(temp_fp,"int code[] = {");
+	fprintf(temp_fp,"const int code[] = {");
 	
 	int total_code_size = 0;
 
