@@ -130,30 +130,34 @@ struct AGP_node *generate_list(int i){
 		}
 
 		return_node->num_dest = return_node->code[(6+return_node->code[1])];
-	
-		if(return_node->num_dest == 0){
-			nodes_removed++;
-			return generate_list(i);//dont create a useless node
-		}else{
-			
-			struct Destination *dest = (struct Destination *)malloc(sizeof(struct Destination));
-			struct Destination *temp = dest;
+		printf("Num of return nodes: %d\n",return_node->num_dest);
 
-			for(int i = 1; i <= return_node->num_dest; i++){
-				if(return_node->code[return_node->node_size-i] == -1){
-					temp->node_dest = OUTPUT; //write to mem
-				}else{
-					temp->node_dest = find_dest_node(return_node->code[return_node->node_size-i]);
+		if(return_node->code[4] != code_expansion){
+			if(return_node->num_dest == 0){
+				nodes_removed++;
+				return generate_list(i);//dont create a useless node
+			}else{
+				
+				struct Destination *dest = (struct Destination *)malloc(sizeof(struct Destination));
+				struct Destination *temp = dest;
+
+				for(int i = 1; i <= return_node->num_dest; i++){
+					if(return_node->code[return_node->node_size-i] == -1){
+						temp->node_dest = OUTPUT; //write to mem
+					}else{
+						temp->node_dest = find_dest_node(return_node->code[return_node->node_size-i]);
+					}
+					temp->cpu_dest = UNDEFINED;
+					temp->next = (struct Destination *)malloc(sizeof(struct Destination));
+					temp = temp->next;
 				}
-				temp->cpu_dest = UNDEFINED;
-				temp->next = (struct Destination *)malloc(sizeof(struct Destination));
-				temp = temp->next;
+				//temp = NULL;
+				free(temp);
+				return_node->dest = dest;
 			}
-			//temp = NULL;
-			free(temp);
-			return_node->dest = dest;
+		}else{
+			//code expansion setup
 		}
-		
 		list_index++;
 		return_node->next = generate_list(i);
 
