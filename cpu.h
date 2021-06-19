@@ -28,7 +28,6 @@
 #define DEAD 		0xFFFFFFFF
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
-#define max_dependables 30
 
 #define LOCAL_STORAGE_SIZE 64
 

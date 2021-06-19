@@ -341,9 +341,8 @@ void *CPU_start(struct CPU *cpu){
 		if(dest->cpu_dest == -99){
 			printf("CPU %d Writing to Main MEM!!\n",cpu->cpu_num);
 			//writing back to memory (code array)
-			pthread_mutex_lock(&mem_lock);
 			writeMem(NTE->code_address+2, output->value);
-			pthread_mutex_unlock(&mem_lock);
+			
 		
 		}else if(dest->cpu_dest == 0){
 			//save the value and node name (node number) for when its called upon

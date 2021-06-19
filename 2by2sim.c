@@ -89,6 +89,15 @@ int dictionary[][3] = {{0,56,6}
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
+
+/**
+ * @brief size function
+ *
+ * This function is called to calculate the size of each node. (how many entries does the node have)
+ * @param [in] addr is the beggining of the node.
+ * @param [out] size of the node.
+ * @return int
+ */
 int size(int addr){
 	//find size
 	int i = addr + 1;
@@ -100,6 +109,14 @@ int size(int addr){
 	return size;
 }
 
+/**
+ * @brief find_dest_node function
+ *
+ * This function is called to find destination node number
+ * @param [in] end the offset from top of the stack 
+ * @param [out] equivalent node number given the offset
+ * @return int
+ */
 int find_dest_node(int end){
 
 	int dest = code_size - (end/4);
@@ -113,6 +130,13 @@ int find_dest_node(int end){
 }
 
 
+/**
+ * @brief generate_list function
+ *
+ * This function is a recursive function that creats AGP nodes.
+ * @param [in] i start of each node
+ * @return struct AGP_node
+ */
 struct AGP_node *generate_list(int i){  
 
 	if(i >= code_size){
@@ -165,6 +189,15 @@ struct AGP_node *generate_list(int i){
 	}
 }
 
+
+/**
+ * @brief generate_lookup_table function
+ *
+ * This function is called to initialize cpu connections. (specifies to which queues does the current cpu have access and can put the rsult to or get the result from)
+ * @param [in] current the current cpu under initialization 
+ * @param [in] Q the pointer to all queues
+ * @return void
+ */
 void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
@@ -200,6 +233,15 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 	}
 }
 
+
+/**
+ * @brief refactor_destinations function
+ *
+ * This function is called to update or refactor destinations to be matched to node's stack rather than entire code stack
+ * @param [in] current is the current node we are evaluating
+ * @param [in] top is the top of the AGP nodes' list
+ * @return void
+ */
 void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 	if(current == NULL){
 		printf("cant refactor a null node!!!\n");
@@ -244,6 +286,14 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 }
 
 
+
+/**
+ * @brief schedule_me function
+ *
+ * This function is called to schedule a new task to be run on the current cpu. (on-demand scheduling)
+ * @param [in] cpu_num specifies the cpu which requests for a new task to execute it.
+ * @return struct AGP_node a new node that can be executed on the current cpu. it can be a dummy node in case there are no nodes left.
+ */
 struct AGP_node *schedule_me(int cpu_num){
 
 	//initial while that we will traverse through and try to find the node we want to schedule
@@ -277,8 +327,6 @@ struct AGP_node *schedule_me(int cpu_num){
 		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
 	} else{ //there is some unassigned nodes
-		
-		//runtime_refactor(); 
 		
 		if(current->code[1] == 0){//if the node has no dependent
 			current->assigned_cpu = cpu_num;
@@ -327,13 +375,31 @@ struct AGP_node *schedule_me(int cpu_num){
 }
 
 
+/**
+ * @brief writeMem function
+ *
+ * This function is called to writing back the result to memory.
+ * @param [in] ind the code address for writing back to memory array.
+ * @param [in] val the result.
+ * @return void
+ */
 void writeMem(int ind, int val){
+
+	pthread_mutex_lock(&mem_lock);
 	runtime_code[ind] = val;
 	printf("WRITING BACK TO MEMORY...\n");
 	printf("code[%d] = %d\n",ind, runtime_code[ind]);
+	pthread_mutex_unlock(&mem_lock);
 }
 
 
+/**
+ * @brief print_nodes function
+ *
+ * This function is just a pretty printer which prints all the AGP_nodes
+ * @param [in] nodes the pointer to AGP nodes' list
+ * @return void
+ */
 void print_nodes(struct AGP_node *nodes){
 	if(nodes == NULL){
 
@@ -363,7 +429,7 @@ int main(int argc, char **argv)
     printf("***SIMULATION START***\n\n");
 
 
-    if(argc < 1){
+    if(argc < 2){
 	printf("You must enter the number of CPU you want\nex: ./sim 4 (to run a 2x2 sim with 4 cores)");
 	return 1;
     }
