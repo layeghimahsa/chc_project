@@ -360,11 +360,11 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 0x0, //operation (zero means expansion)
 0x1, // 1 argument
 0x0, //value
-0x1dc, //address (in code array)
+0x1dc, //address of x in our example (in code array)
 0x1, //1 destination
 0x0, // address of subgraph to expand
-0x38, // address of node in subgraph to remap
-0x1b4, //remaping to this
+0x38, // address of node in subgraph to remap (address of result in our example)
+0x1b4, //remaping to this (address of b in our example)
 */
 
 
