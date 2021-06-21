@@ -98,6 +98,9 @@ void generate_output()
 	fprintf(fp,"int code_size = %d;\n",total_code_size); 
 	fprintf(temp_fp,"int code_size = %d;\n",total_code_size);
 
+	//for 2by2sim
+	fprintf(temp_fp,"int main_addr = %d;\n",main_addr);
+	fprintf(temp_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 
 	//create subgraph dictionary
 	fprintf(fp,"int dictionary[][3] = {"); 
