@@ -28,44 +28,49 @@ const int code[] = {//End main:
 0x7fffffff,
 0x0,
 0x7,
-0x28,
-0xc,
-0x0,
-0x3,
-0x8,
-0xc,
-0x7c,
-0x7fffffff,
-0x0,
-0x7,
 0x20,
 0xc,
 0x0,
 0x1,
-0x78,
+0x14,
 0x7fffffff,
-0x2,
+0x1,
 0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
-0x0,
-0x1,
-0x34,
-0x7fffffff,
-0x0,
-0x16,
-0x20,
+0x24,
 0xc,
+0x1,
 0x0,
 0x1,
+0xffffffff,
+0x7fffffff,
+0x1,
+0xfffffffc,
 0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x38,
+0x1b4,
+//Start main @(120):
+//End fact:
 0x7fffffff,
-0x2,
+0x0,
 0xfffffffc,
 0x28,
+0x1,
+0x0,
 0x3,
+0xa8,
+0xf4,
+0x124,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x28,
+0xb,
 0x2,
 0x0,
 0x0,
@@ -75,16 +80,109 @@ const int code[] = {//End main:
 0x2,
 0xfffffffc,
 0x28,
-0x3,
+0x8,
 0x2,
 0x0,
 0x0,
 0x1,
-0xffffffff
-//Start main @(0):
+0x19c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x198,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x30,
+0x5,
+0x2,
+0x0,
+0x0,
+0x3,
+0x80,
+0x14c,
+0x174,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x4,
+0x2,
+0x0,
+0x0,
+0x1,
+0x148,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xf0,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0xa,
+0x2,
+0x0,
+0x0,
+0x1,
+0x7c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x0,
+0x0,
+0x20,
+0xc,
+0x0,
+0x1,
+0x120,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0xa4,
+0x170,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0xcc,
+0x1b4
+//Start fact @(0):
 };
-int code_size = 56;
-int dictionary[][3] = {{0,56,6}
+int code_size = 149;
+int main_addr = 120;
+int main_num_nodes = 3;
+int dictionary[][3] = {{120,29,3},
+{0,120,12}
 };
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
@@ -137,6 +235,12 @@ int find_dest_node(int end){
  * @param [in] i start of each node
  * @return struct AGP_node
  */
+ 
+ 
+ //creating a list given a function start address, and counting that until reaching the number of nodes 
+ //first checking the dictionary given a function start address (the name of the function)
+ //generate the amount of nodes the function has only!
+
 struct AGP_node *generate_list(int i){  
 
 	if(i >= code_size){
@@ -153,10 +257,11 @@ struct AGP_node *generate_list(int i){
 			i++;
 		}
 
-		return_node->num_dest = return_node->code[(6+return_node->code[1])];
-		printf("Num of return nodes: %d\n",return_node->num_dest);
-
 		if(return_node->code[4] != code_expansion){
+		
+			return_node->num_dest = return_node->code[(6+return_node->code[1])];
+			printf("Num of return nodes: %d\n",return_node->num_dest);
+
 			if(return_node->num_dest == 0){
 				nodes_removed++;
 				return generate_list(i);//dont create a useless node
@@ -180,7 +285,10 @@ struct AGP_node *generate_list(int i){
 				return_node->dest = dest;
 			}
 		}else{
-			//code expansion setup
+			//code expansion setup TODO
+			return_node->num_dest = return_node->code[(6+(return_node->code[1]*2))];
+			printf("Num of return nodes: %d\n",return_node->num_dest);
+			
 		}
 		list_index++;
 		return_node->next = generate_list(i);
@@ -242,6 +350,34 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
  * @param [in] top is the top of the AGP nodes' list
  * @return void
  */
+ 
+ 
+/*
+0x7fffffff, //expansion node start
+0x1, //created count, missing 1 input
+0xfffffffc,
+0x30, //node size
+0x0, //operation (zero means expansion)
+0x1, // 1 argument
+0x0, //value
+0x1dc, //address (in code array)
+0x1, //1 destination
+0x0, // address of subgraph to expand
+0x38, // address of node in subgraph to remap
+0x1b4, //remaping to this
+*/
+
+
+//1. get the address of subgraph to expand
+//2. calling the generate_list function using this address
+//3. connect to main list, make program_agp_node top!
+//4. refactor the given expansion
+//5. check variable if unavailable -> we have to block and continiouslt check if it's been updated
+//6. find an output node to ramap it (given address of node in subgraph to remap)
+void expansion(struct AGP_node *current){
+	//TODO
+}
+ 
 void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 	if(current == NULL){
 		printf("cant refactor a null node!!!\n");
@@ -327,47 +463,53 @@ struct AGP_node *schedule_me(int cpu_num){
 		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
 	} else{ //there is some unassigned nodes
-		
-		if(current->code[1] == 0){//if the node has no dependent
-			current->assigned_cpu = cpu_num;
-			refactor_destinations(current, program_APG_node_list);
-			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-			*return_node = *current;
-			return return_node;
-		} else{ //if the node has dependables
-		
-			struct AGP_node *temp = program_APG_node_list;
+		if(current->code[4] == code_expansion){
+			expansion(current);
+			return schedule_me(cpu_num);
 			
-			struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
-			struct Dependables *dep = depe;
+		} else{
+			if(current->code[1] == 0){//if the node has no dependent
+				current->assigned_cpu = cpu_num;
+				refactor_destinations(current, program_APG_node_list);
+				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
+				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
+				*return_node = *current;
+				return return_node;
+			} else{ //if the node has dependables
+			
+				struct AGP_node *temp = program_APG_node_list;
+				
+				struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
+				struct Dependables *dep = depe;
 
-			while(temp != NULL){
-				struct Destination *dest = temp->dest;
+				while(temp != NULL){
+					struct Destination *dest = temp->dest;
 
-				for(int i = 0; i< temp->num_dest; i++){
-					if(dest->node_dest == current->node_num){
-						if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
-							dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
-							dep->node_needed = temp->node_num; //variable name to be requested
-							dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
-							dep = dep->next;
+					for(int i = 0; i< temp->num_dest; i++){
+						if(dest->node_dest == current->node_num){
+							if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
+								dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+								dep->node_needed = temp->node_num; //variable name to be requested
+								dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
+								dep = dep->next;
+							}
 						}
+						dest = dest->next;
 					}
-					dest = dest->next;
+					temp = temp->next;
 				}
-				temp = temp->next;
+				current->depend = depe;
+				//return the cpu.
+				current->assigned_cpu = cpu_num;
+				refactor_destinations(current, program_APG_node_list);
+				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
+				//return copy of node, not actual node
+				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
+				*return_node = *current;
+				return return_node;
+				
 			}
-			current->depend = depe;
-			//return the cpu.
-			current->assigned_cpu = cpu_num;
-			refactor_destinations(current, program_APG_node_list);
-			cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-			//return copy of node, not actual node
-			struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-			*return_node = *current;
-			return return_node;
-			
+		
 		}
 	
 	}
@@ -489,7 +631,7 @@ int main(int argc, char **argv)
     }
 
     printf("\n\nCREATING NODE LIST\n\n"); 
-    program_APG_node_list = generate_list(0);
+    program_APG_node_list = generate_list(main_addr);
     print_nodes(program_APG_node_list);
 
     printf("\n\nSCHEDULING NODES\n\n");    
