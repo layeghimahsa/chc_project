@@ -32,157 +32,73 @@ const int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0x14,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x38,
-0x1b4,
-//Start main @(120):
-//End fact:
+0x1c,
 0x7fffffff,
 0x0,
-0xfffffffc,
-0x28,
-0x1,
-0x0,
-0x3,
-0xa8,
-0xf4,
-0x124,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x28,
-0xb,
-0x2,
-0x0,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
 0x8,
-0x2,
-0x0,
-0x0,
-0x1,
-0x19c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0x198,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x30,
-0x5,
-0x2,
-0x0,
-0x0,
-0x3,
-0x80,
-0x14c,
-0x174,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x4,
-0x2,
-0x0,
-0x0,
-0x1,
-0x148,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xf0,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0xa,
-0x2,
-0x0,
-0x0,
-0x1,
-0x7c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0x14,
-0x7fffffff,
-0x0,
-0x0,
 0x20,
 0xc,
 0x0,
 0x1,
-0x120,
-0x7fffffff,
-0x0,
-0x1,
-0x24,
-0xc,
-0x0,
-0x2,
-0xa4,
-0x170,
+0x14,
 0x7fffffff,
 0x1,
 0xfffffffc,
-0x30,
-0x0,
+0x24,
+0xc,
 0x1,
 0x0,
-0x1dc,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x38,
+0x0,
+0x2,
+0x0,
+0x44,
+0x0,
+0x64,
 0x1,
 0x0,
-0xcc,
-0x1b4
-//Start fact @(0):
+0x40,
+0x24,
+//Start main @(26):
+//End test:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0xc,
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0x8,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff
+//Start test @(0):
 };
-int code_size = 149;
-int main_addr = 120;
-int main_num_nodes = 3;
-int dictionary[][3] = {{120,29,3},
-{0,120,12}
+int code_size = 65;
+int main_addr = 26;
+int main_num_nodes = 4;
+int dictionary[][3] = {{26,39,4},
+{0,26,3}
 };
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
@@ -243,7 +159,7 @@ int find_dest_node(int end){
 
 struct AGP_node *generate_list(int i){  
 
-	if(i >= code_size){
+	if(i >= code_size || list_index > main_num_nodes){
 		return NULL;
 	} else {
 		struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
@@ -289,7 +205,26 @@ struct AGP_node *generate_list(int i){
 			return_node->num_dest = return_node->code[(6+(return_node->code[1]*2))];
 			printf("Num of return nodes: %d\n",return_node->num_dest);
 			
+			struct Destination *dest = (struct Destination *)malloc(sizeof(struct Destination));
+			struct Destination *temp = dest;
+
+			for(int i = 1; i <= return_node->num_dest; i++){
+				if(return_node->code[return_node->node_size-i] == -1){
+					temp->node_dest = OUTPUT; //write to mem
+				}else{
+					temp->node_dest = find_dest_node(return_node->code[return_node->node_size-i]);
+				}
+				temp->cpu_dest = UNDEFINED;
+				temp->next = (struct Destination *)malloc(sizeof(struct Destination));
+				temp = temp->next;
+			}
+
+			free(temp);
+			return_node->dest = dest;
+			
+			
 		}
+		
 		list_index++;
 		return_node->next = generate_list(i);
 
@@ -630,8 +565,26 @@ int main(int argc, char **argv)
 	runtime_code[i] = code[i];
     }
 
-    printf("\n\nCREATING NODE LIST\n\n"); 
-    program_APG_node_list = generate_list(main_addr);
+    printf("\n\nCREATING NODE LIST\n\n");
+    //main_address is calculated as below
+    //1. main_addr + main_size = 26 + 39 = 65
+    // now, we have the end of main (65 in our example).
+    //2. since code array starts from 0 (unlike stack), therefore we must deacrese code_size from that
+    // 65-65 = 0
+    
+    int row_num = sizeof(dictionary)/sizeof(dictionary[0]);
+    int main_size = 0;
+    for(int j =0; j<row_num; j++){
+    	if(dictionary[j][0] == main_addr){
+    		main_size = dictionary[j][1];
+    	}
+    }
+    
+    int main_start_ind;
+    main_start_ind = main_addr + main_size;
+    main_start_ind = code_size - main_start_ind;
+    
+    program_APG_node_list = generate_list(main_start_ind);
     print_nodes(program_APG_node_list);
 
     printf("\n\nSCHEDULING NODES\n\n");    
