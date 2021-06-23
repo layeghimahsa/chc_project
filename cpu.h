@@ -70,6 +70,8 @@ struct AGP_node{
 	
 	int num_dest; //number of node's destinations
 
+	int node_func; //sub graph its from 
+
 	struct Destination *dest; 	//destination cpu
 	struct Dependables *depend; //list of all cpu that contain your dependables and need var request
 	struct AGP_node *next;

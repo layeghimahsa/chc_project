@@ -107,6 +107,7 @@ void generate_output()
 	fprintf(temp_fp,"int dictionary[][3] = {");
 
 	code_ptr = program_code;
+	int count = 0;
 	while(code_ptr != (struct code_scope *)0)
 	{
 		if((code_ptr->next == (struct code_scope *)0)){
@@ -115,10 +116,12 @@ void generate_output()
 			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes); fprintf(temp_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		code_ptr = code_ptr->next;
-		
+		count++;
 	}
 
 	fprintf(fp,"};\n"); fprintf(temp_fp,"};\n");
+
+	fprintf(temp_fp,"int num_dict_entries = %d;\n",count);
 
 	/////////////////////////////////////////////////
 	while(fgets(buffer, 256, code_fp) != NULL ) {
