@@ -286,28 +286,28 @@ void expansion(struct AGP_node *current){
 	
 
 	//REMAPING OUTPUT
-	int func_size;
+	int sub_func_size;
 	for(int i = 0; i<num_dict_entries; i++){   //get sub function dictionary info 
 		if(dictionary[i][0] == sub_address){
-			func_size = dictionary[i][1];
+			sub_func_size = dictionary[i][1];
 		}
 	}
-	int sub_code_pos = code_size - sub_address - func_size;
+	int sub_code_pos = code_size - sub_address - sub_func_size;
 
 	struct AGP_node *node_to_change = program_APG_node_list;
 	struct AGP_node *node_to_point = traverse;
         //calculate node offset from called function 
 	int ntc= find_num_node(sub_code_pos, (sub_address*4+current->code[(9+(current->code[1]*2))]));
-	
+	int main_func_size;
 	for(int i = 0; i<num_dict_entries; i++){ //get calling function dictionary info
 		if(dictionary[i][0] == current->node_func){
-			func_size = dictionary[i][1];
+			main_func_size = dictionary[i][1];
 		}
 	}
-	sub_code_pos = code_size - current->node_func - func_size;
+	int main_code_pos = code_size - current->node_func - main_func_size;
 	//calculate node offset from calling function
-	int ntp= find_num_node(sub_code_pos, (current->node_func*4+current->code[(8+(current->code[1]*2))]));
-	printf("ntc: %d	ntp: %d\n",ntc,ntp);
+	int ntp = find_num_node(main_code_pos, (current->node_func*4+current->code[(8+(current->code[1]*2))]));
+	//printf("ntc: %d	ntp: %d\n",ntc,ntp);
 	
 
 	for(ntc; ntc>1; ntc--){node_to_change = node_to_change->next;}
@@ -324,35 +324,60 @@ void expansion(struct AGP_node *current){
 	}
 	else{
 		struct Destination *temp = node_to_change->dest;
-		while(temp->next != NULL){temp = temp->next;}
-		temp = dest_node;
+		node_to_change->dest = dest_node;
+		dest_node->next = temp;
 		node_to_change->num_dest++;
 	}
+	
+	node_to_change->node_size++;
+	int dest = code_size - 1 - node_to_point->node_func - (current->code[(8+(current->code[1]*2))]);
+	node_to_change->code[node_to_change->node_size-1] = dest;//refactored address to write var into
 
 	//CREATING INPUT VARIABLE REQUEST MESSAGE
-	/*
-				
-	struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
-	struct Dependables *dep = depe;
-
-	while(traverse != NULL){
-		struct Destination *dest = traverse->dest;
-
-		for(int i = 0; i< traverse->num_dest; i++){
-			if(dest->node_dest == current->node_num){
-				if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
-					dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
-					dep->node_needed = temp->node_num; //variable name to be requested
-					dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
-					dep = dep->next;
+	
+	int num_args = current->code[5] -1;
+	//for the numbr of arguments there are/are called
+	while(num_args >= 0){
+		struct AGP_node *input_node = traverse;
+		struct AGP_node *requ_node = program_APG_node_list;
+		struct Dependables *dep = (struct Dependables *)malloc(sizeof(struct Dependables));
+		//find node that needs to request
+		ntp  = find_num_node(sub_code_pos,sub_address*4+current->code[7+(2*num_args)]);
+		for(ntp; ntp>1; ntp--){requ_node = requ_node->next;}
+		//find node that points to arg value
+		while(input_node != NULL){
+			int address_needed = (current->code_address + 6 + (2*num_args));
+			for(int i = 0; i< input_node->num_dest; i++){
+				int pointed_address = main_func_size - 1 - (input_node->code[input_node->node_size-1-i]/4);
+				if(pointed_address == address_needed){
+					dep->cpu_num = input_node->assigned_cpu;
+					dep->var_access_key = current->node_num;
+					dep->node_needed = input_node->node_num;
+					dep->next = NULL;
+					goto NEXT;
 				}
 			}
-			dest = dest->next;
+			input_node = input_node->next;
 		}
-		traverse = traverse->next;
+		printf("failed to find node");
+		exit(0);
+		NEXT:
+		
+
+
+		if(requ_node->depend == NULL){
+			requ_node->depend = dep;
+		}
+		else{
+			struct Dependables *temp = requ_node->depend;
+			while(temp->next != NULL){temp = temp->next;}
+			temp = dep;
+		}
+		requ_node->code[1]++;
+		num_args--;
+
+
 	}
-	current->depend = depe;
-	*/
 }
 
 
@@ -418,12 +443,10 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 			if(dest_struct->node_dest == OUTPUT){ //return to main mem since there are no dependants
 				dest_struct->cpu_dest = OUTPUT; //main mem
 			}else{
-				dest_struct->node_dest -= nodes_removed; //updating node_dest in case of any removed nodes
 				struct AGP_node *temp = top;
-				int node_count = 1;
 				
-				while(node_count != dest_struct->node_dest){
-					temp = temp->next; node_count++;
+				while(temp->node_num != dest_struct->node_dest){
+					temp = temp->next;
 				}
 
 				//if the destination isnt assigned, the current node must hold the value
@@ -434,12 +457,14 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 				
 				//now we must change the satck destination to match the node stack rather than the full code stack
 				//this is done even if the cpu isnt assinged yet
-				int dest = code_size - (current->code[current->node_size-i]/4) - 1;
+				
+				int dest = code_size - 1 - temp->node_func - current->code[current->node_size-i]/4;
+				//printf("RAW DEST: %d\n", dest);
 				int count = 0;
 				while(code[dest] != NODE_BEGIN_FLAG){
 					count++; dest--;
 				}
-				dest = (temp->node_size - count -1)*4;
+				dest = (temp->node_size - count - 1)*4;
 				printf("DEST: %d\n", dest);
 				current->code[current->node_size-i] = dest;
 
@@ -448,7 +473,6 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 			dest_struct = dest_struct->next;
 			
 		}
-		//refactor_destinations(current->next, top, node_num+1);
 	}
 }
 
@@ -495,6 +519,7 @@ struct AGP_node *schedule_me(int cpu_num){
 		return dummy;
 	} else{ //there is some unassigned nodes
 		if(current->code[4] == code_expansion){
+			current->assigned_cpu = 0;
 			expansion(current);
 			return schedule_me(cpu_num);
 			
@@ -506,7 +531,15 @@ struct AGP_node *schedule_me(int cpu_num){
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 				*return_node = *current;
 				return return_node;
-			} else{ //if the node has dependables
+			} else if(current->code[4] == code_input){ //should already have dependable list
+				current->assigned_cpu = cpu_num;
+				refactor_destinations(current, program_APG_node_list);
+				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
+				//return copy of node, not actual node
+				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
+				*return_node = *current;
+				return return_node;
+			}else{ //if the node has dependables
 			
 				struct AGP_node *temp = program_APG_node_list;
 				
@@ -515,17 +548,19 @@ struct AGP_node *schedule_me(int cpu_num){
 
 				while(temp != NULL){
 					struct Destination *dest = temp->dest;
-
-					for(int i = 0; i< temp->num_dest; i++){
-						if(dest->node_dest == current->node_num){
-							if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
-								dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
-								dep->node_needed = temp->node_num; //variable name to be requested
-								dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
-								dep = dep->next;
+					if(dest != NULL){
+						for(int i = 0; i< temp->num_dest; i++){
+							if(dest->node_dest == current->node_num){
+								if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
+									dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+									dep->node_needed = temp->node_num; //variable name to be requested
+									dep->var_access_key = UNDEFINED;
+									dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
+									dep = dep->next;
+								}
 							}
+							dest = dest->next;
 						}
-						dest = dest->next;
 					}
 					temp = temp->next;
 				}
@@ -669,29 +704,7 @@ int main(int argc, char **argv)
     //2. since code array starts from 0 (unlike stack), therefore we must deacrese code_size from that
     // 65-65 = 0
     
-    int row_num = sizeof(dictionary)/sizeof(dictionary[0]);
-    int main_size = 0;
-    for(int j =0; j<row_num; j++){
-    	if(dictionary[j][0] == main_addr){
-    		main_size = dictionary[j][1];
-    	}
-    }
-    
-    int main_start_ind;
-    main_start_ind = main_addr + main_size;
-    main_start_ind = code_size - main_start_ind;
-    
-
     program_APG_node_list = create_list(main_addr);
-    print_nodes(program_APG_node_list);
-    printf("\n\nEXPANDING NODE LIST\n\n");
-    struct AGP_node *temp = program_APG_node_list;
-    temp = temp->next;
-    temp = temp->next;
-    expansion(temp);
-    print_nodes(program_APG_node_list);
-
-   /* program_APG_node_list = generate_list(main_start_ind);
     print_nodes(program_APG_node_list);
 
     printf("\n\nSCHEDULING NODES\n\n");    
@@ -699,10 +712,11 @@ int main(int argc, char **argv)
 	cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
     }
   
-    printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
-    for(int i = 0; i<NUM_CPU; i++){
-    	refactor_destinations(cpus[i]->node_to_execute, program_APG_node_list);
-    }
+ //   printf("\n\nREFACTORING NODE DESTINATIONS\n\n");   
+    //refactor again since we may get less request packets 
+   // for(int i = 0; i<NUM_CPU; i++){
+    //	refactor_destinations(cpus[i]->node_to_execute, program_APG_node_list);
+  //  }
     print_nodes(program_APG_node_list);
 
     printf("\n\nLAUNCHING THREADS!!!\n\n"); 
@@ -719,7 +733,7 @@ int main(int argc, char **argv)
     /***********************/
 
     //wait for all active cpu threads to finish
- /*   int num_cpu_idle = 0;
+    int num_cpu_idle = 0;
     while(num_cpu_idle < NUM_CPU){
 	num_cpu_idle = 0;
 	for(int i = 0; i<NUM_CPU; i++){
@@ -744,7 +758,7 @@ int main(int argc, char **argv)
     for(int i = 0; i<code_size; i++){
 	printf("code[%d]: %d\n", i ,runtime_code[i]); 
     }
-  */
+  
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
     return 0;
