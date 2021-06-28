@@ -27,7 +27,7 @@ pthread_mutex_t mem_lock;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x7,
+0x3,
 0x20,
 0xc,
 0x0,
@@ -49,46 +49,140 @@ const int code[] = {//End main:
 0x0,
 0x1,
 0x0,
-0x64,
+0x1dc,
 0x1,
 0x0,
 0x38,
-0x24,
-//Start main @(26):
-//End func:
+0x1b4,
+//Start main @(120):
+//End fact:
 0x7fffffff,
 0x0,
 0xfffffffc,
-0x20,
+0x28,
 0x1,
 0x0,
-0x1,
-0xc,
+0x3,
+0xa8,
+0xf4,
+0x124,
 0x7fffffff,
+0x1,
+0xfffffffc,
+0x28,
+0xb,
+0x2,
 0x0,
-0x7,
-0x20,
-0xc,
 0x0,
 0x1,
-0x8,
+0xffffffff,
 0x7fffffff,
 0x2,
 0xfffffffc,
 0x28,
-0x3,
+0x8,
 0x2,
 0x0,
 0x0,
 0x1,
-0xffffffff
-//Start func @(0):
+0x19c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x198,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x30,
+0x5,
+0x2,
+0x0,
+0x0,
+0x3,
+0x80,
+0x14c,
+0x174,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x4,
+0x2,
+0x0,
+0x0,
+0x1,
+0x148,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xf0,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0xa,
+0x2,
+0x0,
+0x0,
+0x1,
+0x7c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x0,
+0x0,
+0x20,
+0xc,
+0x0,
+0x1,
+0x120,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0xa4,
+0x170,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0xcc,
+0x1b4
+//Start fact @(0):
 };
-int code_size = 55;
-int main_addr = 26;
+int code_size = 149;
+int main_addr = 120;
 int main_num_nodes = 3;
-int dictionary[][3] = {{26,29,3},
-{0,26,3}
+int dictionary[][3] = {{120,29,3},
+{0,120,12}
 };
 int num_dict_entries = 2;
 //CODE END//
@@ -485,17 +579,39 @@ struct AGP_node *schedule_me(int cpu_num){
 	
 	struct AGP_node *current = program_APG_node_list;
 	int unode_num = 0; //number of unscheduled nodes
-	
+	int count=0;
 	/*finding unscheduled nodes and store them into a new list*/
 	while(current != NULL){ 
-		
-		if(current->assigned_cpu == UNDEFINED){
+		count = 0;
+		if(current->assigned_cpu == UNDEFINED && current->code[1] == 0){
 			unode_num++;
-			break;
+			goto SCHEDUAL;
+		}else if(current->assigned_cpu == UNDEFINED){
+			struct AGP_node *temp = program_APG_node_list;
+			while(temp != NULL){
+				struct Destination *dest = temp->dest;
+				if(dest != NULL){
+					for(int i = 0; i< temp->num_dest; i++){
+						if(dest->node_dest == current->node_num){
+							if(temp->assigned_cpu == UNDEFINED)
+								goto KEEP_SEARCHING;
+							else
+								count++;
+						}
+						dest = dest->next;
+					}
+				}
+				temp = temp->next;
+			}
+			if(count == current->code[1]){
+				unode_num++;
+				goto SCHEDUAL;
+			}
 		}
-		
+		KEEP_SEARCHING:
 		current = current->next;
 	}
+	SCHEDUAL:
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
 		printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
@@ -560,6 +676,25 @@ struct AGP_node *schedule_me(int cpu_num){
 
 }
 
+
+void propagate_death(int node_num){
+	printf("NODE REMOVAL!!");
+	struct AGP_node *trav = program_APG_node_list;
+	struct AGP_node *from;
+	while(trav->next->node_num != node_num){trav = trav->next;}
+	from = trav; trav = trav->next; 
+	if(trav->code[4] != code_merge){
+		struct AGP_node *temp = trav; 
+		trav = trav->next;
+		from->next = trav;
+		struct Destination *dest = temp->dest;
+		for(int i=temp->num_dest; i>0; i--){
+			propagate_death(dest->node_dest);
+			dest = dest->next;
+		}
+		free(temp);
+	}
+}
 
 /**
  * @brief writeMem function

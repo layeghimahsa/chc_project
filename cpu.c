@@ -63,7 +63,7 @@ void *CPU_start(struct CPU *cpu){
 		dep = dep->next;
 		
 	}
-	
+	//message passing loop
 	do { //while waiting for dependent
 		sleep(0.01);
 		// -check port for dependent! (checking the queue) , reset the count and reducce the number of dependents 
@@ -294,6 +294,7 @@ void *CPU_start(struct CPU *cpu){
 		switch(operation)
 		{
 			case code_input: 		printf("\t<< "); scanf("%d",NTE->code[2]); break;
+			case code_output:		printf("CPU %d printing: %d\n",cpu->cpu_num,NTE->code[2]); break;
 			case code_plus: 		NTE->code[2] = NTE->code[6]+ NTE->code[7]; break;
 			case code_minus:		NTE->code[2] = NTE->code[6] - NTE->code[7]; break;
 			case code_times:		NTE->code[2] = NTE->code[6] * NTE->code[7]; break;
@@ -307,8 +308,8 @@ void *CPU_start(struct CPU *cpu){
 									else
 									{ 
 										
-										//propagate_death(NTE->code[0]); 
-										NTE->code[1] = DEAD; 
+										propagate_death(NTE->node_num); 
+										//NTE->code[1] = DEAD; 
 									} break; 
 			case code_else:			if(NTE->code[6] == 0)
 									{
@@ -317,8 +318,8 @@ void *CPU_start(struct CPU *cpu){
 									else
 									{ 
 										
-										//propagate_death(NTE->code[0]);
-										NTE->code[1] = DEAD; 
+										propagate_death(NTE->node_num);
+										//NTE->code[1] = DEAD; 
 									} break;
 
 			//TODO: Fix merge so it has a single argument

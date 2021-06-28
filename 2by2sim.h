@@ -44,6 +44,7 @@ struct AGP_node *generate_list(); //generates a list of cpu strcts that will be 
 //void schedule_nodes(); //map nodes to cpu's. this is the crux and backbone of the sim
 void refactor_destinations(struct AGP_node *current, struct AGP_node *top); //set cpu dest and address for destination node stack
 void print_nodes(struct AGP_node *nodes); //PRETTY PRINTER! 
+void propagate_death(int node_num); //remove failed if or els nodes that no longer have to be processed 
 void writeMem(int ind, int val);
 struct AGP_node * schedule_me(int cpu_num);
 //queue related functions

@@ -10,7 +10,7 @@
 
 #define code_expansion 	0
 #define code_input		1
-//#define code_output		2 //output isn't really an operation, it's a destination
+#define code_output		2 //output isn't really an operation, it's a destination
 #define code_plus 		3
 #define code_times		4
 #define	code_is_equal	5
@@ -22,7 +22,7 @@
 #define code_merge		11
 #define code_identity	12
 
-#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
+//#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
 //Dead operator: remove it
 #define DEAD 		0xFFFFFFFF
