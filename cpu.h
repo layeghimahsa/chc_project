@@ -46,7 +46,6 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 	int node_needed; //this is technically the variable name 
 	int cpu_num;  //cpu the request must be sent to 
 		
-	int var_access_key; //used for a var that needs to access a node thats reserved for a dif node (used for expansion)
 	struct Dependables *next;
 };
 

@@ -49,14 +49,8 @@ void *CPU_start(struct CPU *cpu){
 			request->dest = dep->cpu_num;  //request destination
 			request->addr = dep->node_needed; //request variable name
 			request->message_type = REQUEST;
-
-			//node number thats requesting (to get correct version of var)
-			if(dep->var_access_key == UNDEFINED){
-				request->node_num = NTE->node_num;
-			}else{
-				request->node_num = dep->var_access_key;
-				var_access_key = dep->var_access_key;
-			}
+			request->node_num = NTE->node_num;
+			
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
 			pthread_mutex_lock(&mem_lock);

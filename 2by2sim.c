@@ -346,15 +346,13 @@ void expansion(struct AGP_node *current){
 		for(ntp; ntp>1; ntp--){requ_node = requ_node->next;}
 		//find node that points to arg value
 		while(input_node != NULL){
-			int address_needed = (current->code_address + 6 + (2*num_args));
-			for(int i = 0; i< input_node->num_dest; i++){
-				int pointed_address = main_func_size - 1 - (input_node->code[input_node->node_size-1-i]/4);
-				if(pointed_address == address_needed){
-					dep->cpu_num = input_node->assigned_cpu;
-					dep->var_access_key = current->node_num;
-					dep->node_needed = input_node->node_num;
-					dep->next = NULL;
-					goto NEXT;
+			struct Destination *dest = input_node->dest;
+			if(dest != NULL){
+				for(int i = 0; i< input_node->num_dest; i++){
+					if(dest->node_dest == current->node_num){
+						dest->node_dest = requ_node->node_num;
+						goto NEXT;
+					}
 				}
 			}
 			input_node = input_node->next;
@@ -362,17 +360,6 @@ void expansion(struct AGP_node *current){
 		printf("failed to find node");
 		exit(0);
 		NEXT:
-		
-
-
-		if(requ_node->depend == NULL){
-			requ_node->depend = dep;
-		}
-		else{
-			struct Dependables *temp = requ_node->depend;
-			while(temp->next != NULL){temp = temp->next;}
-			temp = dep;
-		}
 		requ_node->code[1]++;
 		num_args--;
 
@@ -531,14 +518,6 @@ struct AGP_node *schedule_me(int cpu_num){
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 				*return_node = *current;
 				return return_node;
-			} else if(current->code[4] == code_input){ //should already have dependable list
-				current->assigned_cpu = cpu_num;
-				refactor_destinations(current, program_APG_node_list);
-				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
-				//return copy of node, not actual node
-				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				*return_node = *current;
-				return return_node;
 			}else{ //if the node has dependables
 			
 				struct AGP_node *temp = program_APG_node_list;
@@ -554,7 +533,6 @@ struct AGP_node *schedule_me(int cpu_num){
 								if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
 									dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
 									dep->node_needed = temp->node_num; //variable name to be requested
-									dep->var_access_key = UNDEFINED;
 									dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
 									dep = dep->next;
 								}
