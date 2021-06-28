@@ -464,6 +464,34 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 }
 
 
+int check_dep_unscheduled(struct AGP_node *current){
+
+	puts("\nin check_dep_unscheduled!\n");
+	printf("node num: %d\n", current->node_num);
+	struct AGP_node *temp = program_APG_node_list;
+	int while_breaker = 1; //0 means the destination node is 
+	while(temp != NULL &&  while_breaker){
+		struct Destination *dest = temp->dest;
+		if(dest != NULL){
+		puts("\nDestination not null\n");
+			for(int i = 0; i< temp->num_dest; i++){
+				if(dest->node_dest == current->node_num){
+					if(dest->cpu_dest == UNDEFINED){
+						//marking the destination as unscheduled dest node
+						while_breaker = 0;
+						puts("\nBP2!!!!!!!!!!!!!!\n");
+					}
+				}
+				dest = dest->next;
+			}
+		}
+		temp = temp->next;
+	}
+	
+	printf("\nBP3!!!!!!!!!!!!!!, while breaker is %d\n", while_breaker);
+	return while_breaker;
+}
+
 
 /**
  * @brief schedule_me function
@@ -489,13 +517,24 @@ struct AGP_node *schedule_me(int cpu_num){
 	/*finding unscheduled nodes and store them into a new list*/
 	while(current != NULL){ 
 		
-		if(current->assigned_cpu == UNDEFINED){
+		if(current->assigned_cpu == UNDEFINED && current->code[1] == 0){
 			unode_num++;
-			break;
-		}
+			puts("\nbp1\n");
+			break;	
+		} else if(current->assigned_cpu == UNDEFINED && current->code[1] != 0){
+		
+			int result = check_dep_unscheduled(current); 
+			if(result == 1){
+				unode_num++;
+				break;
+			}
+			printf("result: %d\n", result);
+		
+		} 
 		
 		current = current->next;
 	}
+	
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
 		printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
