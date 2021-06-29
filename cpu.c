@@ -31,9 +31,9 @@ void *CPU_start(struct CPU *cpu){
 		if(dep->cpu_num==0){
 			break;
 		}else if(dep->cpu_num == cpu->cpu_num){ //fetch from your own cache!!
-			printf("CPU %d fetching variable from local mem\n",cpu->cpu_num);
+			printf("CPU %d fetching variable %d from local mem\n",cpu->cpu_num,dep->node_needed);
 			for(int i = 0; i<8; i++){
-				if(cpu->local_mem[0][i] == dep->node_needed){
+				if(cpu->local_mem[0][i] == dep->node_needed && cpu->local_mem[3][i] == NTE->node_num){
 					int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
 					NTE->code[addr] =  cpu->local_mem[2][i];
 					cpu->local_mem[0][i] = UNDEFINED;
@@ -86,6 +86,7 @@ void *CPU_start(struct CPU *cpu){
 						struct Message_capsul *output = (struct Message_capsul *)malloc(sizeof(struct Message_capsul)); 
 						int found = 0;
 						printf("CPU %d LOOKING FOR NODE %d FOR NODE %d REQUEST\n",cpu->cpu_num,message->addr,message->node_num);
+						//printf(" - value: %d\n - addr: %d\n - dest: %d\n - node_num: %d\n",message->value,message->addr,message->dest,message->node_num);
 						for(int i = 0; i<8; i++){
 							if(cpu->local_mem[0][i] == message->addr && cpu->local_mem[3][i] == message->node_num){
 								output->value = cpu->local_mem[2][i];
@@ -103,7 +104,7 @@ void *CPU_start(struct CPU *cpu){
 							printf("CPU %d seding requested var to CPU %d\n",cpu->cpu_num,output->dest);
 						}else{
 							enQueue(cpu->look_up[cpu->cpu_num-1], message);
-							printf("CPU %d didn't find requested var from CPU %d\n",cpu->cpu_num,output->dest);
+							printf("CPU %d didn't find requested var from CPU %d\n",cpu->cpu_num,message->value);
 						}
 					}
 					

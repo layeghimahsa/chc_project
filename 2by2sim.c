@@ -356,7 +356,7 @@ struct AGP_node *create_list(int start_address){
 //5. check variable if unavailable -> we have to block and continiouslt check if it's been updated
 //6. find an output node to ramap it (given address of node in subgraph to remap)
 void expansion(struct AGP_node *current){
-	
+	printf("\n\nEXPANDING\n\n");
 	//1. get the address of subgraph to expand
 	int sub_address = current->code[(7+(current->code[1]*2))];
 
@@ -688,7 +688,7 @@ struct AGP_node *schedule_me(int cpu_num){
 
 
 void propagate_death(int node_num){
-	printf("NODE REMOVAL!!");
+	printf("\n\nREMOVING NODE %d\n\n",node_num);
 	struct AGP_node *trav = program_APG_node_list;
 	struct AGP_node *from;
 	while(trav->next->node_num != node_num){trav = trav->next;}
@@ -830,6 +830,13 @@ int main(int argc, char **argv)
     program_APG_node_list = create_list(main_addr);
     print_nodes(program_APG_node_list);
 
+  /*  struct AGP_node *temp = program_APG_node_list;
+    temp = temp->next;
+    temp = temp->next;
+    expansion(temp);
+    print_nodes(program_APG_node_list);
+    propagate_death(7);*/
+    
     printf("\n\nSCHEDULING NODES\n\n");    
     for(int i = 0; i<NUM_CPU; i++){
 	cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
