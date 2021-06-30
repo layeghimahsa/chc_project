@@ -308,9 +308,9 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
-										
+										pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num); 
-										//NTE->code[1] = DEAD; 
+										pthread_mutex_unlock(&mem_lock);
 									} break; 
 			case code_else:			if(NTE->code[6] == 0)
 									{
@@ -318,9 +318,9 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
-										
+										pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num);
-										//NTE->code[1] = DEAD; 
+										pthread_mutex_unlock(&mem_lock);
 									} break;
 
 			//TODO: Fix merge so it has a single argument

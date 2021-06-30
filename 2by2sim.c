@@ -284,7 +284,7 @@ struct AGP_node *create_list(int start_address){
 		}
 		if(making->code[4] != code_expansion){
 		
-			making->num_dest = making->code[(6+making->code[1])];
+			making->num_dest = making->code[(6+making->code[5])];
 			//printf("Num of return nodes: %d\n",making->num_dest);
 
 			if(making->num_dest == 0){
@@ -310,7 +310,7 @@ struct AGP_node *create_list(int start_address){
 			}
 		}else{
 			//code expansion setup TODO
-			making->num_dest =making->code[(6+(making->code[1]*2))];
+			making->num_dest =making->code[(6+(making->code[5]*2))];
 			//printf("Num of return nodes: %d\n",making->num_dest);
 			
 		}
@@ -407,11 +407,13 @@ void expansion(struct AGP_node *current){
 	for(ntc; ntc>1; ntc--){node_to_change = node_to_change->next;}
 	for(ntp; ntp>1; ntp--){node_to_point = node_to_point->next;}
 	
+	printf("NTC: %d\n",node_to_change->node_num);
+	printf("NTP: %d\n",node_to_point->node_num);
+
 	//create destination node 
 	struct Destination *dest_node = (struct Destination *)malloc(sizeof(struct Destination));
 	dest_node->node_dest = node_to_point->node_num;
-	if(node_to_point->assigned_cpu == UNDEFINED){dest_node->cpu_dest = UNDEFINED;}
-	else{dest_node->cpu_dest = node_to_point->assigned_cpu;}
+	dest_node->cpu_dest = UNDEFINED;
 	
 	if(node_to_change->dest == NULL){
 		node_to_change->dest = dest_node;
@@ -420,11 +422,13 @@ void expansion(struct AGP_node *current){
 		struct Destination *temp = node_to_change->dest;
 		node_to_change->dest = dest_node;
 		dest_node->next = temp;
-		node_to_change->num_dest++;
 	}
-	
+
+	node_to_change->code[node_to_change->node_size - 1 - node_to_change->num_dest] +=1;
+	node_to_change->num_dest++;
 	node_to_change->node_size++;
-	int dest = code_size - 1 - node_to_point->node_func - (current->code[(8+(current->code[1]*2))]);
+	int dest = code_size - 1 - node_to_point->node_func - (current->code[(8+(current->code[1]*2))]/4);	
+	printf("DEST: %d\n",dest);
 	node_to_change->code[node_to_change->node_size-1] = dest;//refactored address to write var into
 
 	//CREATING INPUT VARIABLE REQUEST MESSAGE
@@ -546,7 +550,7 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 					count++; dest--;
 				}
 				dest = (temp->node_size - count - 1)*4;
-				printf("DEST: %d\n", dest);
+				//printf("DEST: %d\n", dest);
 				current->code[current->node_size-i] = dest;
 
 			}
@@ -688,21 +692,56 @@ struct AGP_node *schedule_me(int cpu_num){
 
 
 void propagate_death(int node_num){
-	printf("\n\nREMOVING NODE %d\n\n",node_num);
+	if(node_num == 52){node_num = 51;}
 	struct AGP_node *trav = program_APG_node_list;
 	struct AGP_node *from;
-	while(trav->next->node_num != node_num){trav = trav->next;}
-	from = trav; trav = trav->next; 
-	if(trav->code[4] != code_merge){
-		struct AGP_node *temp = trav; 
-		trav = trav->next;
-		from->next = trav;
-		struct Destination *dest = temp->dest;
-		for(int i=temp->num_dest; i>0; i--){
-			propagate_death(dest->node_dest);
-			dest = dest->next;
+
+	while(trav->next != NULL && trav->next->node_num != node_num){trav = trav->next;}
+	
+	if(trav->next == NULL && trav->node_num != node_num){
+		printf("\n\nFAILED TO FIND NODE TO REMOVE: %d\n\n", node_num);
+	}else{
+
+		from = trav; trav = trav->next; 
+		if(trav->code[4] == code_expansion){
+			printf("\nREMOVING EXPANSION NODE %d\n",node_num);
+			struct AGP_node *temp = trav; 
+			trav = trav->next;
+			from->next = trav; 
+
+
+			int func_size;
+			for(int i = 0; i<num_dict_entries; i++){ //get calling function dictionary info
+				if(dictionary[i][0] == temp->node_func){
+					func_size = dictionary[i][1];
+				}
+			}
+			int main_code_pos = code_size - temp->node_func - func_size;
+			//calculate node offset from calling function
+			int ntp = find_num_node(main_code_pos, (temp->node_func*4+temp->code[(9+(temp->code[1]*2))]));
+			struct AGP_node *find = program_APG_node_list;
+			for(ntp; ntp>1; ntp--){find = find->next;}
+			//printf("NTPP: %d\n",find->node_num);
+			propagate_death(find->node_num);
+			free(temp);
+		}else{
+			if(trav->code[4] != code_merge){
+				printf("\nREMOVING NODE %d\n",node_num);
+				refactor_destinations(trav,program_APG_node_list);
+				struct AGP_node *temp = trav; 
+				trav = trav->next;
+				from->next = trav;
+				struct Destination *dest = temp->dest;
+				for(int i=temp->num_dest; i>0; i--){
+					if(dest->node_dest != -99)
+						propagate_death(dest->node_dest);
+					dest = dest->next;
+				}
+				free(temp);
+			}else{
+				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
+			}
 		}
-		free(temp);
 	}
 }
 
@@ -828,16 +867,23 @@ int main(int argc, char **argv)
     // 65-65 = 0
     
     program_APG_node_list = create_list(main_addr);
-    print_nodes(program_APG_node_list);
+    //print_nodes(program_APG_node_list);
 
-  /*  struct AGP_node *temp = program_APG_node_list;
+
+  /*  //unit test
+   struct AGP_node *temp = program_APG_node_list;
+    print_nodes(program_APG_node_list);
     temp = temp->next;
     temp = temp->next;
     expansion(temp);
+    temp = program_APG_node_list;
+    temp = temp->next;
+    printf("NODE NUM %d\n",temp->node_num);
+    refactor_destinations(temp,program_APG_node_list);
     print_nodes(program_APG_node_list);
-    propagate_death(7);*/
+    propagate_death(12);//*/
     
-    printf("\n\nSCHEDULING NODES\n\n");    
+///*   printf("\n\nSCHEDULING NODES\n\n");    
     for(int i = 0; i<NUM_CPU; i++){
 	cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
     }
@@ -856,13 +902,13 @@ int main(int argc, char **argv)
 		cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
 	else
 		cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
-    }
+    }//*/
     
     /***********************/
     /**** Simulation end ***/
     /***********************/
 
-    //wait for all active cpu threads to finish
+ ///*   //wait for all active cpu threads to finish
     int num_cpu_idle = 0;
     while(num_cpu_idle < NUM_CPU){
 	num_cpu_idle = 0;
@@ -888,7 +934,7 @@ int main(int argc, char **argv)
     for(int i = 0; i<code_size; i++){
 	printf("code[%d]: %d\n", i ,runtime_code[i]); 
     }
-  
+  //*/
 
     printf("\n\n***SIMULATION COMPLETE***\n\n");
     return 0;
