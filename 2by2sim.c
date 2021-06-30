@@ -273,7 +273,8 @@ struct AGP_node *create_list(int start_address){
 		making->node_size = size(i);
 		making->code_address = i;
 		making->depend = NULL;
-		making->node_num = list_index; list_index++;
+		making->node_num = list_index; 
+		list_index+=1;
 		making->assigned_cpu = UNDEFINED;
 		making->node_func = start_address;
 		//printf("I: %d\n",i);
@@ -439,8 +440,8 @@ void expansion(struct AGP_node *current){
 	int num_args = current->code[5] -1;
 	//for the numbr of arguments there are/are called
 	while(num_args >= 0){
-		struct AGP_node *input_node = traverse;
-		struct AGP_node *requ_node = program_APG_node_list;
+		struct AGP_node *input_node = traverse; //a in the factorial example 
+		struct AGP_node *requ_node = program_APG_node_list; //x in the factorial example 
 		struct Dependables *dep = (struct Dependables *)malloc(sizeof(struct Dependables));
 		//find node that needs to request
 		ntp  = find_num_node(sub_code_pos,sub_address*4+current->code[7+(2*num_args)]);
@@ -451,17 +452,22 @@ void expansion(struct AGP_node *current){
 			if(dest != NULL){
 				for(int i = 0; i< input_node->num_dest; i++){
 					if(dest->node_dest == current->node_num){
-						dest->node_dest = requ_node->node_num;
+						//dest->node_dest = requ_node->node_num;
 						goto NEXT;
 					}
 				}
 			}
 			input_node = input_node->next;
 		}
-		printf("failed to find node");
+		printf("failed to find node during expansion");
 		exit(0);
 		NEXT:
 		requ_node->code[1]++;
+		//need to create request
+		requ_node->depend = (struct Dependables *)malloc(sizeof(struct Dependables));
+		requ_node->depend->key = current->node_num;
+		requ_node->depend->node_needed = input_node->node_num;
+		requ_node->depend->cpu_num = input_node->assigned_cpu;
 		num_args--;
 
 
@@ -581,7 +587,7 @@ int check_dep_unscheduled(struct AGP_node *current){
 						//printf("\n\n NODE %d is FOUND DEAD %d\n\n",temp->node_num,temp->state);
 						if(temp->state == DEAD){
 							count++;
-							printf("\n\n NODE %d is FOUND DEAD\n\n",temp->node_num);
+							//printf("\n\n NODE %d is FOUND DEAD\n\n",temp->node_num);
 						}else{
 							while_breaker = 0;
 						}
@@ -628,7 +634,10 @@ struct AGP_node *schedule_me(int cpu_num){
 		if(current->assigned_cpu == UNDEFINED && current->code[1] == 0){
 			unode_num++;
 			break;	
-		} else if(current->assigned_cpu == UNDEFINED && current->code[1] != 0){
+		}else if(current->assigned_cpu == UNDEFINED && current->code[4] == code_input){
+			unode_num++;
+			break;	
+		}else if(current->assigned_cpu == UNDEFINED && current->code[1] != 0){
 			int result = check_dep_unscheduled(current); 
 			if(result == 1){
 				unode_num++;
@@ -663,30 +672,32 @@ struct AGP_node *schedule_me(int cpu_num){
 				*return_node = *current;
 				return return_node;
 			}else{ //if the node has dependables
-			
-				struct AGP_node *temp = program_APG_node_list;
 				
-				struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
-				struct Dependables *dep = depe;
-
-				while(temp != NULL){
-					struct Destination *dest = temp->dest;
-					if(dest != NULL){
-						for(int i = 0; i< temp->num_dest; i++){
-							if(dest->node_dest == current->node_num){
-								if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
-									dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
-									dep->node_needed = temp->node_num; //variable name to be requested
-									dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
-									dep = dep->next;
+				if(current->depend == NULL){
+					struct AGP_node *temp = program_APG_node_list;
+					struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
+					struct Dependables *dep = depe;
+			
+					while(temp != NULL){
+						struct Destination *dest = temp->dest;
+						if(dest != NULL){
+							for(int i = 0; i< temp->num_dest; i++){
+								if(dest->node_dest == current->node_num){
+									if(dest->cpu_dest == UNDEFINED || dest->cpu_dest == UNKNOWN){
+										dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+										dep->node_needed = temp->node_num; //variable name to be requested
+										dep->key = UNDEFINED;
+										dep->next = (struct Dependables *)malloc(sizeof(struct Dependables));
+										dep = dep->next;
+									}
 								}
+								dest = dest->next;
 							}
-							dest = dest->next;
 						}
+						temp = temp->next;
 					}
-					temp = temp->next;
+					current->depend = depe;
 				}
-				current->depend = depe;
 				//return the cpu.
 				current->assigned_cpu = cpu_num;
 				refactor_destinations(current, program_APG_node_list);

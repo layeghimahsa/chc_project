@@ -36,29 +36,42 @@ void *CPU_start(struct CPU *cpu){
 		}else if(dep->cpu_num == cpu->cpu_num){ //fetch from your own cache!!
 			printf("CPU %d fetching variable %d from local mem\n",cpu->cpu_num,dep->node_needed);
 			for(int i = 0; i<8; i++){
-				if(cpu->local_mem[0][i] == dep->node_needed && cpu->local_mem[3][i] == NTE->node_num){
-					int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
-					NTE->code[addr] =  cpu->local_mem[2][i];
-					cpu->local_mem[0][i] = UNDEFINED;
-					NTE->code[1]--; //7. decrese the number of dependent
-					break;
+				if(cpu->local_mem[0][i] == dep->node_needed){
+					if(cpu->local_mem[3][i] == NTE->node_num || cpu->local_mem[3][i] == dep->key){
+						int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
+						NTE->code[addr] =  cpu->local_mem[2][i];
+						cpu->local_mem[0][i] = UNDEFINED;
+						NTE->code[1]--; //7. decrese the number of dependent
+						break;
+					}
 				}
 			}
 		}else{
 			printf("CPU %d sending variable request to CPU %d",cpu->cpu_num, dep->cpu_num); 
 			printf(" FOR NODE %d\n",dep->node_needed); 
-			struct Message_capsul *request = (struct Message_capsul *)malloc(sizeof(struct Message_capsul)); 
+			struct Message_capsul *request = (struct Message_capsul *)malloc(sizeof(struct Message_capsul));
+
 			request->value = cpu->cpu_num; //cpu num to send reult back to (its self)
 			request->dest = dep->cpu_num;  //request destination
 			request->addr = dep->node_needed; //request variable name
-			request->message_type = REQUEST;
 			request->node_num = NTE->node_num;
+			request->message_type = REQUEST;
+			
+
+			if(dep->key == UNDEFINED){ 
+				request->node_num = NTE->node_num;
+				
+			}else{
+				request->node_num = dep->key;
+				var_access_key = dep->key;
+			}
+			
 			
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-
 			pthread_mutex_lock(&mem_lock);
-			enQueue(cpu->look_up[dep->cpu_num-1], request);
-			pthread_mutex_unlock(&mem_lock);
+				enQueue(cpu->look_up[dep->cpu_num-1], request);
+				pthread_mutex_unlock(&mem_lock);
+
 			//enable cancelation
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		}
@@ -81,7 +94,9 @@ void *CPU_start(struct CPU *cpu){
 			struct Message_capsul *message;
 			message = deQueue(cpu->look_up[cpu->cpu_num-1]);
 			if(cpu->cpu_num != message->dest){
+		
 				enQueue(cpu->look_up[message->dest-1], message);
+				
 			}else{
 				if(message->message_type == REQUEST){
 					if(message->addr == NTE->node_num){//requesting currently being processed node
@@ -135,9 +150,11 @@ void *CPU_start(struct CPU *cpu){
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		
 		count++;
-		if(count = 1000 && NTE->code[4] == -1){
+		if(count == 1000 && NTE->code[4] == -1){
 			printf("CPU %d has requested a new task\n",cpu->cpu_num);
+			pthread_mutex_lock(&mem_lock);
 			cpu->node_to_execute = schedule_me(cpu->cpu_num);
+			pthread_mutex_unlock(&mem_lock);
 			goto START;
 		}
 
@@ -210,64 +227,66 @@ void *CPU_start(struct CPU *cpu){
 		}
 	}
 
-	  /*******************/
-	 /***** OUTPUT ******/
-	/*******************/
-	struct Destination *dest = NTE->dest;
-	for(int i = 1; i<=NTE->num_dest;i++){
+		  /*******************/
+		 /***** OUTPUT ******/
+		/*******************/
+		struct Destination *dest = NTE->dest;
+		for(int i = 1; i<=NTE->num_dest;i++){
 
-		struct Message_capsul *output;
-		output = (struct Message_capsul *)malloc(sizeof(struct Message_capsul));
-		output->value = NTE->code[2];
-		output->dest = dest->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
-		output->addr = NTE->code[NTE->node_size-i];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
-		output->node_num = dest->node_dest;
-		output->message_type = RESULT;
+			struct Message_capsul *output;
+			output = (struct Message_capsul *)malloc(sizeof(struct Message_capsul));
+			output->value = NTE->code[2];
+			output->dest = dest->cpu_dest;//cpu number, it is either a cpu number or -99 for writing back to memory
+			output->addr = NTE->code[NTE->node_size-i];//stack destination address, it is either a positive offset or -1 for "writing back to memory" state
+			output->node_num = dest->node_dest;
+			output->message_type = RESULT;
 
-		//dissable cancel since it will be using mutexes and we dont wanna cancel while a mutex is locked
-		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-		
-		//not has dependent and should write its value in the queue
-		if(dest->cpu_dest == -99){
-			printf("CPU %d Writing to Main MEM!!\n",cpu->cpu_num);
-			//writing back to memory (code array)
-			writeMem(NTE->code_address+2, output->value);
+			//dissable cancel since it will be using mutexes and we dont wanna cancel while a mutex is locked
+			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 			
-		
-		}else if(dest->cpu_dest == 0){
-			//save the value and node name (node number) for when its called upon
-			int stored = 0;
-			for(int i = 0; i<LOCAL_STORAGE_SIZE; i++){
-				if(cpu->local_mem[0][i] == UNDEFINED){
-					printf("CPU %d STORING NODE %d FOR NODE %d TO MEM!!\n",cpu->cpu_num,NTE->node_num,output->node_num);
-					cpu->local_mem[0][i] = NTE->node_num;
-					cpu->local_mem[1][i] = output->addr;
-					cpu->local_mem[2][i] = output->value;
-					cpu->local_mem[3][i] = output->node_num;  //add entry if its been used so we know theres a problem if it was evicted before use 
-					cpu->local_mem[4][i] = 0; //unused
-					stored = 1;
-					break;
+			//not has dependent and should write its value in the queue
+			if(dest->cpu_dest == -99){
+				printf("CPU %d Writing to Main MEM!!\n",cpu->cpu_num);
+				//writing back to memory (code array)
+				writeMem(NTE->code_address+2, output->value);
+				
+			
+			}else if(dest->cpu_dest == 0){
+				//save the value and node name (node number) for when its called upon
+				int stored = 0;
+				for(int i = 0; i<LOCAL_STORAGE_SIZE; i++){
+					if(cpu->local_mem[0][i] == UNDEFINED){
+						printf("CPU %d STORING NODE %d FOR NODE %d TO MEM!!\n",cpu->cpu_num,NTE->node_num,output->node_num);
+						cpu->local_mem[0][i] = NTE->node_num;
+						cpu->local_mem[1][i] = output->addr;
+						cpu->local_mem[2][i] = output->value;
+						cpu->local_mem[3][i] = output->node_num;  //add entry if its been used so we know theres a problem if it was evicted before use 
+						cpu->local_mem[4][i] = 0; //unused
+						stored = 1;
+						break;
+					}
 				}
+				if(stored == 0)
+					printf("CPU %d STORING UNSUCCSESFULL\n",cpu->cpu_num);
+			}else{ // we need to calculate stuff here after everything has poped up in the queue
+				printf("CPU %d sending result to CPU %d\n",cpu->cpu_num,output->dest);
+				pthread_mutex_lock(&mem_lock);
+				enQueue(cpu->look_up[output->dest-1], output);
+				pthread_mutex_unlock(&mem_lock);
 			}
-			if(stored == 0)
-				printf("CPU %d STORING UNSUCCSESFULL\n",cpu->cpu_num);
-		}else{ // we need to calculate stuff here after everything has poped up in the queue
-			printf("CPU %d sending result to CPU %d\n",cpu->cpu_num,output->dest);
-			pthread_mutex_lock(&mem_lock);
-			enQueue(cpu->look_up[output->dest-1], output);
-			pthread_mutex_unlock(&mem_lock);
-		}
-		
-		//enable cancelation
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+			
+			//enable cancelation
+			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-		dest = dest->next;
-	}
+			dest = dest->next;
+		}
 
 		//request a new task
 		printf("CPU %d has requested a new task\n",cpu->cpu_num);
 		pthread_mutex_lock(&mem_lock);
+		int prev = NTE->node_num;
 		cpu->node_to_execute = schedule_me(cpu->cpu_num);
+		while(cpu->node_to_execute->node_num == prev){cpu->node_to_execute = schedule_me(cpu->cpu_num);}
 		pthread_mutex_unlock(&mem_lock);
 	}
 	

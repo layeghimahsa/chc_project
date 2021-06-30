@@ -33,6 +33,7 @@
 
 #define RESULT 0
 #define REQUEST 1
+#define INPUT_REQUEST 2
 
 struct Destination{ 
 
@@ -45,7 +46,7 @@ struct Destination{
 struct Dependables{ //this is a list of all variable a cpu must call upon to get their variable 
 	int node_needed; //this is technically the variable name 
 	int cpu_num;  //cpu the request must be sent to 
-		
+	int key; //needed if its a node requesting for a node that isnt technically ment for it (used for inputs of expansions)
 	struct Dependables *next;
 };
 
@@ -82,9 +83,7 @@ struct Message_capsul{
 	int value;
 	int dest; // cpu destination 
 	int addr; 
-
 	int node_num; //variable name!
-
 	int message_type; //result, request...
 
 	struct Message_capsul *next;
