@@ -18,6 +18,9 @@ void *CPU_start(struct CPU *cpu){
 	
 	int var_access_key = UNDEFINED; 
 	
+
+	
+	START:
 	while(1){	
 	
 	struct AGP_node *NTE = cpu->node_to_execute;
@@ -64,6 +67,7 @@ void *CPU_start(struct CPU *cpu){
 		
 	}
 	//message passing loop
+	int count = 0;
 	do { //while waiting for dependent
 		sleep(0.01);
 		// -check port for dependent! (checking the queue) , reset the count and reducce the number of dependents 
@@ -129,6 +133,13 @@ void *CPU_start(struct CPU *cpu){
 		pthread_mutex_unlock(&mem_lock);
 		//enable cancelation
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		count++;
+		if(count = 1000 && NTE->code[4] == -1){
+			printf("CPU %d has requested a new task\n",cpu->cpu_num);
+			cpu->node_to_execute = schedule_me(cpu->cpu_num);
+			goto START;
+		}
 
 	} while(NTE->code[1] > 0);
 	var_access_key = UNDEFINED;
@@ -142,148 +153,7 @@ void *CPU_start(struct CPU *cpu){
 	{
 		printf("EXPASION NOT IMPLEMENTED YET");
 
-		/*int *old_sb = sb;
 		
-
-		//get addr of subgraph to expand
-		int addr = ((*(*(sp+5)*2 + sp + 7)));
-
-
-		int i;
-		int size;
-		for(i=0;;i++)
-		{
-			if(dictionary[i][0] == addr)
-				break;
-		}
-		size = dictionary[i][1];
-		int *ip = &(code[code_size - addr - size]);
-		
-		
-
-
-		//expansion info
-		int number_of_inputs = *(sp + 5);
-		int *n_out_addr = (int *)(sp + 6);
-		
-		n_out_addr += (long unsigned int)(number_of_inputs * 2);
-
-		int number_of_outputs = *n_out_addr;
-
-		
-
-		//need to push subgraph onto the stack
-
-		//doing expansion node replacement thingys
-
-		//and chanding all destination addresses to compensate for stack position
-
-		//For every expansion ARG
-			//Find arg address in expanded code
-			//Replace value with ARG value
-
-		//For every expansion DEST
-			//Find dest address in expanded code
-			//Replace target with address of extant node 
-
-
-
-		//first, let's push entire code verbatim, keeping track of old stack bottom
-		int offset = 0;
-		//reserve stack space for new code
-		sb = sb - size;
-		
-		while(offset < size)
-		{
-			
-			*(sb+offset) = *ip;
-			
-			ip++;
-			offset++;
-		}
-		
-		//the easiest way to do this might be to first update all addresses, regardless of later being overriden by expansion
-			//so we don't have to keep track of which are expansion-mapped or not
-		//then just replace those based on expansion mappings
-
-			//Try: update all destinations
-		ip = sb;
-		while(ip != old_sb)
-		{
-			int is_expansion = (*(ip+4) == code_expansion) ? 1: 0;
-
-			if(is_expansion)
-			{
-				//move to number of destinations
-				ip += 8 + (*(ip + 5) * 2);
-				
-				*ip += (int)((long unsigned int)st-(long unsigned int)old_sb + 4);
-				ip++;
-				ip++;
-			}
-			else
-			{
-				//move to number of destinations
-				ip += 7 + *(ip + 5);
-				while(*ip != 0x7FFFFFFF)
-				{
-					if(*ip != code_output)	
-					{
-						*ip += (int)((long unsigned int)st-(long unsigned int)old_sb + 4);
-					}
-					ip++;
-				}
-			}
-		}
-
-		int *input_ptr = (int *)(sp + 6);
-		//input ptr is looking at first argument
-		
-		while(number_of_inputs > 0)
-		{
-			
-
-			//for current input
-			//find it in newly created code
-			int *node_to_replace = (int *)((unsigned long int)old_sb - (unsigned long int)(*(input_ptr + 1)) - 4);
-			
-
-			//update its value and readiness
-				//readiness 
-			*(node_to_replace + 1) = READY;
-			*(node_to_replace + 2) = *input_ptr;
-			*(node_to_replace + 4) = code_identity;
-
-			input_ptr += 2;
-
-			number_of_inputs--;
-		}
-
-		int *output_ptr = (int *)(sp + 8 +(*(sp + 5)*2));
-		//output ptr is looking at first destination
-
-		while(number_of_outputs > 0)
-		{
-			
-
-			//for current output
-			//find it in newly created code
-			int *node_to_replace = (int *)((long unsigned int)old_sb - (long unsigned int)(*(output_ptr + 1)) - 4);
-			
-			//update its destination 
-
-			*(node_to_replace + 7 + *(node_to_replace + 5)) = *output_ptr;
-
-
-			number_of_outputs--;
-		}
- 
-		//then, go over every node
-			//if it's not expansion related (IO), just update destinations relative to stack size (in bytes)
-			//if it is expansion related
-				//if it's an input, replace ...
-				//if it's an output, ...
-		*/
 
 
 	}
@@ -305,6 +175,9 @@ void *CPU_start(struct CPU *cpu){
 			case code_if:			if((NTE->code[6] != 0))
 									{ 
 										(NTE->code[2] = NTE->code[7]);
+										//pthread_mutex_lock(&mem_lock);
+										mark_as_dead(NTE->node_num);
+										//pthread_mutex_unlock(&mem_lock);
 									}
 									else
 									{ 
@@ -315,6 +188,9 @@ void *CPU_start(struct CPU *cpu){
 			case code_else:			if(NTE->code[6] == 0)
 									{
 										(NTE->code[2] = NTE->code[7]);
+										//pthread_mutex_lock(&mem_lock);
+										mark_as_dead(NTE->node_num);
+										//pthread_mutex_unlock(&mem_lock);
 									}
 									else
 									{ 
@@ -390,7 +266,9 @@ void *CPU_start(struct CPU *cpu){
 
 		//request a new task
 		printf("CPU %d has requested a new task\n",cpu->cpu_num);
+		pthread_mutex_lock(&mem_lock);
 		cpu->node_to_execute = schedule_me(cpu->cpu_num);
+		pthread_mutex_unlock(&mem_lock);
 	}
 	
 	

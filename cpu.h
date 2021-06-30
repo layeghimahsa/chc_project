@@ -69,7 +69,7 @@ struct AGP_node{
 	int node_num; //current node number
 	
 	int num_dest; //number of node's destinations
-
+	int state; //alive or dead if else statements 
 	int node_func; //sub graph its from 
 
 	struct Destination *dest; 	//destination cpu

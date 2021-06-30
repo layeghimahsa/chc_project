@@ -282,6 +282,9 @@ struct AGP_node *create_list(int start_address){
 			making->code[j] = code[i];
 			i++;
 		}
+		if(making->code[4] == code_if || making->code[4] == code_else)
+			making->state = 1; //alive
+
 		if(making->code[4] != code_expansion){
 		
 			making->num_dest = making->code[(6+making->code[5])];
@@ -572,16 +575,26 @@ int check_dep_unscheduled(struct AGP_node *current){
 		if(dest != NULL){
 			for(int i = 0; i< temp->num_dest; i++){
 				if(dest->node_dest == current->node_num){
-					if(dest->cpu_dest == UNDEFINED)
+					if(temp->assigned_cpu == UNDEFINED){
 						while_breaker = 0;
-					else
+					}else if(temp->code[4] == code_if || temp->code[4] == code_else){
+						//printf("\n\n NODE %d is FOUND DEAD %d\n\n",temp->node_num,temp->state);
+						if(temp->state == DEAD){
+							count++;
+							printf("\n\n NODE %d is FOUND DEAD\n\n",temp->node_num);
+						}else{
+							while_breaker = 0;
+						}
+					}else{
 						count++;
+					}
 				}
 				dest = dest->next;
 			}
 		}
 		temp = temp->next;
 	}
+	//printf("\n\n COUNT FOR NODE %d is %d\n\n",current->node_num,count);
 	if(count == current->code[1])
 		return while_breaker;
 	else
@@ -632,6 +645,7 @@ struct AGP_node *schedule_me(int cpu_num){
 		struct AGP_node *dummy = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
+		dummy->code[4] = -1;
 		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
 	} else{ //there is some unassigned nodes
@@ -692,7 +706,6 @@ struct AGP_node *schedule_me(int cpu_num){
 
 
 void propagate_death(int node_num){
-	if(node_num == 52){node_num = 51;}
 	struct AGP_node *trav = program_APG_node_list;
 	struct AGP_node *from;
 
@@ -742,6 +755,20 @@ void propagate_death(int node_num){
 				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
 			}
 		}
+	}
+}
+
+//mark as dead makes the given node as dead
+void mark_as_dead(int node_num){
+	struct AGP_node *trav = program_APG_node_list;
+	while(trav->next != NULL && trav->next->node_num != node_num){trav = trav->next;}
+	
+	if(trav->next == NULL && trav->node_num != node_num){
+		printf("\n\nFAILED TO FIND NODE TO MARK AS DEAD: %d\n\n", node_num);
+	}else{
+		trav = trav->next;
+		trav->state = DEAD;
+		printf("\n\nNODE %d MARKED AS DEAD %d\n\n", trav->node_num, trav->state);
 	}
 }
 
@@ -929,13 +956,13 @@ int main(int argc, char **argv)
 
     pthread_mutex_destroy(&mem_lock);
     
-    
+    print_nodes(program_APG_node_list);
     puts("\nPRINTING CODE ARRAY\n"); // want to check if result 14 is written to memory (code array)
     for(int i = 0; i<code_size; i++){
 	printf("code[%d]: %d\n", i ,runtime_code[i]); 
     }
   //*/
-
+	
     printf("\n\n***SIMULATION COMPLETE***\n\n");
     return 0;
 }
