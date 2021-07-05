@@ -27,7 +27,7 @@ pthread_mutex_t mem_lock;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x3,
+0x1,
 0x20,
 0xc,
 0x0,
@@ -364,6 +364,7 @@ void expansion(struct AGP_node *current){
 
 	//4. refactor the given expansion
 	
+        //TODO: add multiple dest support
 
 	//REMAPING OUTPUT
 	int sub_func_size;
@@ -720,6 +721,8 @@ void propagate_death(int node_num){
 
 		from = trav; trav = trav->next; 
 		if(trav->code[4] == code_expansion){
+
+			//TODO: add multiple dest support (a for loop for num_dest)
 			printf("\nREMOVING EXPANSION NODE %d\n",node_num);
 			struct AGP_node *temp = trav;
 			temp->state = DEAD; 
@@ -747,7 +750,7 @@ void propagate_death(int node_num){
 			//free(temp);*/
 
 
-			//TODO: add multiple dest support (a for loop for num_dest)
+			
 		}else{
 			if(trav->code[4] != code_merge){
 				printf("\nREMOVING NODE %d\n",node_num);

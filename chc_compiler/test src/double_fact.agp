@@ -49,8 +49,8 @@ SUBGRAPH(plus1)
 
 
       SUBGRAPH(main)
-        CONST(x,7);
-        CONST(y,7);
+        CONST(x,3);
+        CONST(y,3);
         DATUM(z);
         DATUM(x2);
         DATUM(y2);
