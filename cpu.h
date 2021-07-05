@@ -25,7 +25,9 @@
 //#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
 //Dead operator: remove it
+#define ALIVE		1
 #define DEAD 		0xFFFFFFFF
+#define REFACTOR	-3
 #define DONT_REFACTOR   -2
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
@@ -40,7 +42,7 @@ struct Destination{
 
 	int cpu_dest;
 	int node_dest;
-
+	int state;
 	struct Destination *next;
 };
 

@@ -25,34 +25,42 @@ void *CPU_start(struct CPU *cpu){
 	
 	struct AGP_node *NTE = cpu->node_to_execute;
 
-	printf("CPU %d DOING NODE %d\n",cpu->cpu_num,NTE->node_num);
+	printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu->cpu_num,NTE->node_num,NTE->code[1]);
 
 	//check if there are requests to make, and if yes make em
 	struct Dependables *dep = NTE->depend;
 	while(dep != NULL){ //should be null if no requests to make 
 		
-		if(dep->cpu_num==0){
-			goto NEXT;
+		if(dep->cpu_num==UNDEFINED){
+			printf("\n\nDEPENDABLE NODE %d CPU UNDEFINED\n\n",dep->node_needed);
+			NTE->code[1]--;
+		}else if(dep->cpu_num==UNKNOWN){
 		}else if(dep->cpu_num == cpu->cpu_num){ //fetch from your own cache!!
 			printf("CPU %d fetching variable %d from local mem\n",cpu->cpu_num,dep->node_needed);
-			for(int i = 0; i<8; i++){
+			for(int i = 0; i<64; i++){
 				if(cpu->local_mem[0][i] == dep->node_needed){
 					if(cpu->local_mem[3][i] == NTE->node_num || cpu->local_mem[3][i] == dep->key){
 						if(NTE->code[4] == code_input){
 							NTE->code[2] = cpu->local_mem[2][i];
-							NTE->code[1]--;
+							cpu->local_mem[0][i] = UNDEFINED;
+							NTE->code[1]-= 1;
 							NTE->code[4] = code_identity;
 							goto NEXT;
 						}else{
 							int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
 							NTE->code[addr] =  cpu->local_mem[2][i];
 							cpu->local_mem[0][i] = UNDEFINED;
-							NTE->code[1]--; //7. decrese the number of dependent
+							NTE->code[1]-= 1; //7. decrese the number of dependent
 							goto NEXT;
 						}
 					}
 				}
 			}
+			printf("\n\nFAILED TO FIND VAR %d FROM LOCAL MEM!!!!\n\n",dep->node_needed);
+			for(int i = 0; i < 10; i++){
+				printf("[%d] : [%d][-][%d][%d]\n",i,cpu->local_mem[0][i],cpu->local_mem[2][i],cpu->local_mem[3][i]);
+			}
+			
 		}else{
 			printf("CPU %d sending variable request to CPU %d",cpu->cpu_num, dep->cpu_num); 
 			printf(" FOR NODE %d\n",dep->node_needed); 
@@ -90,6 +98,8 @@ void *CPU_start(struct CPU *cpu){
 	int count = 0;
 	do { //while waiting for dependent
 		sleep(0.01);
+		if(NTE->code[4] != -1)
+			printf("CPU %d waiting. num dep %d\n",cpu->cpu_num,NTE->code[1]);
 		// -check port for dependent! (checking the queue) , reset the count and reducce the number of dependents 
 		//setting up the queue and periodically checking them
 
@@ -156,12 +166,13 @@ void *CPU_start(struct CPU *cpu){
 		//enable cancelation
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		
-		count++;
-		if(count == 750 && NTE->code[4] == -1){
+		count+=1;
+		if(count == 250 && NTE->code[4] == -1){
 			printf("CPU %d has requested a new task\n",cpu->cpu_num);
 			pthread_mutex_lock(&mem_lock);
 			cpu->node_to_execute = schedule_me(cpu->cpu_num);
 			pthread_mutex_unlock(&mem_lock);
+			sleep(0.05);
 			goto START;
 		}
 
@@ -190,7 +201,7 @@ void *CPU_start(struct CPU *cpu){
 		{
 			case code_input: 		printf("\t<< "); scanf("%d",NTE->code[2]); break;
 			case code_output:		printf("CPU %d printing: %d\n",cpu->cpu_num,NTE->code[2]); break;
-			case code_plus: 		NTE->code[2] = NTE->code[6]+ NTE->code[7]; break;
+			case code_plus: 		NTE->code[2] = NTE->code[6] + NTE->code[7]; break;
 			case code_minus:		NTE->code[2] = NTE->code[6] - NTE->code[7]; break;
 			case code_times:		NTE->code[2] = NTE->code[6] * NTE->code[7]; break;
 			case code_is_equal:		(NTE->code[6] == NTE->code[7]) ? (NTE->code[2]=1): (NTE->code[2]=0); break;
@@ -205,6 +216,7 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
+										NTE->code[2] = 0;
 										//pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num); 
 										//pthread_mutex_unlock(&mem_lock);
@@ -218,6 +230,7 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
+										NTE->code[2] = 0;
 										//pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num);
 										//pthread_mutex_unlock(&mem_lock);
@@ -236,7 +249,7 @@ void *CPU_start(struct CPU *cpu){
 			}
 		}
 	}
-
+		 printf("CPU %d: %d NODE RESULT: %d\n",cpu->cpu_num,NTE->node_num,NTE->code[2]);
 		  /*******************/
 		 /***** OUTPUT ******/
 		/*******************/
