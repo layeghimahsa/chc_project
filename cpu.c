@@ -69,8 +69,8 @@ void *CPU_start(struct CPU *cpu){
 			
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 			pthread_mutex_lock(&mem_lock);
-				enQueue(cpu->look_up[dep->cpu_num-1], request);
-				pthread_mutex_unlock(&mem_lock);
+			enQueue(cpu->look_up[dep->cpu_num-1], request);
+			pthread_mutex_unlock(&mem_lock);
 
 			//enable cancelation
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -150,7 +150,7 @@ void *CPU_start(struct CPU *cpu){
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		
 		count++;
-		if(count == 1000 && NTE->code[4] == -1){
+		if(count == 750 && NTE->code[4] == -1){
 			printf("CPU %d has requested a new task\n",cpu->cpu_num);
 			pthread_mutex_lock(&mem_lock);
 			cpu->node_to_execute = schedule_me(cpu->cpu_num);
@@ -168,7 +168,7 @@ void *CPU_start(struct CPU *cpu){
 	//expansion is different
 	if(NTE->code[4] == code_expansion)
 	{
-		printf("EXPASION NOT IMPLEMENTED YET");
+		printf("\n\nCPU %d EXPASION NOT IMPLEMENTED YET\n\n",cpu->cpu_num);
 
 		
 
@@ -198,9 +198,9 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
-										pthread_mutex_lock(&mem_lock);
+										//pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num); 
-										pthread_mutex_unlock(&mem_lock);
+										//pthread_mutex_unlock(&mem_lock);
 									} break; 
 			case code_else:			if(NTE->code[6] == 0)
 									{
@@ -211,9 +211,9 @@ void *CPU_start(struct CPU *cpu){
 									}
 									else
 									{ 
-										pthread_mutex_lock(&mem_lock);
+										//pthread_mutex_lock(&mem_lock);
 										propagate_death(NTE->node_num);
-										pthread_mutex_unlock(&mem_lock);
+										//pthread_mutex_unlock(&mem_lock);
 									} break;
 
 			//TODO: Fix merge so it has a single argument
@@ -283,11 +283,17 @@ void *CPU_start(struct CPU *cpu){
 
 		//request a new task
 		printf("CPU %d has requested a new task\n",cpu->cpu_num);
-		pthread_mutex_lock(&mem_lock);
+		
 		int prev = NTE->node_num;
+		pthread_mutex_lock(&mem_lock);
 		cpu->node_to_execute = schedule_me(cpu->cpu_num);
-		while(cpu->node_to_execute->node_num == prev){cpu->node_to_execute = schedule_me(cpu->cpu_num);}
 		pthread_mutex_unlock(&mem_lock);
+		while(cpu->node_to_execute->node_num == prev){
+			pthread_mutex_lock(&mem_lock);
+			cpu->node_to_execute = schedule_me(cpu->cpu_num);
+			pthread_mutex_unlock(&mem_lock);
+		}
+		
 	}
 	
 	

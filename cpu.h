@@ -26,6 +26,7 @@
 #define NAV			0xFFFFFFFC
 //Dead operator: remove it
 #define DEAD 		0xFFFFFFFF
+#define DONT_REFACTOR   -2
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
 
