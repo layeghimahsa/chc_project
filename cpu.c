@@ -32,17 +32,24 @@ void *CPU_start(struct CPU *cpu){
 	while(dep != NULL){ //should be null if no requests to make 
 		
 		if(dep->cpu_num==0){
-			break;
+			goto NEXT;
 		}else if(dep->cpu_num == cpu->cpu_num){ //fetch from your own cache!!
 			printf("CPU %d fetching variable %d from local mem\n",cpu->cpu_num,dep->node_needed);
 			for(int i = 0; i<8; i++){
 				if(cpu->local_mem[0][i] == dep->node_needed){
 					if(cpu->local_mem[3][i] == NTE->node_num || cpu->local_mem[3][i] == dep->key){
-						int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
-						NTE->code[addr] =  cpu->local_mem[2][i];
-						cpu->local_mem[0][i] = UNDEFINED;
-						NTE->code[1]--; //7. decrese the number of dependent
-						break;
+						if(NTE->code[4] == code_input){
+							NTE->code[2] = cpu->local_mem[2][i];
+							NTE->code[1]--;
+							NTE->code[4] = code_identity;
+							goto NEXT;
+						}else{
+							int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
+							NTE->code[addr] =  cpu->local_mem[2][i];
+							cpu->local_mem[0][i] = UNDEFINED;
+							NTE->code[1]--; //7. decrese the number of dependent
+							goto NEXT;
+						}
 					}
 				}
 			}
@@ -75,7 +82,7 @@ void *CPU_start(struct CPU *cpu){
 			//enable cancelation
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		}
-		
+		NEXT:
 		dep = dep->next;
 		
 	}
@@ -217,7 +224,10 @@ void *CPU_start(struct CPU *cpu){
 									} break;
 
 			//TODO: Fix merge so it has a single argument
-			case code_merge:		NTE->code[2] = (NTE->code[6] | NTE->code[7]); break;
+			case code_merge:		
+					NTE->code[2] = (NTE->code[6] | NTE->code[7]); 
+					printf("CPU %d MERGE %d & %d = %d\n",cpu->cpu_num,NTE->code[6],NTE->code[7],NTE->code[2]);
+					break;
 			case code_identity:		if(NTE->code[2] == NAV){NTE->code[2] = NTE->code[6];}break; 
 			default: 
 			{ 

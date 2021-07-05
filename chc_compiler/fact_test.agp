@@ -7,7 +7,7 @@ SUBGRAPH(fact)
         DATUM(resultfalse);
         DATUM(xis0);
         DATUM(iter);
-        DATUM(nextiter);
+	DATUM(nextiter);
         DATUM(xminus1);
         DATUM(xminus1cond);
         CONST(zero,0);
@@ -22,7 +22,7 @@ SUBGRAPH(fact)
         OPERATOR(xminus1cond,op_ELSE,xis0,xminus1);
 
 SUBGRAPH(main)
-        CONST(a,0);
+        CONST(a,1);
         DATUM(b);
         EXPAND(fact,MAP_IN(x,a);MAP_OUT(result,b););
         OUTPUT(b);

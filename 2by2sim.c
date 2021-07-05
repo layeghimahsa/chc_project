@@ -346,7 +346,6 @@ void expansion(struct AGP_node *current){
 	//1. get the address of subgraph to expand
 	int sub_address = current->code[(7+(current->code[1]*2))];
 
-	int pre_expand_index = list_index;
 	
 	//2. calling the generate_list function using this address
 	struct AGP_node *expand_top = create_list(sub_address);
@@ -413,7 +412,6 @@ void expansion(struct AGP_node *current){
 	node_to_change->code[node_to_change->node_size - 1 - node_to_change->num_dest] +=1;
 	node_to_change->num_dest++;
 	node_to_change->node_size++;
-	
 	node_to_change->state = DONT_REFACTOR;
 	//do refactor here 
 	int dest = code_size - 1 - node_to_point->node_func - (current->code[(8+(current->code[5]*2))]/4);
@@ -422,7 +420,7 @@ void expansion(struct AGP_node *current){
 		count++; dest--;
 	}
 	dest = (node_to_point->node_size - count - 1)*4;
-	printf("\n\nDEST: %d\n\n", dest);
+	//printf("\n\nDEST: %d\n\n", dest);
 	node_to_change->code[node_to_change->node_size-1] = dest;
 
 	//CREATING INPUT VARIABLE REQUEST MESSAGE
@@ -554,7 +552,8 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 					dest = (temp->node_size - count - 1)*4;
 					//printf("DEST: %d\n", dest);
 					current->code[current->node_size-i] = dest;
-				}
+					
+				}else{current->state = 0;}
 
 			}
 
@@ -588,8 +587,6 @@ int check_dep_unscheduled(struct AGP_node *current){
 				dest = dest->next;
 			}
 		}
-		//if(dep_visited_count >= current->code[1])
-			//return 1;
 		trav = trav->next;	
 
 	}
@@ -647,7 +644,7 @@ struct AGP_node *schedule_me(int cpu_num){
 		dummy->code[4] = -1;
 		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 		return dummy;
-	} else{ //there is some unassigned nodes
+	}else{ //there is some unassigned nodes
 		if(current->code[4] == code_expansion){
 			current->assigned_cpu = 1000;
 			expansion(current);
@@ -722,8 +719,6 @@ void propagate_death(int node_num){
 			struct AGP_node *temp = trav; 
 			trav = trav->next;
 			from->next = trav; 
-
-
 			int func_size;
 			for(int i = 0; i<num_dict_entries; i++){ //get calling function dictionary info
 				if(dictionary[i][0] == temp->node_func){
@@ -738,10 +733,13 @@ void propagate_death(int node_num){
 			//printf("NTPP: %d\n",find->node_num);
 			propagate_death(find->node_num);
 			free(temp);
+
+
+			//TODO: add multiple dest support (a for loop for num_dest)
 		}else{
 			if(trav->code[4] != code_merge){
 				printf("\nREMOVING NODE %d\n",node_num);
-				refactor_destinations(trav,program_APG_node_list);
+				//refactor_destinations(trav,program_APG_node_list);
 				struct AGP_node *temp = trav; 
 				trav = trav->next;
 				from->next = trav;
@@ -754,6 +752,7 @@ void propagate_death(int node_num){
 				free(temp);
 			}else{
 				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
+				//trav->code[1]--; //reduce number of dependants to be ran
 			}
 		}
 	}
