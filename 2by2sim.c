@@ -27,7 +27,7 @@ pthread_mutex_t mem_lock;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x3,
+0x7,
 0x20,
 0xc,
 0x0,
@@ -49,140 +49,46 @@ const int code[] = {//End main:
 0x0,
 0x1,
 0x0,
-0x1dc,
+0x64,
 0x1,
 0x0,
 0x38,
-0x1b4,
-//Start main @(120):
-//End fact:
-0x7fffffff,
-0x0,
-0xfffffffc,
-0x28,
-0x1,
-0x0,
-0x3,
-0xa8,
-0xf4,
-0x124,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x28,
-0xb,
-0x2,
-0x0,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x8,
-0x2,
-0x0,
-0x0,
-0x1,
-0x19c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0x198,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x30,
-0x5,
-0x2,
-0x0,
-0x0,
-0x3,
-0x80,
-0x14c,
-0x174,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x4,
-0x2,
-0x0,
-0x0,
-0x1,
-0x148,
-0x7fffffff,
-0x1,
-0xfffffffc,
 0x24,
+//Start main @(26):
+//End func:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
 0xc,
-0x1,
-0x0,
-0x1,
-0xf0,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0xa,
-0x2,
-0x0,
-0x0,
-0x1,
-0x7c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0x14,
 0x7fffffff,
 0x0,
-0x0,
+0x7,
 0x20,
 0xc,
 0x0,
 0x1,
-0x120,
+0x8,
 0x7fffffff,
-0x0,
-0x1,
-0x24,
-0xc,
-0x0,
 0x2,
-0xa4,
-0x170,
-0x7fffffff,
-0x1,
 0xfffffffc,
-0x30,
+0x28,
+0x3,
+0x2,
+0x0,
 0x0,
 0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0xcc,
-0x1b4
-//Start fact @(0):
+0xffffffff
+//Start func @(0):
 };
-int code_size = 149;
-int main_addr = 120;
+int code_size = 55;
+int main_addr = 26;
 int main_num_nodes = 3;
-int dictionary[][3] = {{120,29,3},
-{0,120,12}
+int dictionary[][3] = {{26,29,3},
+{0,26,3}
 };
 int num_dict_entries = 2;
 //CODE END//
@@ -284,7 +190,7 @@ struct AGP_node *create_list(int start_address){
 			i++;
 		}
 		if(making->code[4] == code_if || making->code[4] == code_else)
-			making->state = 1; //alive
+			making->state = ALIVE; //alive
 
 		if(making->code[4] != code_expansion){
 		
@@ -308,12 +214,11 @@ struct AGP_node *create_list(int start_address){
 					temp->next = (struct Destination *)malloc(sizeof(struct Destination));
 					temp = temp->next;
 				}
-				//temp = NULL;
+
 				free(temp);
 				making->dest = dest;
 			}
 		}else{
-			//code expansion setup TODO
 			making->num_dest =making->code[(6+(making->code[5]*2))];
 			//printf("Num of return nodes: %d\n",making->num_dest);
 			
@@ -364,7 +269,7 @@ void expansion(struct AGP_node *current){
 	//1. get the address of subgraph to expand
 	int sub_address = current->code[(7+(current->code[1]*2))];
 
-	int pre_expand_index = list_index;
+	//int pre_expand_index = list_index;
 	
 	//2. calling the generate_list function using this address
 	struct AGP_node *expand_top = create_list(sub_address);
@@ -425,7 +330,7 @@ void expansion(struct AGP_node *current){
 	else{
 		struct Destination *temp = node_to_change->dest;
 		node_to_change->dest = dest_node;
-		dest_node->next = temp;
+		dest_node->next = temp; //its current destination goes to the end of the list
 	}
 
 	node_to_change->code[node_to_change->node_size - 1 - node_to_change->num_dest] +=1;
@@ -518,6 +423,63 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 	}
 }
 
+
+
+
+
+
+int generate_lookup_table_modified(struct Queue **Q, int row, int col){
+
+	int core_num = row * col;
+	if(core_num % 2 != 0 && core_num != 1){
+		puts("THE NUMBER OF CORES SHOULD ONLY BE EVEN OR ONE!\n");
+		return 1; //return failure
+	}
+	
+	
+	//create cpu struct 
+	struct CPU *cpus[core_num];
+	for(int i = 0; i<core_num; i++){
+		struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+		cpu_t->cpu_num = i+1;
+		cpus[i] = cpu_t;
+	}
+	
+	int top,bottom,left,right;
+	top = bottom = left = right = UNDEFINED;
+	
+	//if core_num is greater than one	
+	for(int i = 0; i<core_num; i++){
+		if(i==0){ //top left
+			right = i+1;
+			bottom = i+col;
+		}else if(i == col-1){ //top right
+			left = i-1;
+			bottom = i+col;		
+		}else if(i == (row-1)*col){ //bottom left
+			top = i-col;
+			right = i+1;
+		}else if(i == (row-1)*col + col-1){ //bottom right
+			top = i-row;
+			left = i-1;
+		}
+		
+		
+		cpus[i]->look_up[i] = Q[i];
+		(top!=UNDEFINED) ? (cpus[i]->look_up[top] = Q[top]) : (cpus[i]->look_up[top] = NULL);
+		(bottom!=UNDEFINED) ? (cpus[i]->look_up[bottom] = Q[bottom]) : (cpus[i]->look_up[bottom] = NULL);
+		(left!=UNDEFINED) ? (cpus[i]->look_up[left] = Q[left]) : (cpus[i]->look_up[left] = NULL);
+		(right!=UNDEFINED) ? (cpus[i]->look_up[right] = Q[right]) : (cpus[i]->look_up[right] = NULL);
+		
+		top = bottom = left = right = UNDEFINED;
+		
+		
+	}	
+
+}
+
+
+
  
 
 /**
@@ -574,7 +536,7 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 int check_dep_unscheduled(struct AGP_node *current){
 
 	struct AGP_node *temp = program_APG_node_list;
-	int while_breaker = 1; //0 means the destination node is
+	int while_breaker = 1; //0 means the destination node is not scheduled yet
 	int count = 0; 
 	while(temp != NULL &&  while_breaker){
 		struct Destination *dest = temp->dest;
@@ -591,7 +553,7 @@ int check_dep_unscheduled(struct AGP_node *current){
 						}else{
 							while_breaker = 0;
 						}
-					}else{
+					}else{ //if cpu is assigned and is not code_if and code_else
 						count++;
 					}
 				}
@@ -669,7 +631,8 @@ struct AGP_node *schedule_me(int cpu_num){
 				refactor_destinations(current, program_APG_node_list);
 				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				*return_node = *current;
+				//*return_node = *current;
+				return_node = current;
 				return return_node;
 			}else{ //if the node has dependables
 				
@@ -704,7 +667,8 @@ struct AGP_node *schedule_me(int cpu_num){
 				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				//return copy of node, not actual node
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				*return_node = *current;
+				//*return_node = *current;
+				return_node = current;
 				return return_node;
 				
 			}
@@ -898,11 +862,6 @@ int main(int argc, char **argv)
 	runtime_code[i] = code[i];
     }
     printf("\n\nCREATING NODE LIST\n\n");
-    //main_address is calculated as below
-    //1. main_addr + main_size = 26 + 39 = 65
-    // now, we have the end of main (65 in our example).
-    //2. since code array starts from 0 (unlike stack), therefore we must deacrese code_size from that
-    // 65-65 = 0
     
     program_APG_node_list = create_list(main_addr);
     //print_nodes(program_APG_node_list);

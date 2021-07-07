@@ -34,6 +34,7 @@
 #define RESULT 0
 #define REQUEST 1
 #define INPUT_REQUEST 2
+#define ALIVE 1
 
 struct Destination{ 
 

@@ -16,6 +16,7 @@
 
 #define NODE_BEGIN_FLAG 2147483647
 
+
 #define TEMP_A 0 //tells cpu thats its destination node hasent been assinged yet
 
   
@@ -30,12 +31,6 @@ struct Queue {
 extern pthread_mutex_t mem_lock;
 extern int cpu_assigned[4];
 extern int cpu_generated;
-
-extern struct Queue* cpu_queue1;
-extern struct Queue* cpu_queue2;
-extern struct Queue* cpu_queue3;
-extern struct Queue* cpu_queue4;
-
 
 
 int size(int addr); //determin the size of a node 
