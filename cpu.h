@@ -36,6 +36,10 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
+//enum tblr {zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen};
+typedef enum {zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen} TBLR; //e.g 7 -> 0111 means cpu has connection with all direction except for top
+
+
 struct Destination{ 
 
 	int cpu_dest;
@@ -55,6 +59,8 @@ struct CPU{
 	int cpu_num; //the actual cpu number
 
 	int local_mem[5][64]; //local variable storage
+
+	TBLR tblr;
 
 	struct Queue *look_up[4]; //lookup queue table. 
 

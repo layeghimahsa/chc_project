@@ -431,11 +431,12 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 int generate_lookup_table_modified(struct Queue **Q, int row, int col){
 
 	int core_num = row * col;
-	if(core_num % 2 != 0 && core_num != 1){
-		puts("THE NUMBER OF CORES SHOULD ONLY BE EVEN OR ONE!\n");
+	
+	if(row != col){
+		puts("THE NUMBER OF CORES SHOULD ONLY BE SYMMETRICAL!\n");
 		return 1; //return failure
 	}
-	
+
 	
 	//create cpu struct 
 	struct CPU *cpus[core_num];
@@ -445,36 +446,49 @@ int generate_lookup_table_modified(struct Queue **Q, int row, int col){
 		cpus[i] = cpu_t;
 	}
 	
-	int top,bottom,left,right;
-	top = bottom = left = right = UNDEFINED;
 	
-	//if core_num is greater than one	
-	for(int i = 0; i<core_num; i++){
-		if(i==0){ //top left
-			right = i+1;
-			bottom = i+col;
-		}else if(i == col-1){ //top right
-			left = i-1;
-			bottom = i+col;		
-		}else if(i == (row-1)*col){ //bottom left
-			top = i-col;
-			right = i+1;
-		}else if(i == (row-1)*col + col-1){ //bottom right
-			top = i-row;
-			left = i-1;
+	
+	//TODO if number of cores is 1 ...
+	
+	int number;
+	for(int i =0; i<row; i++){
+		for(int j =0; j<col; j++){
+			number = (i*col)+j;
+			if(i==0){ //first row
+				if(j==0) {cpus[number]->tblr = five; /*0101*/} //top left
+				else if(j==col-1) {cpus[number]->tblr = six; /*0110*/} //top right
+				else {cpus[number]->tblr = 7; /*0111*/}
+			
+			}else if(i == row-1){ //last right
+				if(j==0) {cpus[number]->tblr = nine; /*1001*/} //bottom left
+				else if(j==col-1) {cpus[number]->tblr = ten; /*1010*/} //bottom right
+				else {cpus[number]->tblr = eleven; /*1011*/}
+			}else if(i!=0 && i!= row-1 && j == 0){ //first col
+				cpus[number]->tblr = thirteen; /*1101*/
+			}else if(i!=0 && i!= row-1 && j == col-1){ //last col
+				cpus[number]->tblr = fourteen; //1110
+			} else {
+				cpus[number]->tblr = fifteen; //1111
+			}
+			
 		}
+	}
+	
+	
+	for(int i = 0; i<core_num; i++){
 		
+		cpus[i]->look_up[i] = Q[i]; //every cpu has access to its own queue
 		
-		cpus[i]->look_up[i] = Q[i];
-		(top!=UNDEFINED) ? (cpus[i]->look_up[top] = Q[top]) : (cpus[i]->look_up[top] = NULL);
-		(bottom!=UNDEFINED) ? (cpus[i]->look_up[bottom] = Q[bottom]) : (cpus[i]->look_up[bottom] = NULL);
-		(left!=UNDEFINED) ? (cpus[i]->look_up[left] = Q[left]) : (cpus[i]->look_up[left] = NULL);
-		(right!=UNDEFINED) ? (cpus[i]->look_up[right] = Q[right]) : (cpus[i]->look_up[right] = NULL);
-		
-		top = bottom = left = right = UNDEFINED;
-		
+		/*other connections*/
+		if( (cpus[i]->tblr &1 ) != 0) cpus[i]->look_up[i+1] = Q[i+1]; //right
+		if( (cpus[i]->tblr &2 ) != 0) cpus[i]->look_up[i-1] = Q[i-1]; //left
+		if( (cpus[i]->tblr &4 ) != 0) cpus[i]->look_up[i+col] = Q[i+col]; //bottom
+		if( (cpus[i]->tblr &8 ) != 0) cpus[i]->look_up[i-col] = Q[i-col]; //top
+				
 		
 	}	
+	
+	return 0;
 
 }
 
