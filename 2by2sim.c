@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h> 
 #include <pthread.h>
@@ -428,7 +429,9 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
 
-int generate_lookup_table_modified(struct Queue **Q, int row, int col){
+int generate_lookup_table_modified( int row, int col){
+
+	//struct Queue **Q
 
 	int core_num = row * col;
 	
@@ -451,49 +454,56 @@ int generate_lookup_table_modified(struct Queue **Q, int row, int col){
 	//TODO if number of cores is 1 ...
 	
 	int number;
-	for(int i =0; i<row; i++){
-		for(int j =0; j<col; j++){
-			number = (i*col)+j;
-			if(i==0){ //first row
-				if(j==0) {cpus[number]->tblr = five; /*0101*/} //top left
-				else if(j==col-1) {cpus[number]->tblr = six; /*0110*/} //top right
-				else {cpus[number]->tblr = 7; /*0111*/}
-			
-			}else if(i == row-1){ //last right
-				if(j==0) {cpus[number]->tblr = nine; /*1001*/} //bottom left
-				else if(j==col-1) {cpus[number]->tblr = ten; /*1010*/} //bottom right
-				else {cpus[number]->tblr = eleven; /*1011*/}
-			}else if(i!=0 && i!= row-1 && j == 0){ //first col
-				cpus[number]->tblr = thirteen; /*1101*/
-			}else if(i!=0 && i!= row-1 && j == col-1){ //last col
-				cpus[number]->tblr = fourteen; //1110
-			} else {
-				cpus[number]->tblr = fifteen; //1111
-			}
-			
+	int src,top,bottom,left,right;
+	int limit_bottom;
+	int prow,pcol; //power of row and power of col
+	prow = row*row;
+	pcol = col*col;	
+	
+	int link[prow][pcol];
+	
+	
+	//initialize link array
+	for(int i=0; i<prow; i++){
+		for(int j=0; j<pcol; j++){
+			link[i][j] = 0; //0 means no connection
 		}
 	}
 	
 	
-	for(int i = 0; i<core_num; i++){
+	//connection
+	for(int i=0; i<core_num; i++){
+	
+		src = i;
+		top = i-col;
+		bottom = i+col;
+		left = i-1;
+		right = i+1;
 		
-		cpus[i]->look_up[i] = Q[i]; //every cpu has access to its own queue
+		if(top >= 0) link[src][top] = 1;
+		if(bottom < row*col) link[src][bottom] = 1;
+		if((left%col != col-1)) link[src][left] = 1;
+		if(right%col != 0) link[src][right] = 1;
+	
+	}
+	
+	
 		
-		/*other connections*/
-		if( (cpus[i]->tblr &1 ) != 0) cpus[i]->look_up[i+1] = Q[i+1]; //right
-		if( (cpus[i]->tblr &2 ) != 0) cpus[i]->look_up[i-1] = Q[i-1]; //left
-		if( (cpus[i]->tblr &4 ) != 0) cpus[i]->look_up[i+col] = Q[i+col]; //bottom
-		if( (cpus[i]->tblr &8 ) != 0) cpus[i]->look_up[i-col] = Q[i-col]; //top
-				
-		
-	}	
+	
+	for(int i=0; i<prow; i++){
+		for(int j=0; j<pcol; j++){
+			printf("\t %d",link[i][j]);
+		}
+		puts("\n");
+	}
+	
 	
 	return 0;
 
 }
 
 
-
+  
  
 
 /**
@@ -835,6 +845,8 @@ int main(int argc, char **argv)
 	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
 	return 1;
     }
+    
+    generate_lookup_table_modified(4,4);
     
     printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
 
