@@ -15,8 +15,7 @@
 #define DUMMY_NODE -5
 
 #define NODE_BEGIN_FLAG 2147483647
-#define INFINITY 9999
-#define MAX 100
+#define INT_MAX 2147483647
 
 #define TEMP_A 0 //tells cpu thats its destination node hasent been assinged yet
 

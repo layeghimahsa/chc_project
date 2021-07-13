@@ -428,8 +428,7 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
 
-
-int generate_lookup_table_modified( int row, int col){
+int** generate_lookup_table_modified (int row, int col){
 
 	//struct Queue **Q
 
@@ -437,7 +436,7 @@ int generate_lookup_table_modified( int row, int col){
 	
 	if(row != col){
 		puts("THE NUMBER OF CORES SHOULD ONLY BE SYMMETRICAL!\n");
-		return 1; //return failure
+		return NULL; //return failure
 	}
 
 	
@@ -460,11 +459,12 @@ int generate_lookup_table_modified( int row, int col){
 	prow = row*row;
 	pcol = col*col;	
 	
-	int link[prow][pcol];
-	
+	int** link =(int **)malloc(pcol * sizeof(int *));
+	//int link[prow][pcol];
 	
 	//initialize link array
 	for(int i=0; i<prow; i++){
+		link[i] = (int *)malloc(prow * sizeof(int));
 		for(int j=0; j<pcol; j++){
 			link[i][j] = 0; //0 means no connection
 		}
@@ -487,23 +487,183 @@ int generate_lookup_table_modified( int row, int col){
 	
 	}
 	
+
 	
-		
-	
-	for(int i=0; i<prow; i++){
+	/*for(int i=0; i<prow; i++){
 		for(int j=0; j<pcol; j++){
 			printf("\t %d",link[i][j]);
 		}
 		puts("\n");
-	}
+	}*/
 	
 	
-	return 0;
+	return link;
 
 }
 
 
   
+ 
+  
+int minDistance(int dist[], bool visited[], int core_num)
+{
+    int min = INT_MAX;
+    int min_index;
+  
+    for (int v = 0; v < core_num ; v++){
+        if (visited[v] == false && dist[v] <= min){
+            min = dist[v];
+            min_index = v;
+          }
+    }
+  
+    return min_index;
+}
+
+
+int printPath(int path[], int j)
+{
+       
+    // Base Case : If j is source
+    if (path[j] == -1)
+        return -1;
+   
+    printPath(path, path[j]);
+   
+    //if(path[j] == 0)
+    	printf("%d ", j);
+}
+
+
+
+int get_first_in_path(int path[], int j)
+{
+
+     int previous_j;
+   
+     previous_j = j;
+     
+     while(path[j] != -1){
+        previous_j = j;
+     	j = path[j];
+     
+     }
+     
+     return previous_j;      
+
+}
+
+  
+  
+void printSolution(int path[], int core_num)
+{
+    for (int i = 0; i < core_num; i++){
+    	//printf("%d ",get_first_in_path(path, i));
+        printPath(path, i);
+        
+        puts("\n");
+    }
+}
+
+
+  
+// Function that implements Dijkstra's single source visited path algorithm
+// for a graph represented using adjacency matrix representation
+void dijkstra(int src, int core_num, int **graph)
+{
+    int dist[core_num]; //holds the shortest distance from src to i
+  
+    bool visited[core_num]; // visited[i] is true if vertex i is included in shortest path tree or shortest distance from src to i is finalized
+    int path[core_num];
+    //int* first_node = (int *)malloc(core_num * sizeof(int));
+  
+    // Initialize all distances as INFINITE and visited[] as false
+    for (int i = 0; i < core_num; i++){
+    	path[0] = -1;
+        dist[i] = INT_MAX;
+        visited[i] = false;
+    }
+  
+    dist[src] = 0;
+  
+    // Find shortest path for all vertices
+    for (int count = 0; count < core_num - 1; count++) {
+        
+        int u = minDistance(dist, visited, core_num); //Pick the minimum distance vertex from the set of vertices
+  
+        visited[u] = true; // Mark the picked vertex as processed
+  
+        // Update dist value of the adjacent vertices of the picked vertex.
+        for (int v = 0; v < core_num; v++){
+            if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]){
+                 dist[v] = dist[u] + graph[u][v];
+                 path[v] = u;
+            }
+        }
+    }
+    
+    
+    // print the constructed distance array
+    printSolution(path, core_num);
+
+   
+}
+
+
+void find_first_queue_dest(int core_num, int **graph){
+
+	int* out =(int *)malloc(core_num * sizeof(int));
+
+	
+	//out = dijkstra(1, core_num, graph);
+
+
+	for(int i=0; i<core_num; i++){
+		printf("%d ",out[i]);
+	}
+	
+	
+	int** result =(int **)malloc(core_num * sizeof(int *));
+
+	for(int i=0; i<core_num; i++){
+	
+		result[i] = (int *)malloc(core_num * sizeof(int));
+		//out = dijkstra(i, core_num, graph);
+		
+		for(int j=0; j<core_num; j++){
+		
+			result[i][j] = out[j];
+		}
+
+	}
+
+	
+	
+	return;
+
+}
+  
+  
+// driver program to test above function
+/*int main()
+{
+    /* Let us create the example graph discussed above 
+    int graph[V][V] = { { 0, 4, 0, 0, 0, 0, 0, 8, 0 },
+                        { 4, 0, 8, 0, 0, 0, 0, 11, 0 },
+                        { 0, 8, 0, 7, 0, 4, 0, 0, 2 },
+                        { 0, 0, 7, 0, 9, 14, 0, 0, 0 },
+                        { 0, 0, 0, 9, 0, 10, 0, 0, 0 },
+                        { 0, 0, 4, 14, 10, 0, 2, 0, 0 },
+                        { 0, 0, 0, 0, 0, 2, 0, 1, 6 },
+                        { 8, 11, 0, 0, 0, 0, 1, 0, 7 },
+                        { 0, 0, 2, 0, 0, 0, 6, 7, 0 } };
+  
+    dijkstra(graph, 0);
+  
+    return 0;
+}*/
+
+
  
 
 /**
@@ -846,7 +1006,12 @@ int main(int argc, char **argv)
 	return 1;
     }
     
-    generate_lookup_table_modified(4,4);
+    int **queue_links_arr;
+    
+    queue_links_arr = generate_lookup_table_modified(4,4);
+    //find_first_queue_dest(16,queue_links_arr);
+    dijkstra(0, 16, queue_links_arr);
+    
     
     printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
 

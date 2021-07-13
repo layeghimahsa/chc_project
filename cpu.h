@@ -36,7 +36,6 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-//enum tblr {zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen};
 typedef enum {zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen} TBLR; //e.g 7 -> 0111 means cpu has connection with all direction except for top
 
 
@@ -95,7 +94,6 @@ struct Message_capsul{
 
 	struct Message_capsul *next;
 };
-
 
 
 void *CPU_start();
