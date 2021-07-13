@@ -456,8 +456,6 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 int** generate_adjacency_matrix (int row, int col){
 
-	//struct Queue **Q
-
 	int core_num = row * col;
 	
 	if(row != col){
@@ -1010,6 +1008,9 @@ int main(int argc, char **argv)
     int **adj_mtrx;
     int **queue_links_arr;
     
+    
+    //TODO specifi case for cpu_num == 1, should ask
+    //This should happen for NUM_CPU > 1
     adj_mtrx = generate_adjacency_matrix(row_col,row_col);
     queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
     free(adj_mtrx);
