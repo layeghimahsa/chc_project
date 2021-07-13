@@ -537,21 +537,6 @@ int minDistance(int dist[], bool visited[], int core_num)
 }
 
 
-int printPath(int path[], int j)
-{
-       
-    // Base Case : If j is source
-    if (path[j] == -1)
-        return -1;
-   
-    printPath(path, path[j]);
-   
-    //if(path[j] == 0)
-    	printf("%d ", j);
-}
-
-
-
 int get_first_in_path(int path[], int j)
 {
 
@@ -569,17 +554,6 @@ int get_first_in_path(int path[], int j)
 
 }
 
-  
-  
-void printSolution(int path[], int core_num)
-{
-    for (int i = 0; i < core_num; i++){
-    	//printf("%d ",get_first_in_path(path, i));
-        printPath(path, i);
-        
-        puts("\n");
-    }
-}
 
 int* dijkstra(int src, int core_num, int **graph)
 {
@@ -633,8 +607,6 @@ int* dijkstra(int src, int core_num, int **graph)
   
   
     return first_node;
-    // print the constructed distance array
-    //printSolution(path, core_num);
 
    
 }
@@ -644,15 +616,6 @@ int* dijkstra(int src, int core_num, int **graph)
 int** find_first_queue_dest(int core_num, int **graph){
 
 	int* out =(int *)malloc(core_num * sizeof(int));
-
-	
-	//out = dijkstra(1, core_num, graph);
-
-
-	/*for(int i=0; i<core_num; i++){
-		printf("%d ",out[i]);
-	}*/
-	
 	
 	int** result =(int **)malloc(core_num * sizeof(int *));
 
@@ -670,7 +633,7 @@ int** find_first_queue_dest(int core_num, int **graph){
 	free(out);
 	
 	
-	for(int i=0; i<core_num; i++){
+	/*for(int i=0; i<core_num; i++){
 		
 		for(int j=0; j<core_num; j++){
 		
@@ -679,7 +642,7 @@ int** find_first_queue_dest(int core_num, int **graph){
 		
 		puts("\n");
 
-	}
+	}*/
 	
 	
 	return result;
@@ -1028,18 +991,34 @@ int main(int argc, char **argv)
 	return 1;
     }
     
+    int row_col = UNDEFINED;
+    
+    for (int i = 1; i * i <= NUM_CPU; i++) {
+ 
+        // if (i * i = n)
+        if ((NUM_CPU % i == 0) && (NUM_CPU / i == i)) {
+            row_col = i;
+        }
+    }
+    
+    if(row_col == UNDEFINED){
+    	printf("Only N*N cpu structure is supported! \n");
+	return 1;
+    }
+    
+ 
     int **adj_mtrx;
     int **queue_links_arr;
     
-    adj_mtrx = generate_adjacency_matrix(4,4);
-    queue_links_arr = find_first_queue_dest(16,adj_mtrx);
+    adj_mtrx = generate_adjacency_matrix(row_col,row_col);
+    queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
     free(adj_mtrx);
     
     
     //dijkstra(2, 16, queue_links_arr);
     
     
-    printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
+    printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
 
 
     printf("\n\nSETTING UP ENVIRONMENT\n\n"); 
@@ -1068,28 +1047,25 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
 	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
         cpu_t->cpu_num = i+1;
-	generate_lookup_table(cpu_t, cpu_queues);
+	//generate_lookup_table(cpu_t, cpu_queues);
 	cpus[i] = cpu_t;
     }
     
     
     //initializing cpu queue connections
-    for(int i = 0; i<16; i++){
-	for(int j = 0; j<16; j++){
+    for(int i = 0; i<NUM_CPU; i++){
+	for(int j = 0; j<NUM_CPU; j++){
 		int queue_index = queue_links_arr[i][j];	
-		printf("%d ",queue_index);	
-		//cpus[i]->look_up[j] = cpu_queues[queue_index];
+		//printf("%d ",queue_index);	
+		cpus[i]->look_up[j] = cpu_queues[queue_index];
 	}
 	
-	puts("\n");
+	//puts("\n");
     }
     
     /*free allocated memory, avoiding memory leak*/
     free(queue_links_arr);
-    
-    
-    //struct CPU *cpus[NUM_CPU];
-    //cpus = generate_lookup_table_modified(cpu_queues, queue_links_arr, 16);
+
 
     //TODO: copy static code array into a new array that can be modified 
     runtime_code = (int *)malloc(sizeof(int) *code_size);
