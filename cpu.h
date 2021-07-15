@@ -16,8 +16,8 @@
 #define	code_is_equal	5
 #define	code_is_less	6
 #define code_is_greater	7
-#define	code_if			8 
-#define code_else		9 
+#define	code_if			8
+#define code_else		9
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
@@ -32,13 +32,13 @@
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
 
-#define LOCAL_STORAGE_SIZE 64
+#define LS_SIZE 64 //local storage size
 
 #define RESULT 0
 #define REQUEST 1
 #define INPUT_REQUEST 2
 
-struct Destination{ 
+struct Destination{
 
 	int cpu_dest;
 	int node_dest;
@@ -46,9 +46,9 @@ struct Destination{
 	struct Destination *next;
 };
 
-struct Dependables{ //this is a list of all variable a cpu must call upon to get their variable 
-	int node_needed; //this is technically the variable name 
-	int cpu_num;  //cpu the request must be sent to 
+struct Dependables{ //this is a list of all variable a cpu must call upon to get their variable
+	int node_needed; //this is technically the variable name
+	int cpu_num;  //cpu the request must be sent to
 	int key; //needed if its a node requesting for a node that isnt technically ment for it (used for inputs of expansions)
 	struct Dependables *next;
 };
@@ -56,11 +56,11 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 struct CPU{
 	int cpu_num; //the actual cpu number
 
-	int local_mem[5][64]; //local variable storage
+	int local_mem[5][LS_SIZE]; //local variable storage
 
-	struct Queue *look_up[4]; //lookup queue table. 
+	struct Queue *look_up[4]; //lookup queue table.
 
-	struct AGP_node *node_to_execute; //the node that needs to be executed 
+	struct AGP_node *node_to_execute; //the node that needs to be executed
 
 };
 
@@ -71,10 +71,10 @@ struct AGP_node{
 	int node_size; //actual the size of stack/code
 	int code_address; //original code address
 	int node_num; //current node number
-	
+
 	int num_dest; //number of node's destinations
-	int state; //alive or dead if else statements 
-	int node_func; //sub graph its from 
+	int state; //alive or dead if else statements
+	int node_func; //sub graph its from
 
 	struct Destination *dest; 	//destination cpu
 	struct Dependables *depend; //list of all cpu that contain your dependables and need var request
@@ -84,8 +84,8 @@ struct AGP_node{
 
 struct Message_capsul{
 	int value;
-	int dest; // cpu destination 
-	int addr; 
+	int dest; // cpu destination
+	int addr;
 	int node_num; //variable name!
 	int message_type; //result, request...
 
