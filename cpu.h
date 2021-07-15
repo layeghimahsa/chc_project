@@ -27,6 +27,7 @@
 //Dead operator: remove it
 #define ALIVE		1
 #define DEAD 		0xFFFFFFFF
+#define DONE    2
 #define REFACTOR	-3
 #define DONT_REFACTOR   -2
 //Can process corresponding operation and send result to destinations (all arguments resolved)

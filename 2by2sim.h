@@ -52,5 +52,6 @@ struct Queue* createQueue();
 void enQueue(struct Queue* q, struct Message_capsul *out);
 struct Message_capsul* deQueue(struct Queue* q);
 void nodes_never_ran();
+void print_node_short();
 
 #endif

@@ -530,7 +530,7 @@ void expansion(struct AGP_node *current){
 	//1. get the address of subgraph to expand
 	int sub_address = current->code[(7+(current->code[1]*2))];
 
-
+	current->state = DEAD;
 	//2. calling the generate_list function using this address
 	struct AGP_node *expand_top = create_list(sub_address);
 	if(expand_top == NULL){
@@ -543,7 +543,17 @@ void expansion(struct AGP_node *current){
 	while(traverse->next != NULL){traverse = traverse->next;}
 	traverse->next = program_APG_node_list;
 	program_APG_node_list = expand_top;
-	traverse = traverse->next; //now points to old top of list (usefull for refactoring)
+
+
+	//traverse = traverse->next; //now points to old top of list (usefull for refactoring)
+
+	//must find "current" node scope to properly link things
+	struct AGP_node *t = traverse;
+	while(t->node_num != current->node_num){
+		if(t->node_num < traverse->node_num){traverse = t;}
+		t = t->next;
+	}
+
 	//4. refactor the given expansion
 
 
@@ -574,7 +584,7 @@ void expansion(struct AGP_node *current){
 		node_to_point = traverse;
 
 		//calculate node offset from called function      //9 + number of inputs * 2 (input size) + output num * 3 (output size)
-		int ntc= find_num_node(sub_code_pos, (sub_address*4+current->code[(9+(current->code[5]*2)+(i*3))]));
+		int ntc = find_num_node(sub_code_pos, (sub_address*4+current->code[(9+(current->code[5]*2)+(i*3))]));
 		//calculate node offset from calling function
 		ntp = find_num_node(main_code_pos, (current->node_func*4+current->code[(8+(current->code[5]*2)+(i*3))]));
 
@@ -583,8 +593,8 @@ void expansion(struct AGP_node *current){
 		for(ntc; ntc>1; ntc--){node_to_change = node_to_change->next;}
 		for(ntp; ntp>1; ntp--){node_to_point = node_to_point->next;}
 
-		//printf("NTC: %d\n",node_to_change->node_num);
-		//printf("\n\nNTP: %d\n\n",node_to_point->node_num);
+		printf("NTC: %d\n",node_to_change->node_num);
+		printf("NTP: %d\n\n",node_to_point->node_num);
 
 		//create destination node
 		struct Destination *dest_node = (struct Destination *)malloc(sizeof(struct Destination));
@@ -653,7 +663,7 @@ void expansion(struct AGP_node *current){
 		requ_node->depend->key = current->node_num;
 		requ_node->depend->node_needed = input_node->node_num;
 		requ_node->depend->cpu_num = input_node->assigned_cpu;
-		//printf("node_num %d\n\n", input_node->node_num);
+		printf("node %d will request %d\n\n", requ_node->node_num,input_node->node_num);
 		input_node = input_node->next;
 		num_args--;
 		requ_node->code[1]++;
@@ -914,65 +924,63 @@ struct AGP_node *schedule_me(int cpu_num){
 
 void propagate_death(int node_num){
 	struct AGP_node *trav = program_APG_node_list;
-	struct AGP_node *from;
+	struct AGP_node *scope = program_APG_node_list;
 
-	while(trav->next != NULL && trav->next->node_num != node_num){trav = trav->next;}
+	while(trav->node_num != node_num){trav = trav->next;}
 
-	if(trav->next == NULL && trav->node_num != node_num){
-		printf("\n\nFAILED TO FIND NODE TO REMOVE: %d\n\n", node_num);
+	struct AGP_node *t = scope;
+	while(t->node_num != node_num){
+		if(t->node_num < scope->node_num){scope = t;}
+		t = t->next;
+	}
+
+	if(trav->code[4] == code_expansion){
+
+		printf("\nREMOVING EXPANSION NODE %d\n",node_num);
+		trav->state = DEAD;
+		int func_size;
+		for(int i = 0; i<num_dict_entries; i++){ //get calling function dictionary info
+			if(dictionary[i][0] == trav->node_func){
+				func_size = dictionary[i][1];
+			}
+		}
+		int main_code_pos = code_size - trav->node_func - func_size;
+
+
+		for(int i = 0; i<trav->num_dest; i++){
+			//calculate node offset from calling function
+			int ntp = find_num_node(main_code_pos, (trav->node_func*4+trav->code[(9+(trav->code[5]*2)+(i*3))]));
+
+			struct AGP_node *find = scope;
+
+			for(ntp; ntp>1; ntp--){find = find->next;}
+			//printf("NTPP: %d\n",find->node_num);
+			propagate_death(find->node_num);
+
+			//mark the output link as dead so the program can continue 
+			ntp = find_num_node(main_code_pos, (trav->node_func*4+trav->code[(8+(trav->code[5]*2)+(i*3))]));
+			find = scope;
+			for(ntp; ntp>1; ntp--){find = find->next;}
+			printf("\nNODE %d MARKED AS DEAD %d\n\n", find->node_num, find->state);
+			find->state = DEAD;
+			//free(temp);*/
+		}
+
+
 	}else{
-
-		from = trav; trav = trav->next;
-		if(trav->code[4] == code_expansion){
-
-			//TODO: add multiple dest support (a for loop for num_dest)
-			printf("\nREMOVING EXPANSION NODE %d\n",node_num);
-			struct AGP_node *temp = trav;
-			temp->state = DEAD;
-			//trav = trav->next;
-			//from->next = trav;
-			int func_size;
-			for(int i = 0; i<num_dict_entries; i++){ //get calling function dictionary info
-				if(dictionary[i][0] == temp->node_func){
-					func_size = dictionary[i][1];
-				}
+		if(trav->code[4] != code_merge){
+			printf("\nREMOVING NODE %d\n",node_num);
+			//refactor_destinations(trav,program_APG_node_list);
+			trav->state = DEAD;
+			struct Destination *dest = trav->dest;
+			for(int i=trav->num_dest; i>0; i--){
+				if(dest->node_dest != -99)
+					propagate_death(dest->node_dest);
+				dest = dest->next;
 			}
-			int main_code_pos = code_size - temp->node_func - func_size;
-
-
-			for(int i = 0; i<temp->num_dest; i++){
-				//calculate node offset from calling function
-				int ntp = find_num_node(main_code_pos, (temp->node_func*4+temp->code[(9+(temp->code[5]*2)+(i*3))]));
-				struct AGP_node *find = program_APG_node_list;
-				for(ntp; ntp>1; ntp--){find = find->next;}
-				//printf("NTPP: %d\n",find->node_num);
-				propagate_death(find->node_num);
-
-
-				ntp = find_num_node(main_code_pos, (temp->node_func*4+temp->code[(8+(temp->code[5]*2)+(i*3))]));
-				find = program_APG_node_list;
-				for(ntp; ntp>1; ntp--){find = find->next;}
-				printf("\nNODE %d MARKED AS DEAD %d\n\n", find->node_num, find->state);
-				find->state = DEAD;
-				//free(temp);*/
-			}
-
-
+			//free(temp);
 		}else{
-			if(trav->code[4] != code_merge){
-				printf("\nREMOVING NODE %d\n",node_num);
-				//refactor_destinations(trav,program_APG_node_list);
-				trav->state = DEAD;
-				struct Destination *dest = trav->dest;
-				for(int i=trav->num_dest; i>0; i--){
-					if(dest->node_dest != -99)
-						propagate_death(dest->node_dest);
-					dest = dest->next;
-				}
-				//free(temp);
-			}else{
-				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
-			}
+			printf("\nCANT REMOV MERGE NODE %d\n",node_num);
 		}
 	}
 }
@@ -1009,7 +1017,7 @@ void nodes_never_ran(){
 		if(trav->assigned_cpu == UNDEFINED){
 
 				if(trav->state == DEAD)
-					printf("DEAD --  ");
+					printf("DEAD  -- ");
 				else
 					printf("ALIVE -- ");
 
@@ -1029,6 +1037,36 @@ void nodes_never_ran(){
 				}
 				printf("\n");
 		}
+		trav = trav->next;
+	}
+}
+
+void print_node_short(){
+	struct AGP_node *trav = program_APG_node_list;
+	while(trav != NULL){
+
+
+		if(trav->state == DEAD)
+			printf("DEAD  -- ");
+		else
+			printf("ALIVE -- ");
+
+
+		printf("%d",trav->node_num);
+
+		if(trav->code[4] == code_expansion){
+			printf(" EXPANSION");
+		}else{
+			if(trav->num_dest>0){
+				printf(" -> DEST:");
+				struct Destination *dest = trav->dest;
+				for(int i=trav->num_dest; i>0; i--){
+						printf(" %d",dest->node_dest);
+						dest = dest->next;
+				}
+			}
+		}
+		printf("\n");
 		trav = trav->next;
 	}
 }
@@ -1211,15 +1249,20 @@ int main(int argc, char **argv)
 
     pthread_mutex_destroy(&mem_lock);
 
-    //print_nodes(program_APG_node_list);
+
 /*    puts("\nPRINTING CODE ARRAY\n"); // want to check if result 14 is written to memory (code array)
     for(int i = 0; i<code_size; i++){
 	printf("code[%d]: %d\n", i ,runtime_code[i]);
     }
   */
 		printf("\n\n***SIMULATION COMPLETE***\n\n");
+		//print_nodes(program_APG_node_list);
+
     printf("%d AGP nodes created\n\n",list_index-1);
-		printf("Un-ran node list\n");
+
+		print_node_short();
+
+		printf("\n\nUn-ran node list\n");
 		nodes_never_ran();
 
 

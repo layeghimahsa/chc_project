@@ -64,7 +64,7 @@ void *CPU_start(struct CPU *cpu){
 			}
 			printf("\n\nFAILED TO FIND VAR %d FROM LOCAL MEM!!!!\n\n",dep->node_needed);
 			for(int i = 0; i < LS_SIZE; i++){
-				printf("[%d] : [%d][-][%d][%d]\n",i,cpu->local_mem[0][i],cpu->local_mem[2][i],cpu->local_mem[3][i]);
+				printf("[%d] : [%d][-][%d][%d][%d]\n",i,cpu->local_mem[0][i],cpu->local_mem[2][i],cpu->local_mem[3][i],cpu->local_mem[4][i]);
 			}
 			exit(0); //for now exit but later it should have a work around (mayber request missing var node)
 		}else{
@@ -310,11 +310,10 @@ void *CPU_start(struct CPU *cpu){
 				if(stored == 0){
 					int oldest = 0;
 					for(int i = 0; i<LS_SIZE; i++){
-						if(cpu->local_mem[4][i] > cpu->local_mem[4][oldest])
-							oldest = i;
+						if(cpu->local_mem[4][i] > cpu->local_mem[4][oldest]){oldest = i;}
 					}
 					if(cpu->local_mem[4][oldest] != 0){
-						printf("CPU %d EVICTING %d AND STORING NODE %d FOR NODE %d TO MEM!!\n",cpu->local_mem[0][i], cpu_num,NTE->node_num,output->node_num);
+						printf("CPU %d EVICTING %d AND STORING NODE %d FOR NODE %d TO MEM!!\n",cpu_num, cpu->local_mem[0][i], NTE->node_num,output->node_num);
 						cpu->local_mem[0][i] = NTE->node_num;
 						cpu->local_mem[1][i] = output->addr;
 						cpu->local_mem[2][i] = output->value;
@@ -340,6 +339,10 @@ void *CPU_start(struct CPU *cpu){
 			dest = dest->next;
 		}
 
+		pthread_mutex_lock(&mem_lock);
+		mark_as_dead(NTE->node_num);
+		pthread_mutex_unlock(&mem_lock);
+		
 		//request a new task
 		printf("CPU %d has requested a new task\n",cpu_num);
 
