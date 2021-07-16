@@ -34,7 +34,7 @@ extern struct Queue* cpu_queue2;
 extern struct Queue* cpu_queue3;
 extern struct Queue* cpu_queue4;
 
-
+extern int MESSAGE;
 
 int size(int addr); //determin the size of a node
 int find_dest_node(int end); //fid a given nodes destination node in list (used to help scheduling)

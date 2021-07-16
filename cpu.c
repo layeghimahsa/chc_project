@@ -13,7 +13,9 @@ void *CPU_start(struct CPU *cpu){
 	pthread_mutex_lock(&mem_lock);
 	int cpu_num = cpu->cpu_num;
 	pthread_mutex_unlock(&mem_lock);
-	printf("CPU %d 	START!!\n",cpu_num);
+
+	if(MESSAGE == 1)
+		printf("CPU %d 	START!!\n",cpu_num);
 
 	for(int i = 0; i<LS_SIZE; i++){
 		cpu->local_mem[0][i] = UNDEFINED;
@@ -28,7 +30,8 @@ void *CPU_start(struct CPU *cpu){
 
 	struct AGP_node *NTE = cpu->node_to_execute;
 
-	printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
+	if(MESSAGE == 1)
+		printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
 
 	//check if there are requests to make, and if yes make em
 	struct Dependables *dep = NTE->depend;
@@ -38,11 +41,13 @@ void *CPU_start(struct CPU *cpu){
 	while(dep != NULL){ //should be null if no requests to make
 
 		if(dep->cpu_num==UNDEFINED){
-			printf("\n\nDEPENDABLE NODE %d CPU UNDEFINED\n\n",dep->node_needed);
+			if(MESSAGE == 1)
+				printf("\n\nDEPENDABLE NODE %d CPU UNDEFINED\n\n",dep->node_needed);
 			NTE->code[1]-= 1;
 		}else if(dep->cpu_num==UNKNOWN){NTE->code[1]-= 1;
 		}else if(dep->cpu_num == cpu_num){ //fetch from your own cache!!
-			printf("CPU %d fetching variable %d from local mem\n",cpu_num,dep->node_needed);
+			if(MESSAGE == 1)
+				printf("CPU %d fetching variable %d from local mem\n",cpu_num,dep->node_needed);
 			for(int i = 0; i<LS_SIZE; i++){
 				if(cpu->local_mem[0][i] == dep->node_needed){
 					if(cpu->local_mem[3][i] == NTE->node_num || cpu->local_mem[3][i] == dep->key){
@@ -51,25 +56,29 @@ void *CPU_start(struct CPU *cpu){
 							cpu->local_mem[4][i]+=1;
 							NTE->code[1]-= 1;
 							NTE->code[4] = code_identity;
+							cpu->local_mem[0][i] = UNDEFINED; //remove val
 							goto NEXT;
 						}else{
 							int addr = NTE->node_size - (cpu->local_mem[1][i]/4) - 1;
 							NTE->code[addr] =  cpu->local_mem[2][i];
 							cpu->local_mem[4][i]+=1;
 							NTE->code[1]-= 1; //7. decrese the number of dependent
+							cpu->local_mem[0][i] = UNDEFINED; //remove val
 							goto NEXT;
 						}
 					}
 				}
 			}
-			printf("\n\nFAILED TO FIND VAR %d FROM LOCAL MEM!!!!\n\n",dep->node_needed);
+			printf("\n\nCPU %d FAILED TO FIND VAR %d FOR %d (or %d) FROM LOCAL MEM!!!!\n\n",cpu_num,dep->node_needed,NTE->node_num,var_access_key);
 			for(int i = 0; i < LS_SIZE; i++){
 				printf("[%d] : [%d][-][%d][%d][%d]\n",i,cpu->local_mem[0][i],cpu->local_mem[2][i],cpu->local_mem[3][i],cpu->local_mem[4][i]);
 			}
 			exit(0); //for now exit but later it should have a work around (mayber request missing var node)
 		}else{
-			printf("CPU %d sending variable request to CPU %d",cpu_num, dep->cpu_num);
-			printf(" FOR NODE %d\n",dep->node_needed);
+			if(MESSAGE == 1){
+				printf("CPU %d sending variable request to CPU %d",cpu_num, dep->cpu_num);
+				printf(" FOR NODE %d\n",dep->node_needed);
+			}
 			struct Message_capsul *request = (struct Message_capsul *)malloc(sizeof(struct Message_capsul));
 
 			request->value = cpu_num; //cpu num to send reult back to (its self)
@@ -136,7 +145,8 @@ void *CPU_start(struct CPU *cpu){
 					}else{
 						struct Message_capsul *output = (struct Message_capsul *)malloc(sizeof(struct Message_capsul));
 						int found = 0;
-						printf("CPU %d LOOKING FOR NODE %d FOR NODE %d REQUEST\n",cpu_num,message->addr,message->node_num);
+						if(MESSAGE == 1)
+							printf("CPU %d LOOKING FOR NODE %d FOR NODE %d REQUEST\n",cpu_num,message->addr,message->node_num);
 						//printf(" - value: %d\n - addr: %d\n - dest: %d\n - node_num: %d\n",message->value,message->addr,message->dest,message->node_num);
 						for(int i = 0; i<LS_SIZE; i++){
 							if(cpu->local_mem[0][i] == message->addr && cpu->local_mem[3][i] == message->node_num){
@@ -145,7 +155,7 @@ void *CPU_start(struct CPU *cpu){
 								output->addr = cpu->local_mem[1][i];
 								output->node_num = message->node_num;
 								output->message_type = RESULT;
-								//cpu->local_mem[0][i] = UNDEFINED; //remove val
+								cpu->local_mem[0][i] = UNDEFINED; //remove val
 								cpu->local_mem[4][i]+=1;
 								found = 1;
 								break;
@@ -156,12 +166,13 @@ void *CPU_start(struct CPU *cpu){
 							//pthread_mutex_lock(&mem_lock);
 							enQueue(cpu->look_up[message->value-1], output);
 							//pthread_mutex_unlock(&mem_lock);
-							printf("CPU %d seding requested var to CPU %d\n",cpu_num,output->dest);
+							if(MESSAGE == 1)
+								printf("CPU %d seding requested var to CPU %d\n",cpu_num,output->dest);
 						}else{
 							//pthread_mutex_lock(&mem_lock);
 							enQueue(cpu->look_up[cpu_num-1], message);
 							//pthread_mutex_unlock(&mem_lock);
-							printf("CPU %d didn't find requested var from CPU %d\n",cpu_num,message->value);
+							printf("\n\nCPU %d FAILED TO FIND REQUESTED VAR %d FOR %d FROM LOCAL MEM!!!!\n\n",cpu_num,message->addr,NTE->node_num);
 							for(int i = 0; i < 10; i++){
 								printf("[%d] : [%d][-][%d][%d][%d]\n",i,cpu->local_mem[0][i],cpu->local_mem[2][i],cpu->local_mem[3][i],cpu->local_mem[4][i]);
 							}
@@ -178,13 +189,16 @@ void *CPU_start(struct CPU *cpu){
 						NTE->code[2] = message->value;
 						NTE->code[4] = code_identity;
 						NTE->code[1]-= 1; //7. decrese the number of dependents
-						printf("CPU %d dependents: %d\n",cpu_num, NTE->code[1]); //printing the updated dependents number
+						if(MESSAGE == 1)
+							printf("CPU %d dependents: %d\n",cpu_num, NTE->code[1]); //printing the updated dependents number
 					}else{
 						int addr = NTE->node_size - (message->addr/4) - 1;
-						printf("CPU %d writing to addr %d\n",cpu_num, message->addr);
+						if(MESSAGE == 1)
+							printf("CPU %d writing to addr %d\n",cpu_num, message->addr);
 						NTE->code[addr] = message->value;
 						NTE->code[1]-= 1; //7. decrese the number of dependents
-						printf("CPU %d dependents: %d\n",cpu_num, NTE->code[1]); //printing the updated dependents number
+						if(MESSAGE == 1)
+							printf("CPU %d dependents: %d\n",cpu_num, NTE->code[1]); //printing the updated dependents number
 					}
 				}
 			}
@@ -195,7 +209,8 @@ void *CPU_start(struct CPU *cpu){
 
 		count+=1;
 		if(count == 150 && NTE->code[4] == -1){
-			printf("CPU %d has requested a new task\n",cpu_num);
+			if(MESSAGE == 1)
+				printf("CPU %d has requested a new task\n",cpu_num);
 			pthread_mutex_lock(&mem_lock);
 			cpu->node_to_execute = schedule_me(cpu_num);
 			pthread_mutex_unlock(&mem_lock);
@@ -255,7 +270,7 @@ void *CPU_start(struct CPU *cpu){
 		//TODO: Fix merge so it has a single argument
 		case code_merge:
 				NTE->code[2] = (NTE->code[6] | NTE->code[7]);
-				printf("CPU %d MERGE %d & %d = %d\n",cpu_num,NTE->code[6],NTE->code[7],NTE->code[2]);
+				//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,NTE->code[6],NTE->code[7],NTE->code[2]);
 				break;
 		case code_identity:		if(NTE->code[2] == NAV){NTE->code[2] = NTE->code[6];}break;
 		default:
@@ -264,8 +279,8 @@ void *CPU_start(struct CPU *cpu){
 			sleep(10);
 		}
 	}
-
-		 printf("CPU %d: %d NODE RESULT: %d\n",cpu_num,NTE->node_num,NTE->code[2]);
+		if(MESSAGE == 1)
+			printf("CPU %d: %d NODE RESULT: %d\n",cpu_num,NTE->node_num,NTE->code[2]);
 		  /*******************/
 		 /***** OUTPUT ******/
 		/*******************/
@@ -285,7 +300,8 @@ void *CPU_start(struct CPU *cpu){
 
 			//not has dependent and should write its value in the queue
 			if(dest->cpu_dest == OUTPUT){
-				printf("CPU %d Writing to Main MEM!!\n",cpu_num);
+				if(MESSAGE == 1)
+					printf("CPU %d Writing to Main MEM!!\n",cpu_num);
 				//writing back to memory (code array)
 				pthread_mutex_lock(&mem_lock);
 				writeMem(NTE->code_address+2, output->value);
@@ -298,7 +314,8 @@ void *CPU_start(struct CPU *cpu){
 				int stored = 0;
 				for(int i = 0; i<LS_SIZE; i++){
 					if(cpu->local_mem[0][i] == UNDEFINED){
-						printf("CPU %d STORING NODE %d FOR NODE %d TO MEM!!\n",cpu_num,NTE->node_num,output->node_num);
+						if(MESSAGE == 1)
+							printf("CPU %d STORING NODE %d FOR NODE %d TO MEM!!\n",cpu_num,NTE->node_num,output->node_num);
 						cpu->local_mem[0][i] = NTE->node_num;
 						cpu->local_mem[1][i] = output->addr;
 						cpu->local_mem[2][i] = output->value;
@@ -309,26 +326,14 @@ void *CPU_start(struct CPU *cpu){
 					}
 				}
 				if(stored == 0){
-					int oldest = 0;
-					for(int i = 0; i<LS_SIZE; i++){
-						if(cpu->local_mem[4][i] > cpu->local_mem[4][oldest]){oldest = i;}
-					}
-					if(cpu->local_mem[4][oldest] != 0){
-						printf("CPU %d EVICTING %d AND STORING NODE %d FOR NODE %d TO MEM!!\n",cpu_num, cpu->local_mem[0][i], NTE->node_num,output->node_num);
-						cpu->local_mem[0][i] = NTE->node_num;
-						cpu->local_mem[1][i] = output->addr;
-						cpu->local_mem[2][i] = output->value;
-						cpu->local_mem[3][i] = output->node_num;  //add entry if its been used so we know theres a problem if it was evicted before use
-						cpu->local_mem[4][i] = 0; //unused
-						stored = 1;
-					}
-					if(stored == 0){
+
 						printf("CPU %d STORING UNSUCCSESFULL\n",cpu_num);
 						exit(0);
-					}
+					
 				}
 			}else{ // we need to calculate stuff here after everything has poped up in the queue
-				printf("CPU %d sending result to CPU %d\n",cpu_num,output->dest);
+				if(MESSAGE == 1)
+					printf("CPU %d sending result to CPU %d\n",cpu_num,output->dest);
 				pthread_mutex_lock(&mem_lock);
 				enQueue(cpu->look_up[output->dest-1], output);
 				pthread_mutex_unlock(&mem_lock);
@@ -345,7 +350,8 @@ void *CPU_start(struct CPU *cpu){
 		pthread_mutex_unlock(&mem_lock);
 
 		//request a new task
-		printf("CPU %d has requested a new task\n",cpu_num);
+		if(MESSAGE == 1)
+			printf("CPU %d has requested a new task\n",cpu_num);
 
 		int prev = NTE->node_num;
 		pthread_mutex_lock(&mem_lock);

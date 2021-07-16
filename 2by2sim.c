@@ -22,6 +22,9 @@ struct AGP_node *program_APG_node_list;
 pthread_mutex_t mem_lock;
 
 
+//FOR OUTPUT DISPLAY
+int MESSAGE;
+
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
 const int code[] = {//End main:
@@ -522,7 +525,9 @@ struct AGP_node *create_list(int start_address){
 //6. find an output node to ramap it (given address of node in subgraph to remap)
 void expansion(struct AGP_node *current){
 
-	printf("\n\nEXPANDING\n");
+	if(MESSAGE == 1)
+		printf("\n\nEXPANDING\n");
+
 	//1. get the address of subgraph to expand
 	int sub_address = current->code[(7+(current->code[1]*2))];
 
@@ -662,7 +667,8 @@ void expansion(struct AGP_node *current){
 		requ_node->depend->node_needed = input_node->node_num;
 		requ_node->depend->cpu_num = input_node->assigned_cpu;
 
-		printf("node %d will request %d\n\n", requ_node->node_num,input_node->node_num);
+		if(MESSAGE == 1)
+			printf("node %d will request %d\n\n", requ_node->node_num,input_node->node_num);
 
 		input_node = input_node->next;
 		num_args--;
@@ -738,7 +744,8 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 
 				while(temp->node_num != dest_struct->node_dest){
 					if(temp->next == NULL){
-						printf("FAILED TO FIND REFACTOR NODE\n");
+						if(MESSAGE == 1)
+							printf("FAILED TO FIND REFACTOR NODE\n");
 						break;
 					}
 					temp = temp->next;
@@ -839,7 +846,9 @@ struct AGP_node *schedule_me(int cpu_num){
 	FOUND:
 	//if there is no node to be left to be scheduled
 	if(unode_num == 0){
-		printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
+		if(MESSAGE == 1)
+			printf("no more nodes to assign!! sending CPU %d a dummy node\n",cpu_num);
+
 		struct AGP_node *dummy = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
@@ -921,7 +930,8 @@ void propagate_death(int node_num){
 
 	if(trav->code[4] == code_expansion){
 
-		printf("\nREMOVING EXPANSION NODE %d\n",node_num);
+		if(MESSAGE == 1)
+			printf("\nREMOVING EXPANSION NODE %d\n",node_num);
 
 		trav->state = DEAD;
 		int func_size;
@@ -946,7 +956,8 @@ void propagate_death(int node_num){
 			find = scope;
 			for(ntp; ntp>1; ntp--){find = find->next;}
 
-			printf("\nNODE %d MARKED AS DEAD %d\n\n", find->node_num, find->state);
+			if(MESSAGE == 1)
+				printf("\nNODE %d MARKED AS DEAD %d\n\n", find->node_num, find->state);
 
 			find->state = DEAD;
 		}
@@ -954,8 +965,8 @@ void propagate_death(int node_num){
 
 	}else{
 		if(trav->code[4] != code_merge){
-
-			printf("\nREMOVING NODE %d\n",node_num);
+			if(MESSAGE == 1)
+				printf("\nREMOVING NODE %d\n",node_num);
 
 			trav->state = DEAD;
 			struct Destination *dest = trav->dest;
@@ -966,8 +977,8 @@ void propagate_death(int node_num){
 			}
 			//free(temp);
 		}else{
-
-			printf("\nCANT REMOV MERGE NODE %d\n",node_num);
+			if(MESSAGE == 1)
+				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
 
 		}
 	}
@@ -978,8 +989,8 @@ void mark_as_dead(int node_num){
 	struct AGP_node *trav = program_APG_node_list;
 	while(trav->node_num != node_num){trav = trav->next;}
 	trav->state = DEAD;
-
-	printf("\n\nNODE %d MARKED AS DEAD %d\n\n", trav->node_num, trav->state);
+	if(MESSAGE == 1)
+		printf("\n\nNODE %d MARKED AS DEAD %d\n\n", trav->node_num, trav->state);
 
 }
 
@@ -994,11 +1005,11 @@ void mark_as_dead(int node_num){
 void writeMem(int ind, int val){
 
 	runtime_code[ind] = val;
-
-	printf("WRITING BACK TO MEMORY...\n");
-	printf("code[%d] = %d\n",ind, runtime_code[ind]);
-
-	printf("OUTPUT: %d",val);
+	if(MESSAGE == 1){
+		printf("WRITING BACK TO MEMORY...\n");
+		printf("code[%d] = %d\n",ind, runtime_code[ind]);
+	}
+	printf("OUTPUT: %d\n",val);
 }
 
 
@@ -1120,12 +1131,50 @@ void print_nodes(struct AGP_node *nodes){
 
 int main(int argc, char **argv)
 {
-    printf("***SIMULATION START***\n\n");
+    printf("\n***SIMULATION START***\n\n");
 
+		int NUM_CPU;
+		MESSAGE = 0;
+		int g=0;
+		int KG=0;
+		int h=0;
 
-    if(argc < 2){
-	printf("You must enter the number of CPU you want\nex: ./sim 4 (to run a 2x2 sim with 4 cores)\n");
-	return 1;
+		int opt;
+		while ((opt = getopt(argc, argv, "mhgK:")) != -1) {
+             switch (opt) {
+             case 'm':
+                 MESSAGE = 1;
+                 break;
+						 case 'h':
+ 								 h=1;
+ 								 break;
+						 case 'g':
+						 		 g = 1;
+								 break;
+             case 'K':
+                 KG = 1;
+                 break;
+             default: /* '?' */
+                 printf("Usage: %s [-m] [-g] [-K] [-h] num_cpu\n",argv[0]);
+                 exit(EXIT_FAILURE);
+             }
+    }
+		if(h==1){
+			printf("Usage: ./sim [-m] [-g] [-K] [-h] num_cpu  (ex: ./sim 4 or ./sim -m 4)\n[-m]: Display all core messages\n[-g]: Create graphs and save them to pdf (Requires gnuplot)\n[-K]: Create and display graphs directly in kitty terminal (Requires gnuplot)\n[-h]: Display all options\n\n");
+			return 0;
+		}
+		if (optind >= argc) {
+             fprintf(stderr, "Expected argument!\nhint: add -h to see all options\n\n");
+             exit(EXIT_FAILURE);
+  	}else{
+			NUM_CPU = atoi(argv[optind]);
+		}
+
+		//printf("FLAGS: m %d | g %d | K %d\n",M,g,KG);
+    if(NUM_CPU < 1){
+			printf("NUM CPU %d\n",NUM_CPU);
+			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
+			return 1;
     }
 
     //create mutex
@@ -1135,18 +1184,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int NUM_CPU = atoi(argv[1]);
-    if(NUM_CPU < 1){
-	printf("NODE NUM %d\n",NUM_CPU);
-	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
-	return 1;
-    }
 
-    printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
-
-
-    printf("\n\nSETTING UP ENVIRONMENT\n\n");
-
+		if(MESSAGE == 1){
+	    printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
+	    printf("\n\nSETTING UP ENVIRONMENT\n\n");
+		}
 
     //create array of thread id
     pthread_t thread_id[NUM_CPU];
@@ -1177,26 +1219,25 @@ int main(int argc, char **argv)
 
     runtime_code = (int *)malloc(sizeof(int) *code_size);
     for(int i = 0; i<code_size; i++){
-			printf("code[%d]: %d\n", i ,code[i]);
+			if(MESSAGE == 1)
+				printf("code[%d]: %d\n", i ,code[i]);
 			runtime_code[i] = code[i];
     }
-    printf("\n\nCREATING NODE LIST\n\n");
-    //main_address is calculated as below
-    //1. main_addr + main_size = 26 + 39 = 65
-    // now, we have the end of main (65 in our example).
-    //2. since code array starts from 0 (unlike stack), therefore we must deacrese code_size from that
-    // 65-65 = 0
+
+		if(MESSAGE == 1)
+    	printf("\n\nCREATING NODE LIST\n\n");
 
     program_APG_node_list = create_list(main_addr);
 
 ///*   printf("\n\nSCHEDULING NODES\n\n");
     for(int i = 0; i<NUM_CPU; i++){
-	cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
+			cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
     }
+		if(MESSAGE == 1)
+    	print_nodes(program_APG_node_list);
 
-    print_nodes(program_APG_node_list);
-
-    printf("\n\nLAUNCHING THREADS!!!\n\n");
+		if(MESSAGE == 1)
+    	printf("\n\nLAUNCHING THREADS!!!\n\n");
 
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
@@ -1235,10 +1276,10 @@ int main(int argc, char **argv)
     printf("%d AGP nodes created\n\n",list_index-1);
 
 		//print_nodes(program_APG_node_list);
-
-		print_node_short();
-
-		nodes_never_ran();
+		if(MESSAGE == 1){
+			print_node_short();
+			nodes_never_ran();
+		}
 
     return 0;
 }
