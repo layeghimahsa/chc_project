@@ -284,7 +284,7 @@ void *CPU_start(struct CPU *cpu){
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
 			//not has dependent and should write its value in the queue
-			if(dest->cpu_dest == -99){
+			if(dest->cpu_dest == OUTPUT){
 				printf("CPU %d Writing to Main MEM!!\n",cpu_num);
 				//writing back to memory (code array)
 				pthread_mutex_lock(&mem_lock);
@@ -292,6 +292,7 @@ void *CPU_start(struct CPU *cpu){
 				pthread_mutex_unlock(&mem_lock);
 
 
+			}else if(dest->cpu_dest == IGNORE){
 			}else if(dest->cpu_dest == 0){
 				//save the value and node name (node number) for when its called upon
 				int stored = 0;
@@ -342,7 +343,7 @@ void *CPU_start(struct CPU *cpu){
 		pthread_mutex_lock(&mem_lock);
 		mark_as_dead(NTE->node_num);
 		pthread_mutex_unlock(&mem_lock);
-		
+
 		//request a new task
 		printf("CPU %d has requested a new task\n",cpu_num);
 
