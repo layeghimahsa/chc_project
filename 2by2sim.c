@@ -1138,9 +1138,10 @@ int main(int argc, char **argv)
 		int g=0;
 		int KG=0;
 		int h=0;
+		int n = 0;
 
 		int opt;
-		while ((opt = getopt(argc, argv, "mhgK:")) != -1) {
+		while ((opt = getopt(argc, argv, "mhngK:")) != -1) {
              switch (opt) {
              case 'm':
                  MESSAGE = 1;
@@ -1148,6 +1149,8 @@ int main(int argc, char **argv)
 						 case 'h':
  								 h=1;
  								 break;
+						 case 'n':
+						 		 n = 1;
 						 case 'g':
 						 		 g = 1;
 								 break;
@@ -1155,12 +1158,12 @@ int main(int argc, char **argv)
                  KG = 1;
                  break;
              default: /* '?' */
-                 printf("Usage: %s [-m] [-g] [-K] [-h] num_cpu\n",argv[0]);
+                 printf("Usage: %s [-m] [-g] [-K] [-h] [-n] num_cpu\n",argv[0]);
                  exit(EXIT_FAILURE);
              }
     }
 		if(h==1){
-			printf("Usage: ./sim [-m] [-g] [-K] [-h] num_cpu  (ex: ./sim 4 or ./sim -m 4)\n[-m]: Display all core messages\n[-g]: Create graphs and save them to pdf (Requires gnuplot)\n[-K]: Create and display graphs directly in kitty terminal (Requires gnuplot)\n[-h]: Display all options\n\n");
+			printf("Usage: ./sim [-m] [-n] [-g] [-K] [-h] num_cpu  (ex: ./sim 4 or ./sim -m 4)\n[-m]: Display all core messages\n[-n]: Display node details\n[-g]: Create graphs and save them to pdf (Requires gnuplot)\n[-K]: Create and display graphs directly in kitty terminal (Requires gnuplot)\n[-h]: Display all options\n\n");
 			return 0;
 		}
 		if (optind >= argc) {
@@ -1276,7 +1279,7 @@ int main(int argc, char **argv)
     printf("%d AGP nodes created\n\n",list_index-1);
 
 		//print_nodes(program_APG_node_list);
-		if(MESSAGE == 1){
+		if(MESSAGE == 1 || n == 1){
 			print_node_short();
 			nodes_never_ran();
 		}
