@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -473,12 +474,11 @@ struct AGP_node *create_list(int start_address){
 					temp->next = (struct Destination *)malloc(sizeof(struct Destination));
 					temp = temp->next;
 				}
-				//temp = NULL;
+
 				free(temp);
 				making->dest = dest;
 			}
 		}else{
-			//code expansion setup TODO
 			making->num_dest = making->code[(6+(making->code[5]*2))];
 
 		}
@@ -723,6 +723,228 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
 
+
+
+//I wanted to return an array of struct but I don'y know how to! so, I'll just do it in main :(( 
+
+/*struct CPU ** generate_lookup_table_modified(struct Queue **Q, int **queue_links, int core_num){
+	
+	//create cpu struct 
+	struct CPU *cpus[core_num];
+	for(int i = 0; i<core_num; i++){
+		struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+		cpu_t->cpu_num = i+1;
+		cpus[i] = cpu_t;
+	}
+	
+	
+	for(int i = 0; i<core_num; i++){
+		for(int j = 0; j<core_num; j++){
+			int queue_index = queue_links[i][j];		
+			cpus[i]->look_up[j] = Q[queue_index];
+		}
+	}	
+	
+	return cpus;
+}*/
+
+
+
+
+int** generate_adjacency_matrix (int row, int col){
+
+	int core_num = row * col;
+	
+	if(row != col){
+		puts("THE NUMBER OF CORES SHOULD ONLY BE SYMMETRICAL!\n");
+		return NULL; //return failure
+	}
+
+	
+	//TODO if number of cores is 1 ...
+	
+	int number;
+	int src,top,bottom,left,right;
+	int limit_bottom;
+	int prow,pcol; //power of row and power of col
+	prow = row*row;
+	pcol = col*col;	
+	
+	int** link =(int **)malloc(pcol * sizeof(int *));
+	//int link[prow][pcol];
+	
+	//initialize link array
+	for(int i=0; i<prow; i++){
+		link[i] = (int *)malloc(prow * sizeof(int));
+		for(int j=0; j<pcol; j++){
+			link[i][j] = 0; //0 means no connection
+		}
+	}
+	
+	
+	//connection
+	for(int i=0; i<core_num; i++){
+	
+		src = i;
+		top = i-col;
+		bottom = i+col;
+		left = i-1;
+		right = i+1;
+		
+		if(top >= 0) link[src][top] = 1;
+		if(bottom < row*col) link[src][bottom] = 1;
+		if((left%col != col-1)) link[src][left] = 1;
+		if(right%col != 0) link[src][right] = 1;
+	
+	}
+	
+
+	
+	/*for(int i=0; i<prow; i++){
+		for(int j=0; j<pcol; j++){
+			printf("\t %d",link[i][j]);
+		}
+		puts("\n");
+	}*/
+	
+	
+	return link;
+
+}
+
+
+  
+  
+int minDistance(int dist[], bool visited[], int core_num)
+{
+    int min = INT_MAX;
+    int min_index;
+  
+    for (int v = 0; v < core_num ; v++){
+        if (visited[v] == false && dist[v] <= min){
+            min = dist[v];
+            min_index = v;
+          }
+    }
+  
+    return min_index;
+}
+
+
+int get_first_in_path(int path[], int j)
+{
+
+     int previous_j;
+   
+     previous_j = j;
+     
+     while(path[j] != -1){
+        previous_j = j;
+     	j = path[j];
+     
+     }
+     
+     return previous_j;      
+
+}
+
+
+int* dijkstra(int src, int core_num, int **graph)
+{
+    int dist[core_num]; //holds the shortest distance from src to i
+  
+    bool visited[core_num]; // visited[i] is true if vertex i is included in shortest path tree or shortest distance from src to i is finalized
+    int path[core_num];
+    int* first_node = (int *)malloc(core_num * sizeof(int));
+  
+    // Initialize all distances as INFINITE and visited[] as false
+    for (int i = 0; i < core_num; i++){
+    	path[src] = -1;
+        dist[i] = INT_MAX;
+        visited[i] = false;
+    }
+  
+    dist[src] = 0;
+  
+    // Find shortest path for all vertices
+    for (int count = 0; count < core_num - 1; count++) {
+        
+        int u = minDistance(dist, visited, core_num); //Pick the minimum distance vertex from the set of vertices
+  
+        visited[u] = true; // Mark the picked vertex as processed
+  
+        // Update dist value of the adjacent vertices of the picked vertex.
+        for (int v = 0; v < core_num; v++){
+            if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]){
+                 dist[v] = dist[u] + graph[u][v];
+                 path[v] = u;
+            }
+        }
+    }
+    
+    
+    
+    /*puts("printing path\n");
+    for (int v = 0; v < core_num; v++){
+          printf("%d ", path[v]);
+    }*/
+    
+  
+    for (int i = 0; i < core_num; i++){
+    	first_node[i] = get_first_in_path(path, i);
+    }
+  
+    /*puts("printing path after modification\n");
+    for (int v = 0; v < core_num; v++){
+          printf("%d ", first_node[v]);
+    }*/
+  
+  
+    return first_node;
+
+   
+}
+
+
+
+int** find_first_queue_dest(int core_num, int **graph){
+
+	int* out =(int *)malloc(core_num * sizeof(int));
+	
+	int** result =(int **)malloc(core_num * sizeof(int *));
+
+	for(int i=0; i<core_num; i++){
+	
+		result[i] = (int *)malloc(core_num * sizeof(int));
+		out = dijkstra(i, core_num, graph);
+		
+		for(int j=0; j<core_num; j++){
+			result[i][j] = out[j];
+		}
+
+	}
+	
+	free(out);
+	
+	
+	/*for(int i=0; i<core_num; i++){
+		
+		for(int j=0; j<core_num; j++){
+		
+			printf("%d ", result[i][j]);
+		}
+		
+		puts("\n");
+
+	}*/
+	
+	
+	return result;
+
+}
+
+ 
+
 /**
  * @brief refactor_destinations function
  *
@@ -867,7 +1089,8 @@ struct AGP_node *schedule_me(int cpu_num){
 				refactor_destinations(current, program_APG_node_list);
 				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				*return_node = *current;
+				//*return_node = *current;
+				return_node = current;
 				return return_node;
 			}else{ //if the node has dependables
 
@@ -904,7 +1127,8 @@ struct AGP_node *schedule_me(int cpu_num){
 				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				//return copy of node, not actual node
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				*return_node = *current;
+				//*return_node = *current;
+				return_node = current;
 				return return_node;
 
 			}
@@ -1186,6 +1410,45 @@ int main(int argc, char **argv)
         printf("\n mutex init failed\n");
         return 1;
     }
+   
+    int NUM_CPU = atoi(argv[1]);
+    if(NUM_CPU < 1){
+	printf("NODE NUM %d\n",NUM_CPU);
+	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
+	return 1;
+    }
+    
+    int row_col = UNDEFINED;
+    
+    for (int i = 1; i * i <= NUM_CPU; i++) {
+ 
+        // if (i * i = n)
+        if ((NUM_CPU % i == 0) && (NUM_CPU / i == i)) {
+            row_col = i;
+        }
+    }
+    
+    if(row_col == UNDEFINED){
+    	printf("Only N*N cpu structure is supported! \n");
+	return 1;
+    }
+    
+ 
+    int **adj_mtrx;
+    int **queue_links_arr;
+    
+    
+    //TODO specifi case for cpu_num == 1, should ask
+    //This should happen for NUM_CPU > 1
+    adj_mtrx = generate_adjacency_matrix(row_col,row_col);
+    queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
+    free(adj_mtrx);
+    
+    
+    //dijkstra(2, 16, queue_links_arr);
+    
+    
+    printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
 
 
 		if(MESSAGE == 1){
@@ -1213,11 +1476,26 @@ int main(int argc, char **argv)
     //create cpu struct
     struct CPU *cpus[NUM_CPU];
     for(int i = 0; i<NUM_CPU; i++){
-			struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
-      cpu_t->cpu_num = i+1;
-			generate_lookup_table(cpu_t, cpu_queues);
-			cpus[i] = cpu_t;
+	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+        cpu_t->cpu_num = i+1;
+	//generate_lookup_table(cpu_t, cpu_queues);
+	cpus[i] = cpu_t;
     }
+    
+    
+    //initializing cpu queue connections
+    for(int i = 0; i<NUM_CPU; i++){
+	for(int j = 0; j<NUM_CPU; j++){
+		int queue_index = queue_links_arr[i][j];	
+		//printf("%d ",queue_index);	
+		cpus[i]->look_up[j] = cpu_queues[queue_index];
+	}
+	
+	//puts("\n");
+    }
+    
+    /*free allocated memory, avoiding memory leak*/
+    free(queue_links_arr);
 
 
     runtime_code = (int *)malloc(sizeof(int) *code_size);
