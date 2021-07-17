@@ -1411,7 +1411,7 @@ int main(int argc, char **argv)
         return 1;
     }
    
-    int NUM_CPU = atoi(argv[1]);
+
     if(NUM_CPU < 1){
 	printf("NODE NUM %d\n",NUM_CPU);
 	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
