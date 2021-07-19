@@ -34,7 +34,7 @@
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
 
-#define LS_SIZE 64 //local storage size
+#define LS_SIZE 1024 //local storage size
 
 #define RESULT 0
 #define REQUEST 1

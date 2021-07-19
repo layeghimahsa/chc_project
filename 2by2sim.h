@@ -26,6 +26,12 @@ struct Queue {
     struct Message_capsul *front, *rear;
 };
 
+struct data_entry{
+  double x;
+  double y;
+  struct data_entry *n;
+};
+
 //variables shared to CPU
 //extern int main_mem[MAIN_MEM_SIZE];
 extern pthread_mutex_t mem_lock;
@@ -54,5 +60,7 @@ void enQueue(struct Queue* q, struct Message_capsul *out);
 struct Message_capsul* deQueue(struct Queue* q);
 void nodes_never_ran();
 void print_node_short();
+
+void GNUPLOT(int NUM_CPU);
 
 #endif

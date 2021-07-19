@@ -25,66 +25,54 @@ pthread_mutex_t mem_lock;
 
 //FOR OUTPUT DISPLAY
 int MESSAGE;
+int GRAPH;
+struct data_entry **data;
+clock_t BEGIN;
 
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x2,
-0x24,
+0x1,
+0x20,
 0xc,
 0x0,
-0x2,
-0x54,
-0xec,
+0x1,
+0xa4,
 0x7fffffff,
 0x0,
-0x2,
-0x24,
+0x1,
+0x20,
 0xc,
 0x0,
-0x2,
-0x4c,
-0xc4,
-0x7fffffff,
 0x1,
-0xfffffffc,
-0x24,
+0x74,
+0x7fffffff,
+0x0,
+0x1,
+0x20,
 0xc,
-0x1,
 0x0,
 0x1,
-0xffffffff,
+0x44,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
 0x0,
 0x1,
-0x1c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
+0x20,
+0xc,
 0x0,
 0x1,
 0x14,
 0x7fffffff,
-0x0,
 0x1,
+0xfffffffc,
 0x24,
 0xc,
+0x1,
 0x0,
-0x2,
-0xc0,
-0xe8,
+0x1,
+0xffffffff,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -95,35 +83,81 @@ const int code[] = {//End main:
 0x1,
 0xffffffff,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x38,
-0x0,
-0x2,
-0x0,
-0x134,
-0x0,
-0x158,
 0x1,
-0x92,
-0x110,
-0x114,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x38,
-0x0,
-0x2,
-0x0,
-0x134,
-0x0,
-0x158,
 0x1,
-0x92,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
 0x78,
-0x114,
-//Start main @(233):
-//End test:
+0x134,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0x110,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0xec,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0xc8,
+0x4a4,
+//Start main @(661):
+//End single:
+0x7fffffff,
+0x0,
+0x14,
+0x20,
+0xc,
+0x0,
+0x1,
+0x810,
 0x7fffffff,
 0x0,
 0xfffffffc,
@@ -131,74 +165,244 @@ const int code[] = {//End main:
 0x1,
 0x0,
 0x2,
-0x8c,
-0x68,
+0x434,
+0x814,
 0x7fffffff,
+0x2,
+0xfffffffc,
+0x80,
+0x3,
+0x2,
 0x0,
+0x0,
+0x17,
+0x14,
+0x44,
+0x74,
+0xa4,
+0xd4,
+0x104,
+0x134,
+0x164,
+0x194,
+0x1c4,
+0x1f4,
+0x224,
+0x254,
+0x284,
+0x2b4,
+0x2e4,
+0x314,
+0x344,
+0x374,
+0x3a4,
+0x3d4,
+0x404,
+0x464,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0x488,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0x48c,
+0x7fffffff,
+0x1,
 0xfffffffc,
 0x20,
+0xc,
 0x1,
 0x0,
-0x1,
-0x64,
+0x0,
 0x7fffffff,
 0x1,
 0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x2,
+0xfffffffc,
 0x28,
-0xb,
+0x3,
 0x2,
 0x0,
 0x0,
 0x1,
 0xffffffff,
-0x7fffffff,
-0x0,
-0x0,
-0x20,
-0xc,
-0x0,
-0x1,
-0x38,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xfc,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x8,
-0x2,
-0x0,
-0x0,
-0x1,
-0x14,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x2c,
-0x5,
-0x2,
-0x0,
-0x0,
-0x2,
-0x3c,
-0x90,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0xf8,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -208,10 +412,286 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x1a,
-0xb4,
+0x0,
+0x794,
 0x1b4,
-//Start test @(146):
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x770,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x74c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x72c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x70c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6ac,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x68c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x66c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x64c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x62c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x60c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5ac,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x58c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x56c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x54c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x52c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x50c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4ac,
+0x1b4,
+//Start single @(120):
 //End fact:
 0x7fffffff,
 0x0,
@@ -330,48 +810,19 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x1a,
+0x0,
 0xcc,
-0x1b4,
-//Start fact @(26):
-//End plus1:
-0x7fffffff,
-0x0,
-0xfffffffc,
-0x20,
-0x1,
-0x0,
-0x1,
-0x2c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0x28
-//Start plus1 @(0):
+0x1b4
+//Start fact @(0):
 };
-int code_size = 326;
-int main_addr = 233;
-int main_num_nodes = 9;
-int dictionary[][3] = {{233,93,9},
-{146,87,9},
-{26,120,12},
-{0,26,3}
+int code_size = 777;
+int main_addr = 661;
+int main_num_nodes = 12;
+int dictionary[][3] = {{661,116,12},
+{120,541,52},
+{0,120,12}
 };
-int num_dict_entries = 4;
+int num_dict_entries = 3;
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -725,26 +1176,26 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
 
-//I wanted to return an array of struct but I don'y know how to! so, I'll just do it in main :(( 
+//I wanted to return an array of struct but I don'y know how to! so, I'll just do it in main :((
 
 /*struct CPU ** generate_lookup_table_modified(struct Queue **Q, int **queue_links, int core_num){
-	
-	//create cpu struct 
+
+	//create cpu struct
 	struct CPU *cpus[core_num];
 	for(int i = 0; i<core_num; i++){
 		struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
 		cpu_t->cpu_num = i+1;
 		cpus[i] = cpu_t;
 	}
-	
-	
+
+
 	for(int i = 0; i<core_num; i++){
 		for(int j = 0; j<core_num; j++){
-			int queue_index = queue_links[i][j];		
+			int queue_index = queue_links[i][j];
 			cpus[i]->look_up[j] = Q[queue_index];
 		}
-	}	
-	
+	}
+
 	return cpus;
 }*/
 
@@ -754,25 +1205,25 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 int** generate_adjacency_matrix (int row, int col){
 
 	int core_num = row * col;
-	
+
 	if(row != col){
 		puts("THE NUMBER OF CORES SHOULD ONLY BE SYMMETRICAL!\n");
 		return NULL; //return failure
 	}
 
-	
+
 	//TODO if number of cores is 1 ...
-	
+
 	int number;
 	int src,top,bottom,left,right;
 	int limit_bottom;
 	int prow,pcol; //power of row and power of col
 	prow = row*row;
-	pcol = col*col;	
-	
+	pcol = col*col;
+
 	int** link =(int **)malloc(pcol * sizeof(int *));
 	//int link[prow][pcol];
-	
+
 	//initialize link array
 	for(int i=0; i<prow; i++){
 		link[i] = (int *)malloc(prow * sizeof(int));
@@ -780,53 +1231,53 @@ int** generate_adjacency_matrix (int row, int col){
 			link[i][j] = 0; //0 means no connection
 		}
 	}
-	
-	
+
+
 	//connection
 	for(int i=0; i<core_num; i++){
-	
+
 		src = i;
 		top = i-col;
 		bottom = i+col;
 		left = i-1;
 		right = i+1;
-		
+
 		if(top >= 0) link[src][top] = 1;
 		if(bottom < row*col) link[src][bottom] = 1;
 		if((left%col != col-1)) link[src][left] = 1;
 		if(right%col != 0) link[src][right] = 1;
-	
-	}
-	
 
-	
+	}
+
+
+
 	/*for(int i=0; i<prow; i++){
 		for(int j=0; j<pcol; j++){
 			printf("\t %d",link[i][j]);
 		}
 		puts("\n");
 	}*/
-	
-	
+
+
 	return link;
 
 }
 
 
-  
-  
+
+
 int minDistance(int dist[], bool visited[], int core_num)
 {
     int min = INT_MAX;
     int min_index;
-  
+
     for (int v = 0; v < core_num ; v++){
         if (visited[v] == false && dist[v] <= min){
             min = dist[v];
             min_index = v;
           }
     }
-  
+
     return min_index;
 }
 
@@ -835,16 +1286,16 @@ int get_first_in_path(int path[], int j)
 {
 
      int previous_j;
-   
+
      previous_j = j;
-     
+
      while(path[j] != -1){
         previous_j = j;
      	j = path[j];
-     
+
      }
-     
-     return previous_j;      
+
+     return previous_j;
 
 }
 
@@ -852,27 +1303,27 @@ int get_first_in_path(int path[], int j)
 int* dijkstra(int src, int core_num, int **graph)
 {
     int dist[core_num]; //holds the shortest distance from src to i
-  
+
     bool visited[core_num]; // visited[i] is true if vertex i is included in shortest path tree or shortest distance from src to i is finalized
     int path[core_num];
     int* first_node = (int *)malloc(core_num * sizeof(int));
-  
+
     // Initialize all distances as INFINITE and visited[] as false
     for (int i = 0; i < core_num; i++){
     	path[src] = -1;
         dist[i] = INT_MAX;
         visited[i] = false;
     }
-  
+
     dist[src] = 0;
-  
+
     // Find shortest path for all vertices
     for (int count = 0; count < core_num - 1; count++) {
-        
+
         int u = minDistance(dist, visited, core_num); //Pick the minimum distance vertex from the set of vertices
-  
+
         visited[u] = true; // Mark the picked vertex as processed
-  
+
         // Update dist value of the adjacent vertices of the picked vertex.
         for (int v = 0; v < core_num; v++){
             if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]){
@@ -881,28 +1332,28 @@ int* dijkstra(int src, int core_num, int **graph)
             }
         }
     }
-    
-    
-    
+
+
+
     /*puts("printing path\n");
     for (int v = 0; v < core_num; v++){
           printf("%d ", path[v]);
     }*/
-    
-  
+
+
     for (int i = 0; i < core_num; i++){
     	first_node[i] = get_first_in_path(path, i);
     }
-  
+
     /*puts("printing path after modification\n");
     for (int v = 0; v < core_num; v++){
           printf("%d ", first_node[v]);
     }*/
-  
-  
+
+
     return first_node;
 
-   
+
 }
 
 
@@ -910,40 +1361,40 @@ int* dijkstra(int src, int core_num, int **graph)
 int** find_first_queue_dest(int core_num, int **graph){
 
 	int* out =(int *)malloc(core_num * sizeof(int));
-	
+
 	int** result =(int **)malloc(core_num * sizeof(int *));
 
 	for(int i=0; i<core_num; i++){
-	
+
 		result[i] = (int *)malloc(core_num * sizeof(int));
 		out = dijkstra(i, core_num, graph);
-		
+
 		for(int j=0; j<core_num; j++){
 			result[i][j] = out[j];
 		}
 
 	}
-	
+
 	free(out);
-	
-	
+
+
 	/*for(int i=0; i<core_num; i++){
-		
+
 		for(int j=0; j<core_num; j++){
-		
+
 			printf("%d ", result[i][j]);
 		}
-		
+
 		puts("\n");
 
 	}*/
-	
-	
+
+
 	return result;
 
 }
 
- 
+
 
 /**
  * @brief refactor_destinations function
@@ -1076,6 +1527,17 @@ struct AGP_node *schedule_me(int cpu_num){
 		dummy->code[1] = 1;
 		dummy->code[4] = -1;
 		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
+
+		if(GRAPH){
+			struct data_entry *d = data[cpu_num-1];
+			while(d->n != NULL){d = d->n;}
+			d->n = (struct data_entry *)malloc(sizeof(struct data_entry));
+			d = d->n;
+			d->y = 0.0;
+			clock_t t = clock();
+			d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
+		}
+
 		return dummy;
 	}else{ //there is some unassigned nodes
 		if(current->code[4] == code_expansion){
@@ -1091,6 +1553,17 @@ struct AGP_node *schedule_me(int cpu_num){
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 				//*return_node = *current;
 				return_node = current;
+
+				if(GRAPH){
+					struct data_entry *d = data[cpu_num-1];
+					while(d->n != NULL){d = d->n;}
+					d->n = (struct data_entry *)malloc(sizeof(struct data_entry));
+					d = d->n;
+					d->y = (double)current->node_num;
+					clock_t t = clock();
+					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
+				}
+
 				return return_node;
 			}else{ //if the node has dependables
 
@@ -1129,6 +1602,17 @@ struct AGP_node *schedule_me(int cpu_num){
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
 				//*return_node = *current;
 				return_node = current;
+
+				if(GRAPH){
+					struct data_entry *d = data[cpu_num-1];
+					while(d->n != NULL){d = d->n;}
+					d->n = (struct data_entry *)malloc(sizeof(struct data_entry));
+					d = d->n;
+					d->y = (double)current->node_num;
+					clock_t t = clock();
+					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
+				}
+
 				return return_node;
 
 			}
@@ -1359,7 +1843,7 @@ int main(int argc, char **argv)
 
 		int NUM_CPU;
 		MESSAGE = 0;
-		int g=0;
+		GRAPH=0;
 		int KG=0;
 		int h=0;
 		int n = 0;
@@ -1376,7 +1860,7 @@ int main(int argc, char **argv)
 						 case 'n':
 						 		 n = 1;
 						 case 'g':
-						 		 g = 1;
+						 		 GRAPH = 1;
 								 break;
              case 'K':
                  KG = 1;
@@ -1410,48 +1894,45 @@ int main(int argc, char **argv)
         printf("\n mutex init failed\n");
         return 1;
     }
-   
+
 
     if(NUM_CPU < 1){
 	printf("NODE NUM %d\n",NUM_CPU);
 	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
 	return 1;
     }
-    
+
     int row_col = UNDEFINED;
-    
+
     for (int i = 1; i * i <= NUM_CPU; i++) {
- 
+
         // if (i * i = n)
         if ((NUM_CPU % i == 0) && (NUM_CPU / i == i)) {
             row_col = i;
         }
     }
-    
+
     if(row_col == UNDEFINED){
     	printf("Only N*N cpu structure is supported! \n");
 	return 1;
     }
-    
- 
+
+
     int **adj_mtrx;
     int **queue_links_arr;
-    
-    
+
+
     //TODO specifi case for cpu_num == 1, should ask
     //This should happen for NUM_CPU > 1
     adj_mtrx = generate_adjacency_matrix(row_col,row_col);
     queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
     free(adj_mtrx);
-    
-    
+
+
     //dijkstra(2, 16, queue_links_arr);
-    
-    
-    printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
 
-
-		if(MESSAGE == 1){
+    if(MESSAGE == 1){
+    	printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
 	    printf("CREATING A %dx%d SIMULATION\n",NUM_CPU/2,NUM_CPU/2);
 	    printf("\n\nSETTING UP ENVIRONMENT\n\n");
 		}
@@ -1481,21 +1962,32 @@ int main(int argc, char **argv)
 	//generate_lookup_table(cpu_t, cpu_queues);
 	cpus[i] = cpu_t;
     }
-    
-    
+
+
     //initializing cpu queue connections
     for(int i = 0; i<NUM_CPU; i++){
 	for(int j = 0; j<NUM_CPU; j++){
-		int queue_index = queue_links_arr[i][j];	
-		//printf("%d ",queue_index);	
+		int queue_index = queue_links_arr[i][j];
+		//printf("%d ",queue_index);
 		cpus[i]->look_up[j] = cpu_queues[queue_index];
 	}
-	
+
 	//puts("\n");
     }
-    
+
     /*free allocated memory, avoiding memory leak*/
     free(queue_links_arr);
+
+
+		//data entry array
+		if(GRAPH==1){
+			data = (struct data_entry **)malloc(sizeof(struct data_entry*) *NUM_CPU);
+			for(int i=0;i<NUM_CPU; i++){
+				data[i] = (struct data_entry *)malloc(sizeof(struct data_entry));
+				data[i]->x = 0.0;
+				data[i]->y = 0.0;
+			}
+		}
 
 
     runtime_code = (int *)malloc(sizeof(int) *code_size);
@@ -1519,6 +2011,8 @@ int main(int argc, char **argv)
 
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
+
+		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
@@ -1550,19 +2044,63 @@ int main(int argc, char **argv)
 				pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely
     }
 
+		clock_t finish = clock();
+		double elapsed = (double)(finish - BEGIN)/CLOCKS_PER_SEC;
+
     pthread_mutex_destroy(&mem_lock);
 
-		printf("\n\n***SIMULATION COMPLETE***\n\n");
+		printf("\n***SIMULATION COMPLETE***\n\n");
 
-    printf("%d AGP nodes created\n\n",list_index-1);
+		printf("TIME ELAPSED: %f\n\n", elapsed);
+
+    printf("%d AGP nodes created\n",list_index-1);
 
 		//print_nodes(program_APG_node_list);
-		if(MESSAGE == 1 || n == 1){
+		if(n == 1){
 			print_node_short();
 			nodes_never_ran();
 		}
 
+		if(KG==1){
+
+		}else if(GRAPH==1){
+			GNUPLOT(NUM_CPU);
+			for(int i = 0; i< NUM_CPU; i++){
+				int count = 0;
+				struct data_entry *d = data[i];
+				while(d != NULL){count++; d=d->n;}
+				printf("CPU %d Ran %d nodes\n",i+1,count);
+			}
+		}
+
     return 0;
+}
+
+void GNUPLOT(int NUM_CPU){
+
+    FILE * gnuplotPipe = popen ("gnuplot -persistent", "w");
+    int i;
+
+		fprintf(gnuplotPipe, "set title '%s'\n", "NODES RAN ON CORES OVER TIME");
+		char name[32];
+
+		for(int i = 0; i< NUM_CPU; i++){
+				sprintf(name, "%d", i+1);
+				FILE * temp = fopen(name, "w");
+				struct data_entry *d = data[i];
+				while(d!=NULL){
+					fprintf(temp, "%f %f \n", d->x, d->y);
+					d = d->n;
+				}
+		}
+		fprintf(gnuplotPipe, "plot '1'");
+		for(int i = 1; i< NUM_CPU; i++){
+			sprintf(name, "%d", i+1);
+			fprintf(gnuplotPipe, ", '%s'",name);
+		}
+		fprintf(gnuplotPipe, " \n");
+
+
 }
 
 /***********************/
