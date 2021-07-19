@@ -484,6 +484,24 @@ struct AGP_node *create_list(int start_address){
 		}else{
 			making->num_dest = making->code[(6+(making->code[5]*2))];
 
+			struct Destination *dest = (struct Destination *)malloc(sizeof(struct Destination));
+			struct Destination *temp = dest;
+
+			for(int j = 1; j <= making->num_dest; j++){
+				if(making->code[making->node_size-j] == -1){
+					temp->node_dest = OUTPUT; //write to mem
+				}else{
+					temp->node_dest = pre_list_index -1 + find_num_node(func_top,(start_address*4+making->code[(8+(making->code[5]*2)+(j*3))]));
+				}
+				temp->cpu_dest = UNDEFINED;
+				temp->state = REFACTOR;
+				temp->next = (struct Destination *)malloc(sizeof(struct Destination));
+				temp = temp->next;
+			}
+
+			free(temp);
+			making->dest = dest;
+
 		}
 		num_nodes_to_make--;
 		if(num_nodes_to_make == 0){making->next = NULL;}
@@ -492,10 +510,50 @@ struct AGP_node *create_list(int start_address){
 			making = making->next;
 		}
 	}
+	create_links(return_node);
 	return return_node;
 }
 
+//this will create all destination and dependables links of the newest segment in the list
+void create_links(struct AGP_node *in){
+	struct AGP_node *trav = in;
 
+	//do all destination links
+	while(trav != NULL){
+		struct Destination *dest = trav->dest;
+		while(dest != NULL){
+			if(dest->node_dest != OUTPUT){
+				struct AGP_node *find = in;
+				while(find != NULL){
+					if(find->node_num == dest->node_dest){
+						dest->destination = find;
+						goto NEXT;
+					}
+				}
+			}
+			NEXT:
+			dest = dest->next;
+		}
+		trav = trav->next;
+	}
+
+	//create and do all dependent links
+	trav = in;
+	while(trav != NULL){
+		struct Destination *dest = trav->dest;
+		while(dest != NULL){
+			if(dest->node_dest != OUTPUT){
+				struct Dependables *dep_t = dest->destination->depend;
+				struct Dependables *dep = (struct Dependables *)malloc(sizeof(struct Dependables));
+				dep->node_needed = dest->destination->node_num;
+				dest->destination->depend = dep;
+				dest->destination->depend->next = dep_t;
+			}
+			dest = dest->next;
+		}
+		trav = trav->next;
+	}
+}
 
 
 

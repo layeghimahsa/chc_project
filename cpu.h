@@ -42,10 +42,10 @@
 #define ALIVE 1
 
 struct Destination{
-
 	int cpu_dest;
 	int node_dest;
 	int state;
+	struct AGP_node *destination;
 	struct Destination *next;
 };
 
@@ -53,6 +53,7 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 	int node_needed; //this is technically the variable name
 	int cpu_num;  //cpu the request must be sent to
 	int key; //needed if its a node requesting for a node that isnt technically ment for it (used for inputs of expansions)
+	struct AGP_node *dependencie; //direct link to depentent
 	struct Dependables *next;
 };
 

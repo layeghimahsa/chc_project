@@ -60,7 +60,7 @@ void enQueue(struct Queue* q, struct Message_capsul *out);
 struct Message_capsul* deQueue(struct Queue* q);
 void nodes_never_ran();
 void print_node_short();
-
+void create_links(struct AGP_node *in); // creates dest and depend links
 void GNUPLOT(int NUM_CPU);
 
 #endif
