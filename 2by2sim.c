@@ -681,77 +681,6 @@ void expansion(struct AGP_node *current){
 }
 
 
-/**
- * @brief generate_lookup_table function
- *
- * This function is called to initialize cpu connections. (specifies to which queues does the current cpu have access and can put the rsult to or get the result from)
- * @param [in] current the current cpu under initialization
- * @param [in] Q the pointer to all queues
- * @return void
- */
-void generate_lookup_table(struct CPU *current, struct Queue **Q){
-
-
-	switch(current->cpu_num){
-
-		case 1:
-			current->look_up[0] = Q[0]; //1
-			current->look_up[1] = Q[1]; //2
-			current->look_up[2] = Q[2]; //3
-			current->look_up[3] = Q[1]; //cant send to 4
-			break;
-		case 2:
-			current->look_up[0] = Q[0];
-			current->look_up[1] = Q[1];
-			current->look_up[2] = Q[3]; //cant send to 3
-			current->look_up[3] = Q[3];
-			break;
-		case 3:
-			current->look_up[0] = Q[0];
-			current->look_up[1] = Q[0]; //cant send to 2
-			current->look_up[2] = Q[2];
-			current->look_up[3] = Q[3];
-			break;
-		case 4:
-			current->look_up[0] = Q[2]; //cant send to 1
-			current->look_up[1] = Q[1];
-			current->look_up[2] = Q[2];
-			current->look_up[3] = Q[3];
-			break;
-		default:
-			printf("shouldn't happen");
-			break;
-	}
-}
-
-
-
-
-
-//I wanted to return an array of struct but I don'y know how to! so, I'll just do it in main :((
-
-/*struct CPU ** generate_lookup_table_modified(struct Queue **Q, int **queue_links, int core_num){
-
-	//create cpu struct
-	struct CPU *cpus[core_num];
-	for(int i = 0; i<core_num; i++){
-		struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
-		cpu_t->cpu_num = i+1;
-		cpus[i] = cpu_t;
-	}
-
-
-	for(int i = 0; i<core_num; i++){
-		for(int j = 0; j<core_num; j++){
-			int queue_index = queue_links[i][j];
-			cpus[i]->look_up[j] = Q[queue_index];
-		}
-	}
-
-	return cpus;
-}*/
-
-
 
 
 int** generate_adjacency_matrix (int row, int col){
@@ -1512,8 +1441,10 @@ int main(int argc, char **argv)
 	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
         cpu_t->cpu_num = i+1;
 	//generate_lookup_table(cpu_t, cpu_queues);
+	cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
 	cpus[i] = cpu_t;
     }
+
 
 
     //initializing cpu queue connections
