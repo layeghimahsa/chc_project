@@ -34,60 +34,45 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x2,
-0x24,
+0x1,
+0x20,
 0xc,
 0x0,
-0x2,
-0x54,
-0xec,
+0x1,
+0xa4,
 0x7fffffff,
 0x0,
-0x2,
-0x24,
+0x1,
+0x20,
 0xc,
 0x0,
-0x2,
-0x4c,
-0xc4,
-0x7fffffff,
 0x1,
-0xfffffffc,
-0x24,
+0x74,
+0x7fffffff,
+0x0,
+0x1,
+0x20,
 0xc,
-0x1,
 0x0,
 0x1,
-0xffffffff,
+0x44,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
 0x0,
 0x1,
-0x1c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
+0x20,
+0xc,
 0x0,
 0x1,
 0x14,
 0x7fffffff,
-0x0,
 0x1,
+0xfffffffc,
 0x24,
 0xc,
+0x1,
 0x0,
-0x2,
-0xc0,
-0xe8,
+0x1,
+0xffffffff,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -98,35 +83,81 @@ const int code[] = {//End main:
 0x1,
 0xffffffff,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x38,
-0x0,
-0x2,
-0x0,
-0x134,
-0x0,
-0x158,
 0x1,
-0x92,
-0x110,
-0x114,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
 0x7fffffff,
-0x2,
-0xfffffffc,
-0x38,
-0x0,
-0x2,
-0x0,
-0x134,
-0x0,
-0x158,
 0x1,
-0x92,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
 0x78,
-0x114,
-//Start main @(233):
-//End test:
+0x134,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0x110,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0xec,
+0x4a4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x850,
+0x1,
+0x78,
+0xc8,
+0x4a4,
+//Start main @(661):
+//End single:
+0x7fffffff,
+0x0,
+0x14,
+0x20,
+0xc,
+0x0,
+0x1,
+0x810,
 0x7fffffff,
 0x0,
 0xfffffffc,
@@ -134,74 +165,244 @@ const int code[] = {//End main:
 0x1,
 0x0,
 0x2,
-0x8c,
-0x68,
+0x434,
+0x814,
 0x7fffffff,
+0x2,
+0xfffffffc,
+0x80,
+0x3,
+0x2,
 0x0,
+0x0,
+0x17,
+0x14,
+0x44,
+0x74,
+0xa4,
+0xd4,
+0x104,
+0x134,
+0x164,
+0x194,
+0x1c4,
+0x1f4,
+0x224,
+0x254,
+0x284,
+0x2b4,
+0x2e4,
+0x314,
+0x344,
+0x374,
+0x3a4,
+0x3d4,
+0x404,
+0x464,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0x488,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0x48c,
+0x7fffffff,
+0x1,
 0xfffffffc,
 0x20,
+0xc,
 0x1,
 0x0,
-0x1,
-0x64,
+0x0,
 0x7fffffff,
 0x1,
 0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x20,
+0xc,
+0x1,
+0x0,
+0x0,
+0x7fffffff,
+0x2,
+0xfffffffc,
 0x28,
-0xb,
+0x3,
 0x2,
 0x0,
 0x0,
 0x1,
 0xffffffff,
-0x7fffffff,
-0x0,
-0x0,
-0x20,
-0xc,
-0x0,
-0x1,
-0x38,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xfc,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x8,
-0x2,
-0x0,
-0x0,
-0x1,
-0x14,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x2c,
-0x5,
-0x2,
-0x0,
-0x0,
-0x2,
-0x3c,
-0x90,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x9,
-0x2,
-0x0,
-0x0,
-0x1,
-0xf8,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -211,10 +412,286 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x1a,
-0xb4,
+0x0,
+0x794,
 0x1b4,
-//Start test @(146):
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x770,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x74c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x72c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x70c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x6ac,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x68c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x66c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x64c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x62c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x60c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x5ac,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x58c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x56c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x54c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x52c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x50c,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4ec,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4cc,
+0x1b4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x4ac,
+0x1b4,
+//Start single @(120):
 //End fact:
 0x7fffffff,
 0x0,
@@ -333,48 +810,19 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x1a,
+0x0,
 0xcc,
-0x1b4,
-//Start fact @(26):
-//End plus1:
-0x7fffffff,
-0x0,
-0xfffffffc,
-0x20,
-0x1,
-0x0,
-0x1,
-0x2c,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x28,
-0x3,
-0x2,
-0x0,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0x28
-//Start plus1 @(0):
+0x1b4
+//Start fact @(0):
 };
-int code_size = 326;
-int main_addr = 233;
-int main_num_nodes = 9;
-int dictionary[][3] = {{233,93,9},
-{146,87,9},
-{26,120,12},
-{0,26,3}
+int code_size = 777;
+int main_addr = 661;
+int main_num_nodes = 12;
+int dictionary[][3] = {{661,116,12},
+{120,541,52},
+{0,120,12}
 };
-int num_dict_entries = 4;
+int num_dict_entries = 3;
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -456,7 +904,6 @@ struct AGP_node *create_list(int start_address){
 		}
 
 
-
 		if(making->code[4] != code_expansion){
 			making->num_dest = making->code[(6+making->code[5])];
 			if(making->num_dest == 0){
@@ -474,11 +921,15 @@ struct AGP_node *create_list(int start_address){
 					}
 					temp->cpu_dest = UNDEFINED;
 					temp->state = REFACTOR;
-					temp->next = (struct Destination *)malloc(sizeof(struct Destination));
-					temp = temp->next;
+					if(j+1 > making->num_dest){
+						temp->next = NULL;
+					}else{
+						temp->next = (struct Destination *)malloc(sizeof(struct Destination));
+						temp = temp->next;
+					}
 				}
 
-				free(temp);
+				//free(temp);
 				making->dest = dest;
 			}
 		}else{
@@ -491,15 +942,20 @@ struct AGP_node *create_list(int start_address){
 				if(making->code[making->node_size-j] == -1){
 					temp->node_dest = OUTPUT; //write to mem
 				}else{
-					temp->node_dest = pre_list_index -1 + find_num_node(func_top,(start_address*4+making->code[(8+(making->code[5]*2)+(j*3))]));
+					temp->node_dest = pre_list_index -1 + find_num_node(func_top,(start_address*4+making->code[(8+(making->code[5]*2)+((j-1)*3))]));
+					//printf("NODE DEST %d",temp->node_dest);
 				}
 				temp->cpu_dest = UNDEFINED;
 				temp->state = REFACTOR;
-				temp->next = (struct Destination *)malloc(sizeof(struct Destination));
-				temp = temp->next;
+				if(j+1 > making->num_dest){
+					temp->next = NULL;
+				}else{
+					temp->next = (struct Destination *)malloc(sizeof(struct Destination));
+					temp = temp->next;
+				}
 			}
 
-			free(temp);
+			//free(temp);
 			making->dest = dest;
 
 		}
@@ -510,49 +966,57 @@ struct AGP_node *create_list(int start_address){
 			making = making->next;
 		}
 	}
+
 	create_links(return_node);
 	return return_node;
 }
 
 //this will create all destination and dependables links of the newest segment in the list
 void create_links(struct AGP_node *in){
+	if(MESSAGE)
+		printf("\nCREATING LINKS\n\n");
+
 	struct AGP_node *trav = in;
 
 	//do all destination links
 	while(trav != NULL){
 		struct Destination *dest = trav->dest;
 		while(dest != NULL){
-			if(dest->node_dest != OUTPUT){
-				struct AGP_node *find = in;
-				while(find != NULL){
-					if(find->node_num == dest->node_dest){
-						dest->destination = find;
-						goto NEXT;
+				if(dest->node_dest != OUTPUT){
+					struct AGP_node *find = in;
+					while(find != NULL){
+						if(find->node_num == dest->node_dest){
+							dest->destination = find;
+							goto NEX;
+						}
+						find = find->next;
 					}
 				}
-			}
-			NEXT:
+			NEX:
 			dest = dest->next;
 		}
 		trav = trav->next;
 	}
-
 	//create and do all dependent links
 	trav = in;
 	while(trav != NULL){
 		struct Destination *dest = trav->dest;
 		while(dest != NULL){
 			if(dest->node_dest != OUTPUT){
-				struct Dependables *dep_t = dest->destination->depend;
+				struct AGP_node *add_dep = dest->destination;
+				struct Dependables *dep_t = add_dep->depend;
 				struct Dependables *dep = (struct Dependables *)malloc(sizeof(struct Dependables));
 				dep->node_needed = dest->destination->node_num;
-				dest->destination->depend = dep;
-				dest->destination->depend->next = dep_t;
+				dep->key = 0;
+				dep->dependencie = trav;
+				add_dep->depend = dep;
+				add_dep->depend->next = dep_t;
 			}
 			dest = dest->next;
 		}
 		trav = trav->next;
 	}
+
 }
 
 
@@ -609,16 +1073,115 @@ void expansion(struct AGP_node *current){
 
 	//traverse = traverse->next; //now points to old top of list (usefull for refactoring)
 
-	//must find "current" node scope to properly link things
+/*	//must find "current" node scope to properly link things
 	struct AGP_node *t = traverse;
 	while(t->node_num != current->node_num){
 		if(t->node_num < traverse->node_num){traverse = t;}
 		t = t->next;
-	}
+	}*/
 
 	//4. refactor the given expansion
 
+	//get sub function info
+	int sub_func_size;
+	for(int i = 0; i<num_dict_entries; i++){   //get sub function dictionary info
+		if(dictionary[i][0] == sub_address){
+			sub_func_size = dictionary[i][1];
+		}
+	}
+	int sub_code_pos = code_size - sub_address - sub_func_size;
 
+	struct AGP_node *node_to_change;
+	struct AGP_node *node_to_point;
+	struct Destination *cur_dest = current->dest;
+	for(int i = 0; i < current->num_dest; i++){
+		node_to_change = program_APG_node_list;
+		//calculate node offset from called function      //9 + number of inputs * 2 (input size) + output num * 3 (output size)
+		int ntc = find_num_node(sub_code_pos, (sub_address*4+current->code[(9+(current->code[5]*2)+(i*3))]));
+		for(ntc; ntc>1; ntc--){node_to_change = node_to_change->next;}
+		node_to_point = cur_dest->destination;
+
+		//create destination node
+		struct Destination *dest_node = (struct Destination *)malloc(sizeof(struct Destination));
+		dest_node->node_dest = node_to_point->node_num;
+		dest_node->cpu_dest = UNDEFINED;
+		dest_node->state = DONT_REFACTOR;
+		dest_node->destination = node_to_point;
+
+		//do refactor here
+		int dest = code_size - 1 - node_to_point->node_func - (current->code[(8+(current->code[5]*2)+(i*3))]/4);
+		int count = 0;
+		while(code[dest] != NODE_BEGIN_FLAG){
+			count++; dest--;
+		}
+		dest = (node_to_point->node_size - count - 1)*4;
+		if(node_to_change->dest == NULL){
+			node_to_change->dest = dest_node;
+		}
+		else{
+			struct Destination *temp = node_to_change->dest;
+			node_to_change->dest = dest_node;
+			dest_node->next = temp;
+		}
+		node_to_change->code[node_to_change->node_size - 1 - node_to_change->num_dest] +=1;
+		node_to_change->num_dest++;
+		node_to_change->node_size++;
+		node_to_change->code[node_to_change->node_size-1] = dest;
+		//remove write to mem since it was mapped
+		struct Destination *temp = node_to_change->dest;
+		for(int i = 0; i < node_to_change->num_dest; i++ ){
+			if(temp->node_dest == OUTPUT){
+				temp->cpu_dest = IGNORE;
+				temp->node_dest = IGNORE;
+				temp->state = DONT_REFACTOR;
+			}
+			temp = temp->next;
+		}
+		cur_dest = cur_dest->next;
+	}
+
+	struct Dependables *d = node_to_point->depend;
+	while(d != NULL){
+		if(d->dependencie->node_num == current->node_num){
+			d->node_needed = node_to_change->node_num;
+			d->key = 0;
+			d->dependencie = node_to_change;
+			break;
+		}
+		d = d->next;
+	}
+
+	//CREATING INPUT VARIABLE REQUEST MESSAGE
+
+	int num_args = current->code[5] - 1;
+	//for the numbr of arguments there are/are called
+	struct AGP_node *inputed_node;
+	struct Dependables *dep = current->depend;
+	while(num_args >= 0){
+
+		inputed_node = dep->dependencie;
+		struct AGP_node *requ_node = program_APG_node_list; //inputed node
+		//find node that needs to request
+		int ntp  = find_num_node(sub_code_pos,sub_address*4+current->code[7+(2*num_args)]);
+		for(ntp; ntp>1; ntp--){requ_node = requ_node->next;}
+
+		//need to create request
+		requ_node->depend = (struct Dependables *)malloc(sizeof(struct Dependables));
+		requ_node->depend->dependencie = inputed_node;
+		requ_node->depend->key = current->node_num;
+		requ_node->depend->node_needed = inputed_node->node_num;
+		requ_node->depend->cpu_num = inputed_node->assigned_cpu;
+
+		if(MESSAGE == 1)
+			printf("node %d will request %d with key %d\n\n", requ_node->node_num,inputed_node->node_num,requ_node->depend->key);
+
+		inputed_node = inputed_node->next;
+		num_args--;
+		requ_node->code[1]++;
+		dep = dep->next;
+	}
+
+/*
 	//REMAPING OUTPUT
 	//get sub function info
 	int sub_func_size;
@@ -736,6 +1299,7 @@ void expansion(struct AGP_node *current){
 		requ_node->code[1]++;
 
 	}
+	*/
 }
 
 
@@ -785,29 +1349,6 @@ void generate_lookup_table(struct CPU *current, struct Queue **Q){
 
 
 
-
-//I wanted to return an array of struct but I don'y know how to! so, I'll just do it in main :((
-
-/*struct CPU ** generate_lookup_table_modified(struct Queue **Q, int **queue_links, int core_num){
-
-	//create cpu struct
-	struct CPU *cpus[core_num];
-	for(int i = 0; i<core_num; i++){
-		struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
-		cpu_t->cpu_num = i+1;
-		cpus[i] = cpu_t;
-	}
-
-
-	for(int i = 0; i<core_num; i++){
-		for(int j = 0; j<core_num; j++){
-			int queue_index = queue_links[i][j];
-			cpus[i]->look_up[j] = Q[queue_index];
-		}
-	}
-
-	return cpus;
-}*/
 
 
 
@@ -1022,17 +1563,19 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 		for(int i = 1; i<=current->num_dest;i++){
 			if(dest_struct->node_dest == OUTPUT){ //return to main mem since there are no dependants
 				dest_struct->cpu_dest = OUTPUT; //main mem
+			}else if(dest_struct->node_dest == IGNORE){
+				dest_struct->cpu_dest = IGNORE;
 			}else{
-				struct AGP_node *temp = top;
-
-				while(temp->node_num != dest_struct->node_dest){
+				//struct AGP_node *temp = top;
+					struct AGP_node *temp = dest_struct->destination;
+			/*	while(temp->node_num != dest_struct->node_dest){
 					if(temp->next == NULL){
 						if(MESSAGE == 1)
 							printf("FAILED TO FIND REFACTOR NODE\n");
 						break;
 					}
 					temp = temp->next;
-				}
+				}*/
 
 				//if the destination isnt assigned, the current node must hold the value
 				if(temp->assigned_cpu == UNDEFINED || temp->code[4] == code_expansion)
@@ -1061,7 +1604,19 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 
 
 int check_dep_unscheduled(struct AGP_node *current){
-	struct AGP_node *trav = program_APG_node_list;
+
+	struct Dependables *dep = current->depend;
+	while(dep != NULL){
+		struct AGP_node *trav = dep->dependencie;
+		if(trav->assigned_cpu == UNDEFINED && trav->state != DEAD){return 0;}
+		else if(trav->code[4] == code_if || trav->code[4] == code_else){
+			if(trav->state == DEAD){}
+			else{return 0;}
+		}else{}
+		dep = dep->next;
+	}
+	return 1;
+/*	struct AGP_node *trav = program_APG_node_list;
 	int dep_visited_count = 0;
 
 	while(trav != NULL){
@@ -1086,6 +1641,7 @@ int check_dep_unscheduled(struct AGP_node *current){
 		return 1;
 	else
 		return 0;
+		*/
 }
 
 
@@ -1111,6 +1667,7 @@ struct AGP_node *schedule_me(int cpu_num){
 	int unode_num = 0; //number of unscheduled nodes
 	int count=0;
 	/*finding unscheduled nodes and store them into a new list*/
+
 	while(current != NULL){
 		if(current->state != DEAD){
 			if(current->assigned_cpu == UNDEFINED && (current->code[1] == 0 || current->code[4] == code_input)){
@@ -1173,11 +1730,12 @@ struct AGP_node *schedule_me(int cpu_num){
 					clock_t t = clock();
 					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
 				}
-
+				if(MESSAGE == 1)
+					printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
 				return return_node;
 			}else{ //if the node has dependables
 
-				if(current->depend == NULL){
+			/*	if(current->depend == NULL){
 					struct AGP_node *temp = program_APG_node_list;
 					struct Dependables *depe = (struct Dependables *)malloc(sizeof(struct Dependables));
 					struct Dependables *dep = depe;
@@ -1203,10 +1761,23 @@ struct AGP_node *schedule_me(int cpu_num){
 						temp = temp->next;
 					}
 					current->depend = depe;
+				}*/
+
+				struct Dependables *dep = current->depend;
+				while(dep!=NULL){
+					struct AGP_node *temp = dep->dependencie;
+					dep->cpu_num = temp->assigned_cpu; //cpu that has that variable
+					dep->node_needed = temp->node_num; //variable name to be requested
+					if(dep->key == 0){dep->key = UNDEFINED;}
+					dep = dep->next;
 				}
+
 				//return the cpu.
 				current->assigned_cpu = cpu_num;
+
 				refactor_destinations(current, program_APG_node_list);
+
+
 				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				//return copy of node, not actual node
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
@@ -1222,7 +1793,8 @@ struct AGP_node *schedule_me(int cpu_num){
 					clock_t t = clock();
 					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
 				}
-
+				if(MESSAGE == 1)
+					printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
 				return return_node;
 
 			}
@@ -1234,9 +1806,38 @@ struct AGP_node *schedule_me(int cpu_num){
 }
 
 
+void prop_death(struct AGP_node *trav){
+	if(trav->code[4] == code_merge){
+		if(MESSAGE == 1)
+			printf("\nCANT REMOV MERGE NODE %d\n",trav->node_num);
+	}else{
+			trav->state = DEAD;
+			struct Destination *dest = trav->dest;
+			while(dest!=NULL){
+				prop_death(dest->destination);
+				dest = dest->next;
+			}
+	}
+}
 void propagate_death(int node_num){
+
 	struct AGP_node *trav = program_APG_node_list;
-	struct AGP_node *scope = program_APG_node_list;
+	while(trav->node_num != node_num){trav = trav->next;}
+
+	if(trav->code[4] == code_merge){
+		if(MESSAGE == 1)
+			printf("\nCANT REMOV MERGE NODE %d\n",trav->node_num);
+	}else{
+			trav->state = DEAD;
+			struct Destination *dest = trav->dest;
+			while(dest!=NULL){
+				prop_death(dest->destination);
+				dest = dest->next;
+			}
+	}
+
+/*	struct AGP_node *trav = program_APG_node_list;
+	//struct AGP_node *scope = program_APG_node_list;
 
 	while(trav->node_num != node_num){trav = trav->next;}
 
@@ -1299,7 +1900,7 @@ void propagate_death(int node_num){
 				printf("\nCANT REMOV MERGE NODE %d\n",node_num);
 
 		}
-	}
+	}*/
 }
 
 //mark as dead makes the given node as dead
