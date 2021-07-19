@@ -1614,7 +1614,6 @@ int main(int argc, char **argv)
 		}
 
 		if(KG==1){
-
 		}else if(GRAPH==1){
 			GNUPLOT(NUM_CPU);
 			for(int i = 0; i< NUM_CPU; i++){
