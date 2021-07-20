@@ -337,6 +337,8 @@ void *CPU_start(struct CPU *cpu){
 				pthread_mutex_lock(&mem_lock);
 				enQueue(cpu->look_up[output->dest-1], output);
 				pthread_mutex_unlock(&mem_lock);
+
+				//binary_routing(NUM_CPU, cpu_num, output->dest-1);
 			}
 
 			//enable cancelation

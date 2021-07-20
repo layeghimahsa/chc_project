@@ -32,6 +32,12 @@ struct data_entry{
   struct data_entry *n;
 };
 
+
+struct path{
+  int x;
+  int y;
+};
+
 //variables shared to CPU
 //extern int main_mem[MAIN_MEM_SIZE];
 extern pthread_mutex_t mem_lock;
