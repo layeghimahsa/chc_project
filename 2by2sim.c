@@ -740,7 +740,8 @@ int binary_routing(int row, int start, int end){
 	sign_y = (routing_y >0) ? 1 : -1;
 	
 	// the other option would be returning the first cpu, the start cpu can send the result to
-	if(routing_x == 0) first_cpu_dest = start + (row * sign_y); //move one in y axis
+	if(routing_x == 0 && routing_y == 0) first_cpu_dest = start;
+	else if(routing_x == 0) first_cpu_dest = start + (row * sign_y); //move one in y axis
 	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis 
 	else first_cpu_dest = start + sign_x; //all other cases would start transfering the message towards the x axis first.
 	
@@ -1481,7 +1482,7 @@ int main(int argc, char **argv)
     adj_mtrx = generate_adjacency_matrix(row_col,row_col);
     queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
     free(adj_mtrx);
-    //binary_routing(4,9,5);
+    binary_routing(4,0,0);
 
 
 
@@ -1516,17 +1517,19 @@ int main(int argc, char **argv)
 	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
         cpu_t->cpu_num = i+1;
 	//generate_lookup_table(cpu_t, cpu_queues);
-	cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
+	//cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
 	cpus[i] = cpu_t;
     }
 
 
 
+    int queue_index; 	
     //initializing cpu queue connections
     for(int i = 0; i<NUM_CPU; i++){
 	for(int j = 0; j<NUM_CPU; j++){
-		int queue_index = queue_links_arr[i][j];
+		//int queue_index = queue_links_arr[i][j];
 		//printf("%d ",queue_index);
+		queue_index = binary_routing(NUM_CPU, i, j);
 		cpus[i]->look_up[j] = cpu_queues[queue_index];
 	}
 
