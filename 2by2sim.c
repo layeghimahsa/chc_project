@@ -22,7 +22,6 @@ struct AGP_node *program_APG_node_list;
 //main mutex
 pthread_mutex_t mem_lock;
 
-
 //FOR OUTPUT DISPLAY
 int MESSAGE;
 int GRAPH;
@@ -1173,196 +1172,73 @@ void expansion(struct AGP_node *current){
 }
 
 
-int** generate_adjacency_matrix (int row, int col){
+/*int generate_lookup_table(int row, int start, int end){
 
-	int core_num = row * col;
+	if(end<0) return -1;
+	
+	if(end == start+1 && end%row = row-1) return -1;
+	
+	if(end == start-1 && end%row = 0) return -1;
+	
+	if(end>=row*row) return -1;
+	
+	return 0;
 
-	if(row != col){
-		puts("THE NUMBER OF CORES SHOULD ONLY BE SYMMETRICAL!\n");
-		return NULL; //return failure
+int binary_routing(int row, int start, int end){
+	
+	/*
+					j ->
+	0000 0001 0010 0011	      i 0  1  2  3
+	0100 0101 0110 0111	      | 4  5  6  7
+	1000 1001 1010 1011	      v 8  9  10 11
+	1100 1101 1110 1111		12 13 14 15
+	
+	*/
+	
+	
+	int first_cpu_dest = UNDEFINED;
+	
+	/* x = least significant (j)   y = most significant (i)*/
+	int x_start, y_start;
+	int x_end, y_end;
+	
+	x_start = start%row; //j
+	y_start = start/row; //i
+	x_end = end%row; //j
+	y_end = end/row; //i
+	
+	int routing_x, routing_y;
+	routing_x = x_end - x_start;
+	routing_y = y_end - y_start;
+	
+	struct path *routing = (struct path*)malloc(sizeof(struct path));
+	
+	routing->x = routing_x;
+	routing->y = routing_y;
+	
+	//printf("x: %d ",routing_x);
+	//printf("y: %d \n",routing_y);
+	
+	//one option could be returning the whole path struct 
+	//return routing; 
+	
+	int sign_x, sign_y;
+	sign_x = (routing_x >0) ? 1 : -1;
+	sign_y = (routing_y >0) ? 1 : -1;
+	
+	// the other option would be returning the first cpu, the start cpu can send the result to
+	if(routing_x == 0 && routing_y == 0) first_cpu_dest = start;
+	else if(routing_x == 0) first_cpu_dest = start + (row * sign_y); //move one in y axis
+	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis 
+	else first_cpu_dest = start + sign_x; //all other cases would start transfering the message towards the x axis first.
+	
+	if(first_cpu_dest == UNDEFINED){
+		printf("ROUTING WAS UNSUCCESSFUL!\n");
+		return -1;
 	}
-
-
-	//TODO if number of cores is 1 ...
-
-	int number;
-	int src,top,bottom,left,right;
-	int limit_bottom;
-	int prow,pcol; //power of row and power of col
-	prow = row*row;
-	pcol = col*col;
-
-	int** link =(int **)malloc(pcol * sizeof(int *));
-	//int link[prow][pcol];
-
-	//initialize link array
-	for(int i=0; i<prow; i++){
-		link[i] = (int *)malloc(prow * sizeof(int));
-		for(int j=0; j<pcol; j++){
-			link[i][j] = 0; //0 means no connection
-		}
-	}
-
-
-	//connection
-	for(int i=0; i<core_num; i++){
-
-		src = i;
-		top = i-col;
-		bottom = i+col;
-		left = i-1;
-		right = i+1;
-
-		if(top >= 0) link[src][top] = 1;
-		if(bottom < row*col) link[src][bottom] = 1;
-		if((left%col != col-1)) link[src][left] = 1;
-		if(right%col != 0) link[src][right] = 1;
-
-	}
-
-
-
-	/*for(int i=0; i<prow; i++){
-		for(int j=0; j<pcol; j++){
-			printf("\t %d",link[i][j]);
-		}
-		puts("\n");
-	}*/
-
-
-	return link;
-
-}
-
-
-
-
-int minDistance(int dist[], bool visited[], int core_num)
-{
-    int min = INT_MAX;
-    int min_index;
-
-    for (int v = 0; v < core_num ; v++){
-        if (visited[v] == false && dist[v] <= min){
-            min = dist[v];
-            min_index = v;
-          }
-    }
-
-    return min_index;
-}
-
-
-int get_first_in_path(int path[], int j)
-{
-
-     int previous_j;
-
-     previous_j = j;
-
-     while(path[j] != -1){
-        previous_j = j;
-     	j = path[j];
-
-     }
-
-     return previous_j;
-
-}
-
-
-int* dijkstra(int src, int core_num, int **graph)
-{
-    int dist[core_num]; //holds the shortest distance from src to i
-
-    bool visited[core_num]; // visited[i] is true if vertex i is included in shortest path tree or shortest distance from src to i is finalized
-    int path[core_num];
-    int* first_node = (int *)malloc(core_num * sizeof(int));
-
-    // Initialize all distances as INFINITE and visited[] as false
-    for (int i = 0; i < core_num; i++){
-    	path[src] = -1;
-        dist[i] = INT_MAX;
-        visited[i] = false;
-    }
-
-    dist[src] = 0;
-
-    // Find shortest path for all vertices
-    for (int count = 0; count < core_num - 1; count++) {
-
-        int u = minDistance(dist, visited, core_num); //Pick the minimum distance vertex from the set of vertices
-
-        visited[u] = true; // Mark the picked vertex as processed
-
-        // Update dist value of the adjacent vertices of the picked vertex.
-        for (int v = 0; v < core_num; v++){
-            if (!visited[v] && graph[u][v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v]){
-                 dist[v] = dist[u] + graph[u][v];
-                 path[v] = u;
-            }
-        }
-    }
-
-
-
-    /*puts("printing path\n");
-    for (int v = 0; v < core_num; v++){
-          printf("%d ", path[v]);
-    }*/
-
-
-    for (int i = 0; i < core_num; i++){
-    	first_node[i] = get_first_in_path(path, i);
-    }
-
-    /*puts("printing path after modification\n");
-    for (int v = 0; v < core_num; v++){
-          printf("%d ", first_node[v]);
-    }*/
-
-
-    return first_node;
-
-
-}
-
-
-
-int** find_first_queue_dest(int core_num, int **graph){
-
-	int* out =(int *)malloc(core_num * sizeof(int));
-
-	int** result =(int **)malloc(core_num * sizeof(int *));
-
-	for(int i=0; i<core_num; i++){
-
-		result[i] = (int *)malloc(core_num * sizeof(int));
-		out = dijkstra(i, core_num, graph);
-
-		for(int j=0; j<core_num; j++){
-			result[i][j] = out[j];
-		}
-
-	}
-
-	free(out);
-
-
-	/*for(int i=0; i<core_num; i++){
-
-		for(int j=0; j<core_num; j++){
-
-			printf("%d ", result[i][j]);
-		}
-
-		puts("\n");
-
-	}*/
-
-
-	return result;
-
+	
+	//printf("first cpu dest: %d \n",first_cpu_dest);
+	return first_cpu_dest;
 }
 
 
@@ -1732,7 +1608,6 @@ void print_nodes(struct AGP_node *nodes){
 int main(int argc, char **argv)
 {
     printf("\n***SIMULATION START***\n\n");
-
 		int NUM_CPU;
 		MESSAGE = 0;
 		GRAPH=0;
@@ -1811,18 +1686,9 @@ int main(int argc, char **argv)
     }
 
 
-    int **adj_mtrx;
-    int **queue_links_arr;
-
-
     //TODO specifi case for cpu_num == 1, should ask
     //This should happen for NUM_CPU > 1
-    adj_mtrx = generate_adjacency_matrix(row_col,row_col);
-    queue_links_arr = find_first_queue_dest(NUM_CPU,adj_mtrx);
-    free(adj_mtrx);
 
-
-    //dijkstra(2, 16, queue_links_arr);
 
     if(MESSAGE == 1){
     	printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
@@ -1852,34 +1718,48 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
 	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
         cpu_t->cpu_num = i+1;
+        cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
 	cpus[i] = cpu_t;
     }
 
 
+    int queue_index; 
+
+    /*top right bottom left -> (0,1,2,3)*/
+    /*for(int i = 0; i<NUM_CPU; i++){
+	queue_index = generate_lookup_table(NUM_CPU, i, i-row_col); //top cpu
+	cpus[i]->look_up[0] = (queue_index != -1) ? cpu_queues[i-row_col] : NULL;
+	queue_index = generate_lookup_table(NUM_CPU, i, i+1); //right cpu
+	cpus[i]->look_up[1] = (queue_index != -1) ? cpu_queues[i+1] : NULL;
+	queue_index = generate_lookup_table(NUM_CPU, i, i+row_col); //bottom cpu
+	cpus[i]->look_up[2] = (queue_index != -1) ? cpu_queues[i+row_col] : NULL;
+	queue_index = generate_lookup_table(NUM_CPU, i, i-1); //left cpu
+	cpus[i]->look_up[3] = (queue_index != -1) ? cpu_queues[i-1] : NULL;
+    }*/
+	
+
+    //int queue_index; 	
     //initializing cpu queue connections
     for(int i = 0; i<NUM_CPU; i++){
 	for(int j = 0; j<NUM_CPU; j++){
-		int queue_index = queue_links_arr[i][j];
 		//printf("%d ",queue_index);
+		queue_index = binary_routing(NUM_CPU, i, j);
 		cpus[i]->look_up[j] = cpu_queues[queue_index];
 	}
 
 	//puts("\n");
     }
 
-    /*free allocated memory, avoiding memory leak*/
-    free(queue_links_arr);
 
-
-		//data entry array
-		if(GRAPH==1){
-			data = (struct data_entry **)malloc(sizeof(struct data_entry*) *NUM_CPU);
-			for(int i=0;i<NUM_CPU; i++){
-				data[i] = (struct data_entry *)malloc(sizeof(struct data_entry));
-				data[i]->x = 0.0;
-				data[i]->y = 0.0;
-			}
+	//data entry array
+	if(GRAPH==1){
+		data = (struct data_entry **)malloc(sizeof(struct data_entry*) *NUM_CPU);
+		for(int i=0;i<NUM_CPU; i++){
+			data[i] = (struct data_entry *)malloc(sizeof(struct data_entry));
+			data[i]->x = 0.0;
+			data[i]->y = 0.0;
 		}
+	}
 
 
     runtime_code = (int *)malloc(sizeof(int) *code_size);
