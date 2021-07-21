@@ -61,7 +61,7 @@ struct CPU{
 
 	int local_mem[5][LS_SIZE]; //local variable storage
 
-	struct Queue *look_up[4]; //lookup queue table.
+	struct Queue **look_up; //lookup queue table.
 
 
 	struct AGP_node *node_to_execute; //the node that needs to be executed
@@ -98,8 +98,6 @@ struct Message_capsul{
 
 
 void *CPU_start();
-
-
 
 
 #endif
