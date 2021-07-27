@@ -1020,33 +1020,6 @@ void create_links(struct AGP_node *in){
 
 
 
-
-
-/*
-0x7fffffff, //expansion node start
-0x1, //created count, missing 1 input
-0xfffffffc,
-0x30, //node size
-0x0, //operation (zero means expansion)
-0x1, // 1 argument
-0x0, //value
-0x1dc, //address of x in our example (in code array)
-0x1, //1 destination
-0x0, // address of subgraph to expand
-0x38, // address of node in subgraph to remap (address of result in our example)
-0x1b4, //remaping to this (address of b in our example)
-
-
-//i think this was inversed
-0x38, //remaping to this (address of b in our example)
-0x1b4,// address of node in subgraph to remap (address of result in our example)
-*/
-
-
-//TODO
-
-//5. check variable if unavailable -> we have to block and continiouslt check if it's been updated
-//6. find an output node to ramap it (given address of node in subgraph to remap)
 void expansion(struct AGP_node *current){
 
 	if(MESSAGE == 1)
@@ -1172,71 +1145,59 @@ void expansion(struct AGP_node *current){
 }
 
 
-/*int generate_lookup_table(int row, int start, int end){
-
-	if(end<0) return -1;
-	
-	if(end == start+1 && end%row = row-1) return -1;
-	
-	if(end == start-1 && end%row = 0) return -1;
-	
-	if(end>=row*row) return -1;
-	
-	return 0;*/
-
 int binary_routing(int row, int start, int end){
-	
+
 	/*
 					j ->
 	0000 0001 0010 0011	      i 0  1  2  3
 	0100 0101 0110 0111	      | 4  5  6  7
 	1000 1001 1010 1011	      v 8  9  10 11
 	1100 1101 1110 1111		12 13 14 15
-	
+
 	*/
-	
-	
+
+
 	int first_cpu_dest = UNDEFINED;
-	
+
 	/* x = least significant (j)   y = most significant (i)*/
 	int x_start, y_start;
 	int x_end, y_end;
-	
+
 	x_start = start%row; //j
 	y_start = start/row; //i
 	x_end = end%row; //j
 	y_end = end/row; //i
-	
+
 	int routing_x, routing_y;
 	routing_x = x_end - x_start;
 	routing_y = y_end - y_start;
-	
+
 	struct path *routing = (struct path*)malloc(sizeof(struct path));
-	
+
 	routing->x = routing_x;
 	routing->y = routing_y;
-	
+
 	//printf("x: %d ",routing_x);
 	//printf("y: %d \n",routing_y);
-	
-	//one option could be returning the whole path struct 
-	//return routing; 
-	
+
+	//one option could be returning the whole path struct
+	//return routing;
+
 	int sign_x, sign_y;
 	sign_x = (routing_x >0) ? 1 : -1;
 	sign_y = (routing_y >0) ? 1 : -1;
-	
+
 	// the other option would be returning the first cpu, the start cpu can send the result to
 	if(routing_x == 0 && routing_y == 0) first_cpu_dest = start;
 	else if(routing_x == 0) first_cpu_dest = start + (row * sign_y); //move one in y axis
-	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis 
+	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis
 	else first_cpu_dest = start + sign_x; //all other cases would start transfering the message towards the x axis first.
-	
+
 	if(first_cpu_dest == UNDEFINED){
 		printf("ROUTING WAS UNSUCCESSFUL!\n");
 		return -1;
 	}
-	
+
 	//printf("first cpu dest: %d \n",first_cpu_dest);
 	return first_cpu_dest;
 }
@@ -1664,11 +1625,11 @@ int main(int argc, char **argv)
     }
 
 
-    if(NUM_CPU < 1){
-	printf("NODE NUM %d\n",NUM_CPU);
-	printf("YOU MUST HAVE AT LEAST 1 CPU\n");
-	return 1;
-    }
+		if(NUM_CPU < 1){
+			printf("NODE NUM %d\n",NUM_CPU);
+			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
+			return 1;
+		}
 
     int row_col = UNDEFINED;
 
@@ -1682,13 +1643,8 @@ int main(int argc, char **argv)
 
     if(row_col == UNDEFINED){
     	printf("Only N*N cpu structure is supported! \n");
-	return 1;
+			return 1;
     }
-
-
-    //TODO specifi case for cpu_num == 1, should ask
-    //This should happen for NUM_CPU > 1
-
 
     if(MESSAGE == 1){
     	printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
@@ -1714,41 +1670,24 @@ int main(int argc, char **argv)
     }
 
     //create cpu struct
-    struct CPU *cpus[NUM_CPU];
-    for(int i = 0; i<NUM_CPU; i++){
-	struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
-        cpu_t->cpu_num = i+1;
-        cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
-	cpus[i] = cpu_t;
-    }
+		struct CPU *cpus[NUM_CPU];
+		for(int i = 0; i<NUM_CPU; i++){
+			struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+			cpu_t->cpu_num = i+1;
+			cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
+			cpus[i] = cpu_t;
+		}
 
 
-    int queue_index; 
-
-    /*top right bottom left -> (0,1,2,3)*/
-    /*for(int i = 0; i<NUM_CPU; i++){
-	queue_index = generate_lookup_table(NUM_CPU, i, i-row_col); //top cpu
-	cpus[i]->look_up[0] = (queue_index != -1) ? cpu_queues[i-row_col] : NULL;
-	queue_index = generate_lookup_table(NUM_CPU, i, i+1); //right cpu
-	cpus[i]->look_up[1] = (queue_index != -1) ? cpu_queues[i+1] : NULL;
-	queue_index = generate_lookup_table(NUM_CPU, i, i+row_col); //bottom cpu
-	cpus[i]->look_up[2] = (queue_index != -1) ? cpu_queues[i+row_col] : NULL;
-	queue_index = generate_lookup_table(NUM_CPU, i, i-1); //left cpu
-	cpus[i]->look_up[3] = (queue_index != -1) ? cpu_queues[i-1] : NULL;
-    }*/
-	
-
-    //int queue_index; 	
+    int queue_index;
     //initializing cpu queue connections
-    for(int i = 0; i<NUM_CPU; i++){
-	for(int j = 0; j<NUM_CPU; j++){
-		//printf("%d ",queue_index);
-		queue_index = binary_routing(NUM_CPU, i, j);
-		cpus[i]->look_up[j] = cpu_queues[queue_index];
-	}
-
-	//puts("\n");
-    }
+		for(int i = 0; i<NUM_CPU; i++){
+			for(int j = 0; j<NUM_CPU; j++){
+			//printf("%d ",queue_index);
+			queue_index = binary_routing(NUM_CPU, i, j);
+			cpus[i]->look_up[j] = cpu_queues[queue_index];
+			}
+		}
 
 
 	//data entry array

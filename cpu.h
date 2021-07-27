@@ -98,6 +98,12 @@ struct Message_capsul{
 };
 
 
+struct Message{
+		unsigned int addr;
+		int data;
+};
+
+
 void *CPU_start();
 
 
