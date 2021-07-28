@@ -101,10 +101,15 @@ struct Message_capsul{
 struct Message{
 		unsigned int addr;
 		int data;
+
+		struct Message *next;
 };
 
 
 void *CPU_start();
+void Message_packing(struct Message *message);
+void bin_representation(int n);
+
 
 
 #endif

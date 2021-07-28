@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "many_core.h"
 #include "2by2sim.h"
 #include "cpu.h"
 
@@ -21,6 +22,10 @@ int nodes_removed;
 struct AGP_node *program_APG_node_list;
 //main mutex
 pthread_mutex_t mem_lock;
+//buss master in
+struct FIFO *buss_Min;
+//buss master out
+struct FIFO *buss_Mout;
 
 //FOR OUTPUT DISPLAY
 int MESSAGE;
@@ -845,8 +850,6 @@ int size(int addr){
 	return size;
 }
 
-
-
 /**
  * @brief find_num_node function
  *
@@ -1018,8 +1021,6 @@ void create_links(struct AGP_node *in){
 
 }
 
-
-
 void expansion(struct AGP_node *current){
 
 	if(MESSAGE == 1)
@@ -1144,7 +1145,6 @@ void expansion(struct AGP_node *current){
 	}
 }
 
-
 int binary_routing(int row, int start, int end){
 
 	/*
@@ -1202,8 +1202,6 @@ int binary_routing(int row, int start, int end){
 	return first_cpu_dest;
 }
 
-
-
 /**
  * @brief refactor_destinations function
  *
@@ -1249,7 +1247,6 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 	}
 }
 
-
 int check_dep_unscheduled(struct AGP_node *current){
 
 	struct Dependables *dep = current->depend;
@@ -1264,7 +1261,6 @@ int check_dep_unscheduled(struct AGP_node *current){
 	}
 	return 1;
 }
-
 
 /**
  * @brief schedule_me function
@@ -1389,7 +1385,6 @@ struct AGP_node *schedule_me(int cpu_num){
 	}
 }
 
-
 void prop_death(struct AGP_node *trav){
 	if(trav->code[4] == code_merge){
 		if(MESSAGE == 1)
@@ -1448,7 +1443,6 @@ void writeMem(int ind, int val){
 	}
 	printf("OUTPUT: %d\n",val);
 }
-
 
 void nodes_never_ran(){
 	printf("\n\nList of nodes that never ran on a core:\n");
@@ -1610,31 +1604,20 @@ int main(int argc, char **argv)
 			NUM_CPU = atoi(argv[optind]);
 		}
 
-		//printf("FLAGS: m %d | g %d | K %d\n",M,g,KG);
     if(NUM_CPU < 1){
 			printf("NUM CPU %d\n",NUM_CPU);
 			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
 			return 1;
     }
-
     //create mutex
-    if (pthread_mutex_init(&mem_lock, NULL) != 0)
-    {
+    if (pthread_mutex_init(&mem_lock, NULL) != 0){
         printf("\n mutex init failed\n");
         return 1;
     }
 
-
-		if(NUM_CPU < 1){
-			printf("NODE NUM %d\n",NUM_CPU);
-			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
-			return 1;
-		}
-
     int row_col = UNDEFINED;
 
-    for (int i = 1; i * i <= NUM_CPU; i++) {
-
+    for (int i = 1; i * i <= NUM_CPU; i++){
         // if (i * i = n)
         if ((NUM_CPU % i == 0) && (NUM_CPU / i == i)) {
             row_col = i;
@@ -1678,7 +1661,6 @@ int main(int argc, char **argv)
 			cpus[i] = cpu_t;
 		}
 
-
     int queue_index;
     //initializing cpu queue connections
 		for(int i = 0; i<NUM_CPU; i++){
@@ -1688,7 +1670,6 @@ int main(int argc, char **argv)
 			cpus[i]->look_up[j] = cpu_queues[queue_index];
 			}
 		}
-
 
 	//data entry array
 	if(GRAPH==1){
@@ -1713,10 +1694,10 @@ int main(int argc, char **argv)
 
     program_APG_node_list = create_list(main_addr);
 
-///*   printf("\n\nSCHEDULING NODES\n\n");
+/*   printf("\n\nSCHEDULING NODES\n\n");
     for(int i = 0; i<NUM_CPU; i++){
 			cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
-    }
+    }*/
 		if(MESSAGE == 1)
     	print_nodes(program_APG_node_list);
 
@@ -1727,17 +1708,17 @@ int main(int argc, char **argv)
 
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
-        if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
+      //  if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
 					cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
-				else
-					cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
+			//	else
+			//		cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }//*/
 
     /***********************/
     /**** Simulation end ***/
     /***********************/
 
- ///*   //wait for all active cpu threads to finish
+ /*   //wait for all active cpu threads to finish
     int num_cpu_idle = 0;
     while(num_cpu_idle < NUM_CPU){
 			num_cpu_idle = 0;
@@ -1748,7 +1729,30 @@ int main(int argc, char **argv)
       }
 			pthread_mutex_unlock(&mem_lock);
 	//can do other busy work while sim continues '\/('_')\/'
-    }
+}*/
+
+		///////////////////////////////////////////////////////////
+		////////////////// Send message test /////////////////////
+		/////////////////////////////////////////////////////////
+		buss_Min = create_FIFO();
+		buss_Mout = create_FIFO();
+
+		int count = 1;
+		struct AGP_node *test;
+		struct Message *m;
+		while(count < 5){
+		//	test = schedule_me(100);
+			m = Message_packing(0,1,-1,code_plus);
+			printf("CODE: %d\n",test->code[4]);
+			count++;
+		}
+
+
+
+		///////////////////////////////////////////////////////////
+		//////////////// Send message test end////////////////////
+		/////////////////////////////////////////////////////////
+
 
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_cancel(thread_id[i]); //cancel all threads
@@ -1785,6 +1789,40 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+struct FIFO *create_FIFO(){
+	struct FIFO *fifo = (struct FIFO*)malloc(sizeof(struct FIFO));
+	fifo->front = fifo->back = NULL;
+	fifo->size = 0;
+	return fifo;
+}
+void sendMessage(struct FIFO *fifo, struct Message *m){
+	struct Message *new;
+	new = m;
+	if(fifo->back == NULL){
+		fifo->front = fifo->back = new;
+		fifo->size++;
+	}else{
+		fifo->back->next = new;
+		fifo->back = fifo->back->next;
+		fifo->size++;
+	}
+}
+struct Message *getMessage(struct FIFO *fifo){
+	if(fifo->front == NULL){
+		return NULL;
+	}
+	struct Message *m = fifo->front;
+	fifo->front = fifo->front->next;
+	m->next = NULL;
+
+	if(fifo->front == NULL)
+		fifo->back = NULL;
+
+		return m;
+}
+
+
 
 void GNUPLOT(int NUM_CPU){
 
