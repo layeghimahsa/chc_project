@@ -5,6 +5,7 @@
 #include <string.h>
 #include "cpu.h"
 #include "2by2sim.h"
+#include "many_core.h"
 
 
 
@@ -20,13 +21,28 @@ void *CPU_start(struct CPU *cpu){
 	int var_access_key = UNDEFINED;
 
 	struct AGP_node *NTE;
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
 	while(1){
 		sleep(0.5);
 	//NTE = cpu->node_to_execute;
+		if(buss_Mout->size > 0){
+			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+			pthread_mutex_lock(&mem_lock);
+			struct Message *m = peekMessage(buss_Mout);
+			if(m != NULL){
+				int cpu_n = (int) ( m->addr >> 26 ) & 0x0000003F; //fetc cpu number
+				if(cpu_n == cpu_num){
+					removeMessage(buss_Mout);
+					printf("CPU %d got it\n",cpu_num);
+				}
+			}
+			pthread_mutex_unlock(&mem_lock);
+		}
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-	if(MESSAGE == 1)
-		printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
+
+		if(MESSAGE == 1)
+			printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
 
 	}
 
@@ -34,7 +50,7 @@ void *CPU_start(struct CPU *cpu){
 
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 
-			struct Messasge* temp = (struct Message*)malloc(sizeof(struct Message));
+			struct Message* temp = (struct Message*)malloc(sizeof(struct Message));
 
 			unsigned int address = ((cpu_num & 0x0000003F) << 26)
 											 | ((rw & 0x00000001) << 25)
@@ -49,7 +65,7 @@ struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 }
 
 
-void Message_printing(str Message *message){
+void Message_printing(struct Message *message){
 
 			/* address 32 bits
 			[cpu number][R/W][addr]

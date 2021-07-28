@@ -1646,11 +1646,7 @@ int main(int argc, char **argv)
 			cpu_status[i] = CPU_AVAILABLE;
     }
 
-    //instantiate queues for all CPUs
-    struct Queue *cpu_queues[NUM_CPU];
-    for(int i = 0; i<NUM_CPU; i++){
-			cpu_queues[i] = createQueue();
-    }
+
 
     //create cpu struct
 		struct CPU *cpus[NUM_CPU];
@@ -1661,15 +1657,7 @@ int main(int argc, char **argv)
 			cpus[i] = cpu_t;
 		}
 
-    int queue_index;
-    //initializing cpu queue connections
-		for(int i = 0; i<NUM_CPU; i++){
-			for(int j = 0; j<NUM_CPU; j++){
-			//printf("%d ",queue_index);
-			queue_index = binary_routing(NUM_CPU, i, j);
-			cpus[i]->look_up[j] = cpu_queues[queue_index];
-			}
-		}
+
 
 	//data entry array
 	if(GRAPH==1){
@@ -1704,6 +1692,9 @@ int main(int argc, char **argv)
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
 
+			buss_Min = create_FIFO();
+			buss_Mout = create_FIFO();
+
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
@@ -1734,16 +1725,18 @@ int main(int argc, char **argv)
 		///////////////////////////////////////////////////////////
 		////////////////// Send message test /////////////////////
 		/////////////////////////////////////////////////////////
-		buss_Min = create_FIFO();
-		buss_Mout = create_FIFO();
+
 
 		int count = 1;
 		struct AGP_node *test;
 		struct Message *m;
 		while(count < 5){
 		//	test = schedule_me(100);
-			m = Message_packing(0,1,-1,code_plus);
-			printf("CODE: %d\n",test->code[4]);
+			m = Message_packing(count,1,-1,code_plus);
+			pthread_mutex_lock(&mem_lock);
+			sendMessage(buss_Mout,m);
+			pthread_mutex_unlock(&mem_lock);
+			//printf("CODE: %d\n",test->code[4]);
 			count++;
 		}
 
@@ -1808,7 +1801,27 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 		fifo->size++;
 	}
 }
-struct Message *getMessage(struct FIFO *fifo){
+struct Message *peekMessage(struct FIFO *fifo){
+	if(fifo->front == NULL){
+		return NULL;
+	}
+	return fifo->front;
+}
+void removeMessage(struct FIFO *fifo){
+	if(fifo->front == NULL){
+		//return NULL;
+	}else{
+		struct Message *m = fifo->front;
+		fifo->front = fifo->front->next;
+		m->next = NULL;
+
+		if(fifo->front == NULL)
+			fifo->back = NULL;
+
+		free(m);
+	}
+}
+struct Message *popMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		return NULL;
 	}

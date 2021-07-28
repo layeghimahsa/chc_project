@@ -8,4 +8,6 @@ struct FIFO{
 
 struct FIFO *create_FIFO();
 void sendMessage(struct FIFO *fifo, struct Message *m);
-struct Message *getMessage(struct FIFO *fifo);
+struct Message *popMessage(struct FIFO *fifo);
+struct Message *peekMessage(struct FIFO *fifo);
+void removeMessage(struct FIFO *fifo);
