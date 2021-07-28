@@ -32,13 +32,29 @@ void *CPU_start(struct CPU *cpu){
 
 }
 
+struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 
-/*void Message_packing(struct Message *message){
+			struct Messasge* temp = (struct Message*)malloc(sizeof(struct Message));
 
-			// address 32 bits
-			//[cpu number][R/W][addr]
-			//[6b][1b][25b]
-			
+			unsigned int address = ((cpu_num & 0x0000003F) << 26)
+											 | ((rw & 0x00000001) << 25)
+											 | (addr & 0x0001FFFF);
+
+			temp->addr = address;
+			temp->data = data;
+			temp->next = NULL;
+
+			return temp;
+
+}
+
+
+void Message_printing(str Message *message){
+
+			/* address 32 bits
+			[cpu number][R/W][addr]
+			[6b][1b][25b]
+			*/
 
 			unsigned int addr_temp;
 			int cpu_num, rw, addr;
@@ -64,7 +80,9 @@ void *CPU_start(struct CPU *cpu){
 			bin_representation(addr);
 			puts("\n");
 
-}*/
+			return;
+
+}
 
 
 void bin_representation(int n)
@@ -74,6 +92,7 @@ void bin_representation(int n)
 
     printf("%d", n % 2);
 }
+
 
 
 // function to create a new linked list node.
