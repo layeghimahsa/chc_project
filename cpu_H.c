@@ -8,36 +8,75 @@
 #include "many_core.h"
 
 
-
 void *CPU_start(struct CPU *cpu){
 
 	int cpu_num = cpu->cpu_num;
-
 	if(MESSAGE == 1)
 		printf("CPU %d 	START!!\n",cpu_num);
+
+
 	for(int i = 0; i<LS_SIZE; i++){
 		cpu->local_mem[0][i] = UNDEFINED;
 	}
-	int var_access_key = UNDEFINED;
 
-	struct AGP_node *NTE;
+	//TODO: create RAM
+
+	int pc = 0;
+	int sp = 0;
 
 	while(1){
 		sleep(0.01);
-	//NTE = cpu->node_to_execute;
-		if(buss_Mout->size > 0){
-			struct Message *m = peekMessage(buss_Mout);
-			if(m != NULL){
-				int cpu_n = getCpuNum(m);
-				if(cpu_n == cpu_num){
-					removeMessage(buss_Mout);
-					Message_printing(m);
+
+		switch(pc){
+			//request task
+			case RT:
+				sendMessage(buff_Min,Message_packing(cpu_num,1,OPR,REQ_TASK));
+				pc=IDLE;
+				break;
+			//decode operation
+			case DEC:
+				pc = code[sp+4];
+				break;
+			//NO operation
+			case IDLE:
+				break;
+			//for number of destinations
+			//send or save result
+			case FND:
+				if(code[5+code[5]] == 0){
+					if(sp == 0){pc=RT;}
+					else{
+						pc = code[sp-1];
+						sp = code[sp-2];
+					}
+				}else{
+					int todo = (code[5+code[5]] * 2)-1;
+					if(todo == SAVE_VAL){pc=save_res;}
+					else{pc=send_res;}
 				}
-			}
+				break;
+			case send_res:
+
+				code[5+code[5]] -= 1;
+				break;
+			case save_res:
+
+				code[5+code[5]] -= 1;
+				break;
+			//op code add
+			case code_plus:
+			  //add
+				pc = FND;
+				break;
+
+			//shouldnt happen
+			default:
+				printf("pc %d undefined operation\n",pc);
+				exit(0);
+				break;
+
 		}
 
-		if(MESSAGE == 1)
-			printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
 
 	}
 
