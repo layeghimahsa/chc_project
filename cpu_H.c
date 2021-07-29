@@ -28,7 +28,7 @@ void *CPU_start(struct CPU *cpu){
 		if(buss_Mout->size > 0){
 			struct Message *m = peekMessage(buss_Mout);
 			if(m != NULL){
-				int cpu_n = (int) ( m->addr >> 26 ) & 0x0000003F; //fetc cpu number
+				int cpu_n = getCpuNum(m);
 				if(cpu_n == cpu_num){
 					removeMessage(buss_Mout);
 					Message_printing(m);
@@ -51,6 +51,8 @@ struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 											 | ((rw & 0x00000001) << 25)
 											 | (addr & 0x0001FFFF);
 
+			//printf("addr: %d\n", addr & 0x0001FFFF);
+
 			temp->addr = address;
 			temp->data = data;
 			temp->next = NULL;
@@ -67,22 +69,15 @@ void Message_printing(struct Message *message){
 			[6b][1b][25b]
 			*/
 
-			//unsigned int addr_temp;
 			int cpu_num, rw, addr;
 
-			//printf("Message's Address: %u\n", message->addr);
-			//printf("Message's Data: %d\n", message->data);
-
 			addr = (int) message->addr & 0x0001FFFF; //fetching addr
-			//printf("addr temp: %d", addr_temp);
 			rw = (int) ( message->addr >> 25 ) & 0x00000001; //fetching read or write
-			//printf("addr temp: %d", addr_temp);
 			cpu_num = (int) ( message->addr >> 26 ) & 0x0000003F; //fetc cpu number
 
 			printf("CPU %d:\n  R/W: %d\n  addr: %d\n  data: %d\n",cpu_num,rw,addr,message->data);
 			//printf("- cpu number: %d , binary representation: ", cpu_num);
 //			bin_representation(cpu_num);
-			puts("\n");
 
 	//		(rw == 1) ? printf("- write\n") : printf("- read\n");
 
@@ -90,10 +85,24 @@ void Message_printing(struct Message *message){
 //			bin_representation(addr);
 			//puts("\n");
 
-		//	return;
-
+			return;
 }
 
+int getCpuNum(struct Message *message){
+		return (int) ( message->addr >> 26 ) & 0x0000003F;
+}
+
+int getRW(struct Message *message){
+		return (int) ( message->addr >> 25 ) & 0x00000001;
+}
+
+int getAddr(struct Message *message){
+		return (int) message->addr & 0x0001FFFF;
+}
+
+int getData(struct Message *message){
+		return message->data;
+}
 
 void bin_representation(int n)
 {

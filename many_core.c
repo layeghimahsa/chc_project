@@ -1732,7 +1732,7 @@ int main(int argc, char **argv)
 		struct Message *m;
 		while(count < 5){
 		//	test = schedule_me(100);
-			m = Message_packing(count,1,-1,code_plus);
+			m = Message_packing(count,1,OPR,code_plus);
 			sendMessage(buss_Mout,m);
 			count++;
 		}
