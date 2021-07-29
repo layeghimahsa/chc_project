@@ -23,23 +23,18 @@ void *CPU_start(struct CPU *cpu){
 	struct AGP_node *NTE;
 
 	while(1){
-		sleep(0.5);
+		sleep(0.01);
 	//NTE = cpu->node_to_execute;
 		if(buss_Mout->size > 0){
-			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-			pthread_mutex_lock(&mem_lock);
 			struct Message *m = peekMessage(buss_Mout);
 			if(m != NULL){
 				int cpu_n = (int) ( m->addr >> 26 ) & 0x0000003F; //fetc cpu number
 				if(cpu_n == cpu_num){
 					removeMessage(buss_Mout);
-					printf("CPU %d got it\n",cpu_num);
+					Message_printing(m);
 				}
 			}
-			pthread_mutex_unlock(&mem_lock);
 		}
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-
 
 		if(MESSAGE == 1)
 			printf("CPU %d DOING NODE %d\n	DEP %d\n",cpu_num,NTE->node_num,NTE->code[1]);
@@ -72,31 +67,30 @@ void Message_printing(struct Message *message){
 			[6b][1b][25b]
 			*/
 
-			unsigned int addr_temp;
+			//unsigned int addr_temp;
 			int cpu_num, rw, addr;
 
-			printf("Message's Address: %u\n", message->addr);
-			printf("Message's Data: %d\n", message->data);
+			//printf("Message's Address: %u\n", message->addr);
+			//printf("Message's Data: %d\n", message->data);
 
-			addr_temp = message->addr;
-			addr = (int) addr_temp & 0x0001FFFF; //fetching addr
-			printf("addr temp: %d", addr_temp);
-			rw = (int) ( addr_temp >> 25 ) & 0x00000001; //fetching read or write
-			printf("addr temp: %d", addr_temp);
-			cpu_num = (int) ( addr_temp >> 26 ) & 0x0000003F; //fetc cpu number
+			addr = (int) message->addr & 0x0001FFFF; //fetching addr
+			//printf("addr temp: %d", addr_temp);
+			rw = (int) ( message->addr >> 25 ) & 0x00000001; //fetching read or write
+			//printf("addr temp: %d", addr_temp);
+			cpu_num = (int) ( message->addr >> 26 ) & 0x0000003F; //fetc cpu number
 
-
-			printf("- cpu number: %d , binary representation: ", cpu_num);
-			bin_representation(cpu_num);
+			printf("CPU %d:\n  R/W: %d\n  addr: %d\n  data: %d\n",cpu_num,rw,addr,message->data);
+			//printf("- cpu number: %d , binary representation: ", cpu_num);
+//			bin_representation(cpu_num);
 			puts("\n");
 
-			(rw == 1) ? printf("- write\n") : printf("- read\n");
+	//		(rw == 1) ? printf("- write\n") : printf("- read\n");
 
-			printf("- address: %d , binary representation: ", addr);
-			bin_representation(addr);
-			puts("\n");
+			//printf("- address: %d , binary representation: ", addr);
+//			bin_representation(addr);
+			//puts("\n");
 
-			return;
+		//	return;
 
 }
 

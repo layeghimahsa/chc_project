@@ -1733,10 +1733,7 @@ int main(int argc, char **argv)
 		while(count < 5){
 		//	test = schedule_me(100);
 			m = Message_packing(count,1,-1,code_plus);
-			pthread_mutex_lock(&mem_lock);
 			sendMessage(buss_Mout,m);
-			pthread_mutex_unlock(&mem_lock);
-			//printf("CODE: %d\n",test->code[4]);
 			count++;
 		}
 
@@ -1790,8 +1787,8 @@ struct FIFO *create_FIFO(){
 	return fifo;
 }
 void sendMessage(struct FIFO *fifo, struct Message *m){
-	struct Message *new;
-	new = m;
+	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
+	*new = *m;
 	if(fifo->back == NULL){
 		fifo->front = fifo->back = new;
 		fifo->size++;
@@ -1805,7 +1802,9 @@ struct Message *peekMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		return NULL;
 	}
-	return fifo->front;
+	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
+	*new = *fifo->front;
+	return new;
 }
 void removeMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
