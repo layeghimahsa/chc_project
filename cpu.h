@@ -8,7 +8,7 @@
 #define UNKNOWN 0
 #define IGNORE -2
 #define OUTPUT -99
-#define OPR 131071
+
 
 #define code_expansion 	0
 #define code_input		1
