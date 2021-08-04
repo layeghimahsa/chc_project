@@ -36,8 +36,10 @@ void *CPU_start(struct CPU *cpu){
 	arg...
 	num_dest
 	dest1 (cpu_dest or save)
+	dest1 node num dest
 	dest1 addr
 	dest... cpu
+	dest... node num dest
 	dest... addr
 
 	*/
