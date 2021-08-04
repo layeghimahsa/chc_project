@@ -65,7 +65,6 @@ struct CPU{
 
 	struct Queue **look_up; //lookup queue table.
 
-
 	struct AGP_node *node_to_execute; //the node that needs to be executed
 
 };

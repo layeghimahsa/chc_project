@@ -1588,11 +1588,11 @@ void run_sim(){
 						//send dependent cpus the dest for their task or previous task
 						struct Dependables *dep = task->depend;
 						while(dep != NULL){
-							sendMessage(buss_Min,Message_packing(dep->cpu_num,1,OPR,NVA));
-							sendMessage(buss_Min,Message_packing(dep->cpu_num,1,0,dep->node_needed));
-							sendMessage(buss_Min,Message_packing(dep->cpu_num,1,0,serving_cpu));
-							sendMessage(buss_Min,Message_packing(dep->cpu_num,1,1,task->node_num));
-							sendMessage(buss_Min,Message_packing(dep->cpu_num ,1,OPR,EOM));
+							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
+							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
+							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
+							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+							sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
 							dep = dep->next;
 						}
 						//send requesting cpu their task
@@ -1609,8 +1609,10 @@ void run_sim(){
 							i++;
 							dest = dest->next;
 						}
-						sendMessage(buss_Min,Message_packing(serving_cpu ,1,OPR,EOM));
+						sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
 						pthread_mutex_unlock(&mem_lock);
+						op = CB;
+						serving_cpu = 0;
 						free(task);
 						break;
 					case MD:  //mark as dead
@@ -1732,9 +1734,9 @@ int main(int argc, char **argv)
 
 
     //create cpu struct
-		struct CPU *cpus[NUM_CPU];
+		struct CPU_H *cpus[NUM_CPU];
 		for(int i = 0; i<NUM_CPU; i++){
-			struct CPU *cpu_t = (struct CPU*)malloc(sizeof(struct CPU));
+			struct CPU_H *cpu_t = (struct CPU_H*)malloc(sizeof(struct CPU_H));
 			cpu_t->cpu_num = i+1;
 			cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
 			cpus[i] = cpu_t;
@@ -1781,7 +1783,7 @@ int main(int argc, char **argv)
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
-				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
+				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_H_start, cpus[i]);
       //  if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
 					cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
 			//	else

@@ -8,7 +8,7 @@
 #include "many_core.h"
 
 
-void *CPU_start(struct CPU *cpu){
+void *CPU_H_start(struct CPU_H *cpu){
 
 	int cpu_num = cpu->cpu_num;
 	if(MESSAGE == 1)
@@ -17,6 +17,10 @@ void *CPU_start(struct CPU *cpu){
 
 	for(int i = 0; i<LS_SIZE; i++){
 		cpu->local_mem[0][i] = UNDEFINED;
+	}
+
+	for(int i = 0; i<ADDRASABLE_SPACE; i++){
+		cpu->stack[i] = UNDEFINED;
 	}
 
 	struct AGP_node *NTE = cpu->node_to_execute;
@@ -46,112 +50,106 @@ void *CPU_start(struct CPU *cpu){
 	int todo;
 	int cpu_dest;
 	int addr_offset;
-	int pc = 0;
-	int sp = 0;
+	cpu->bp = 0;
+	cpu->pc = 0;
+	cpu->sp = 0;
 
 	while(1){
 		sleep(0.01);
 
-		switch(pc){
+		switch(cpu->pc){
 			//request task
 			case RT:
+				pthread_mutex_lock(&mem_lock);
 				sendMessage(buss_Min,Message_packing(cpu_num,1,OPR,REQ_TASK));
-				pc=IDLE;
+				pthread_mutex_unlock(&mem_lock);
+				cpu->pc=IDLE;
 				break;
 			//decode operation
 			case DEC:
-				pc = NTE->code[sp+4];
+				cpu->pc = NTE->code[cpu->sp+4];
 				break;
 			//NO operation
 			case IDLE:
-					if(buss_Min->size > 0){
-						//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-						pthread_mutex_lock(&mem_lock);
-						struct Message *m = peekMessage(buss_Min);
-						if(m != NULL){
-							int cpu_n = getCpuNum(m); //fetch cpu number
-							if(cpu_n == cpu_num){
-								removeMessage(buss_Min);
-								printf("CPU %d got it\n",cpu_num);
-								cpu->node_to_execute = schedule_me(cpu_num);
-								pc = DEC;
-							}
-						}
-						pthread_mutex_unlock(&mem_lock);
-				}
-				//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			//for number of destinations
 			//send or save result
 			case FND:
 				if(NTE->code[6+NTE->code[5]] == 0){
-					if(sp == 0){pc=RT;}
+					if(cpu->sp == 0){cpu->pc=RT;}
 					else{
-						pc = NTE->code[sp-1];
-						sp = NTE->code[sp-2];
+						cpu->pc = NTE->code[cpu->sp-1];
+						cpu->sp = NTE->code[cpu->sp-2];
 					}
 				}else{
 					todo = NTE->code[6+NTE->code[5]]*2 -1;
 					//todo = (code[5+code[5]] * 2)-1;
-					if(NTE->code[NTE->code[3]-todo] == SAVE_VAL){pc=SAVE_RES;}
+					if(NTE->code[NTE->code[3]-todo] == SAVE_VAL){cpu->pc=SAVE_RES;}
+					else if(NTE->code[NTE->code[3]-todo] == OUTPUT){
+						/*pthread_mutex_lock(&mem_lock);
+						sendMessage(buss_Mout,Message_packing(cpu_dest,1,NTE->code[NTE->code[3]-todo+1],NTE->code[cpu->sp+2])); //1 for writing
+						pthread_mutex_unlock(&mem_lock);*/
+					}
 					else{
 							 cpu_dest = NTE->code[NTE->code[3]-todo];
 							 addr_offset = NTE->code[NTE->code[3]-todo+1];
-						   pc=SEND_RES;
+						   cpu->pc=SEND_RES;
 					}
 				}
 				break;
 			case SEND_RES:
-				sendMessage(buss_Mout,Message_packing(cpu_dest,0,addr_offset,NTE->code[sp+2])); //0 for writing
-				pc = FND;
+				pthread_mutex_lock(&mem_lock);
+				sendMessage(buss_Mout,Message_packing(cpu_dest,1,addr_offset,NTE->code[cpu->sp+2])); //1 for writing
+				pthread_mutex_unlock(&mem_lock);
+				cpu->pc = FND;
 				NTE->code[6+NTE->code[5]] -= 1;
 				break;
 			case SAVE_RES:
 				//should save node_num, value and offset_address
 				for(int i = 0; i<LS_SIZE; i++){
 					if(cpu->local_mem[0][i] == UNDEFINED){
-						cpu->local_mem[0][i] = NTE->code[sp]; //node_num
+						cpu->local_mem[0][i] = NTE->code[cpu->sp]; //node_num
 						cpu->local_mem[1][i] = NTE->code[NTE->code[3]+1 - todo]; //offset_address
-						cpu->local_mem[2][i] = NTE->code[sp+2]; //node value
+						cpu->local_mem[2][i] = NTE->code[cpu->sp+2]; //node value
 						cpu->local_mem[3][i] = 0; //unused
 						cpu->local_mem[4][i] = 0; //unused
 						break;
 					}
 				}
-				pc = FND;
+				cpu->pc = FND;
 				NTE->code[6+NTE->code[5]] -= 1;
 				break;
 			//op code add
 			case code_plus:
 			  //add
-				NTE->code[sp+2] = NTE->code[sp+6]+NTE->code[sp+7];
-				pc = FND;
+				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]+NTE->code[cpu->sp+7];
+				cpu->pc = FND;
 				break;
 			case code_minus:
-				NTE->code[sp+2] = NTE->code[sp+6]-NTE->code[sp+7];
-				pc = FND;
+				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]-NTE->code[cpu->sp+7];
+				cpu->pc = FND;
 				break;
 			case code_times:
-				NTE->code[sp+2] = NTE->code[sp+6]*NTE->code[sp+7];
-				pc = FND;
+				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]*NTE->code[cpu->sp+7];
+				cpu->pc = FND;
 				break;
 			case code_is_equal:
-				NTE->code[sp+2] = (NTE->code[sp+6] == NTE->code[sp+7]) ? 1 : 0;
-				pc = FND;
+				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] == NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->pc = FND;
 				break;
 			case code_is_less:
-				NTE->code[sp+2] = (NTE->code[sp+6] < NTE->code[sp+7]) ? 1 : 0;
-				pc = FND;
+				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] < NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->pc = FND;
 				break;
 			case code_is_greater:
-				NTE->code[sp+2] = (NTE->code[sp+6] > NTE->code[sp+7]) ? 1 : 0;
-				pc = FND;
+				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] > NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->pc = FND;
 				break;
 
 
 			//shouldnt happen
 			default:
-				printf("pc %d undefined operation\n",pc);
+				printf("cpu->pc %d undefined operation\n",cpu->pc);
 				exit(0);
 				break;
 
@@ -161,6 +159,29 @@ void *CPU_start(struct CPU *cpu){
 	}
 
 }
+
+
+void message_listening(struct CPU_H *cpu){
+	if(buss_Mout->size > 0){
+		pthread_mutex_lock(&mem_lock);
+		struct Message *m = peekMessage(buss_Min);
+		if(m != NULL){
+			int cpu_n = getCpuNum(m); //fetch cpu number
+			int rw = getRW(m);
+			if(cpu_n == cpu->cpu_num){
+				removeMessage(buss_Min); //remove the message from the buss
+				printf("CPU %d got it\n",cpu_num);
+				if(!rw){
+
+				}
+			}
+		}
+		pthread_mutex_unlock(&mem_lock);
+	}
+
+}
+
+
 
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 
@@ -230,6 +251,7 @@ void bin_representation(int n)
 
     printf("%d", n % 2);
 }
+
 
 
 
