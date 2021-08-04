@@ -7,10 +7,17 @@
 #include "2by2sim.h"
 #include "many_core.h"
 
+pthread_mutex_t cpu_lock;
 
 void *CPU_H_start(struct CPU_H *cpu){
 
+	if (pthread_mutex_init(&cpu_lock, NULL) != 0){
+			printf("\n mutex init failed\n");
+			exit(0);
+	}
+
 	int cpu_num = cpu->cpu_num;
+
 	if(MESSAGE == 1)
 		printf("CPU %d 	START!!\n",cpu_num);
 
@@ -23,15 +30,15 @@ void *CPU_H_start(struct CPU_H *cpu){
 		cpu->stack[i] = UNDEFINED;
 	}
 
-	struct AGP_node *NTE = cpu->node_to_execute;
+	//struct AGP_node *NTE = cpu->node_to_execute;
 
 	//TODO: create RAM
 
 	/*
 	---code---
 
-	node_num
-	num_dependence
+	node_num 				-- 0
+	num_dependence	-- 1
 	value
 	node_size
 	operation
@@ -47,16 +54,13 @@ void *CPU_H_start(struct CPU_H *cpu){
 	dest... addr
 
 	*/
-	int todo;
-	int cpu_dest;
-	int addr_offset;
 	cpu->bp = 0;
 	cpu->pc = 0;
 	cpu->sp = 0;
 
 	while(1){
 		sleep(0.01);
-
+		pthread_mutex_lock(&cpu_lock);
 		switch(cpu->pc){
 			//request task
 			case RT:
@@ -67,7 +71,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 				break;
 			//decode operation
 			case DEC:
-				cpu->pc = NTE->code[cpu->sp+4];
+				cpu->pc = cpu->stack[cpu->sp+4];
 				break;
 			//NO operation
 			case IDLE:
@@ -75,77 +79,109 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//for number of destinations
 			//send or save result
 			case FND:
-				if(NTE->code[6+NTE->code[5]] == 0){
+				if(cpu->stack[6+cpu->stack[5]] == 0){
 					if(cpu->sp == 0){cpu->pc=RT;}
 					else{
-						cpu->pc = NTE->code[cpu->sp-1];
-						cpu->sp = NTE->code[cpu->sp-2];
+						cpu->pc = cpu->stack[cpu->sp-1];
+						cpu->sp = cpu->stack[cpu->sp-2];
 					}
 				}else{
-					todo = NTE->code[6+NTE->code[5]]*2 -1;
+					int todo = cpu->stack[6+cpu->stack[5]]*3;
 					//todo = (code[5+code[5]] * 2)-1;
-					if(NTE->code[NTE->code[3]-todo] == SAVE_VAL){cpu->pc=SAVE_RES;}
-					else if(NTE->code[NTE->code[3]-todo] == OUTPUT){
-						/*pthread_mutex_lock(&mem_lock);
-						sendMessage(buss_Mout,Message_packing(cpu_dest,1,NTE->code[NTE->code[3]-todo+1],NTE->code[cpu->sp+2])); //1 for writing
-						pthread_mutex_unlock(&mem_lock);*/
+					if(cpu->stack[todo-2] == SAVE_VAL){cpu->pc=SAVE_RES;}
+					else if(cpu->stack[todo-2] == OUTPUT){
+						printf("OUTPUT: %d",cpu->stack[cpu->sp+2]);
+						pthread_mutex_lock(&mem_lock);
+						sendMessage(buss_Min,Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
+						pthread_mutex_unlock(&mem_lock);
 					}
 					else{
-							 cpu_dest = NTE->code[NTE->code[3]-todo];
-							 addr_offset = NTE->code[NTE->code[3]-todo+1];
 						   cpu->pc=SEND_RES;
 					}
 				}
 				break;
 			case SEND_RES:
-				pthread_mutex_lock(&mem_lock);
-				sendMessage(buss_Mout,Message_packing(cpu_dest,1,addr_offset,NTE->code[cpu->sp+2])); //1 for writing
-				pthread_mutex_unlock(&mem_lock);
+				//TODO: send to a cpu
+
 				cpu->pc = FND;
-				NTE->code[6+NTE->code[5]] -= 1;
+				cpu->stack[6+cpu->stack[5]] -= 1;
 				break;
 			case SAVE_RES:
+			{
 				//should save node_num, value and offset_address
+				int todo = cpu->stack[6+cpu->stack[5]]*3;
 				for(int i = 0; i<LS_SIZE; i++){
 					if(cpu->local_mem[0][i] == UNDEFINED){
-						cpu->local_mem[0][i] = NTE->code[cpu->sp]; //node_num
-						cpu->local_mem[1][i] = NTE->code[NTE->code[3]+1 - todo]; //offset_address
-						cpu->local_mem[2][i] = NTE->code[cpu->sp+2]; //node value
-						cpu->local_mem[3][i] = 0; //unused
+						cpu->local_mem[0][i] = cpu->stack[cpu->sp]; //node_num
+						cpu->local_mem[1][i] = cpu->stack[todo]; //offset_address
+						cpu->local_mem[2][i] = cpu->stack[cpu->sp+2]; //node value
+						cpu->local_mem[3][i] = cpu->stack[todo-1]; //node dest
 						cpu->local_mem[4][i] = 0; //unused
 						break;
 					}
 				}
 				cpu->pc = FND;
-				NTE->code[6+NTE->code[5]] -= 1;
+				cpu->stack[6+cpu->stack[5]] -= 1;
 				break;
+			}
 			//op code add
 			case code_plus:
 			  //add
-				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]+NTE->code[cpu->sp+7];
+				cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]+cpu->stack[cpu->sp+7];
 				cpu->pc = FND;
 				break;
 			case code_minus:
-				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]-NTE->code[cpu->sp+7];
+				cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]-cpu->stack[cpu->sp+7];
 				cpu->pc = FND;
 				break;
 			case code_times:
-				NTE->code[cpu->sp+2] = NTE->code[cpu->sp+6]*NTE->code[cpu->sp+7];
+				cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]*cpu->stack[cpu->sp+7];
 				cpu->pc = FND;
 				break;
 			case code_is_equal:
-				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] == NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] == cpu->stack[cpu->sp+7]) ? 1 : 0;
 				cpu->pc = FND;
 				break;
 			case code_is_less:
-				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] < NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] < cpu->stack[cpu->sp+7]) ? 1 : 0;
 				cpu->pc = FND;
 				break;
 			case code_is_greater:
-				NTE->code[cpu->sp+2] = (NTE->code[cpu->sp+6] > NTE->code[cpu->sp+7]) ? 1 : 0;
+				cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] > cpu->stack[cpu->sp+7]) ? 1 : 0;
 				cpu->pc = FND;
 				break;
+			case NVA:
+				{
+					int node_needed = getData(popMessage(buss_Mout));
+					int cpu_dest = getData(popMessage(buss_Mout));
+					int node_dest = getData(popMessage(buss_Mout));
+					if(node_needed == cpu->stack[cpu->sp]){
+						//modify correst dest
+						int num_dest = cpu->stack[6+cpu->stack[5]];
+						for(int i =0; i<num_dest; i++){
+							if(((cpu->stack[num_dest]+2)+(3*i)) == node_dest){
+								cpu->stack[(cpu->stack[num_dest]+1)+(3*i)] = cpu_dest;
+								break;
+							}
+						}
 
+					}else{
+						//should be in local mem
+						for(int i = 0; i<LS_SIZE; i++){
+							if(cpu->local_mem[0][i] == node_needed && cpu->local_mem[3][i] == node_dest){
+								//todo send var to cpu that needs it
+							}
+						}
+					}
+					cpu->pc = cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]];
+					break;
+				}
+			case EOM:
+				{
+					cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]] = UNDEFINED;
+					cpu->pc = DEC;
+					break;
+				}
 
 			//shouldnt happen
 			default:
@@ -154,6 +190,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 				break;
 
 		}
+		pthread_mutex_unlock(&cpu_lock);
 
 
 	}
@@ -162,22 +199,34 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 
 void message_listening(struct CPU_H *cpu){
-	if(buss_Mout->size > 0){
-		pthread_mutex_lock(&mem_lock);
-		struct Message *m = peekMessage(buss_Min);
-		if(m != NULL){
-			int cpu_n = getCpuNum(m); //fetch cpu number
-			int rw = getRW(m);
-			if(cpu_n == cpu->cpu_num){
-				removeMessage(buss_Min); //remove the message from the buss
-				printf("CPU %d got it\n",cpu_num);
-				if(!rw){
+	int op = CB;
+	while(1){
 
+			if(buss_Mout->size > 0){
+				pthread_mutex_lock(&mem_lock);
+				struct Message *m = peekMessage(buss_Mout);
+				if(m != NULL){
+					int cpu_n = getCpuNum(m); //fetch cpu number
+					if(cpu_n == cpu->cpu_num){
+						removeMessage(buss_Min); //remove the message from the buss
+						if(getAddr(m) == OPR){
+							pthread_mutex_lock(&cpu_lock);
+							cpu->stack[cpu->stack[cpu->sp+3]] = cpu->pc;
+							cpu->pc = getData(m);
+							pthread_mutex_unlock(&cpu_lock);
+						}else{
+							pthread_mutex_lock(&cpu_lock);
+							cpu->stack[getAddr(m)] = getData(m);
+							pthread_mutex_unlock(&cpu_lock);
+						}
+
+					}
 				}
+				free(m);
+				pthread_mutex_unlock(&mem_lock);
 			}
+			//now check cpu fifo
 		}
-		pthread_mutex_unlock(&mem_lock);
-	}
 
 }
 

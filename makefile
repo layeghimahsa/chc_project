@@ -17,4 +17,4 @@ sim_h: $(OBJH)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
-	rm -f *.o sim
+	rm -f *.o sim sim_h

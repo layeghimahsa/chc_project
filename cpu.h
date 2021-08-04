@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPU_HW
+#define CPU_HW
 
 #define MAX_MEM 1024*64
 //#include <stdbool.h>
@@ -42,6 +42,8 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
+#define ADDRASABLE_SPACE 64
+
 struct Destination{
 	int cpu_dest;
 	int node_dest;
@@ -58,7 +60,7 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 	struct Dependables *next;
 };
 
-struct CPU{
+/*struct CPU{
 	int cpu_num; //the actual cpu number
 
 	int local_mem[5][LS_SIZE]; //local variable storage
@@ -67,6 +69,17 @@ struct CPU{
 
 	struct AGP_node *node_to_execute; //the node that needs to be executed
 
+};*/
+
+struct CPU_H{
+	int cpu_num; //the actual cpu number
+	int local_mem[5][LS_SIZE]; //local variable storage
+	int stack[ADDRASABLE_SPACE];
+	int bp; //base pointer
+	int sp; //stack pointer
+	int pc; //program counter
+	struct Queue **look_up; //lookup queue table.
+	struct AGP_node *node_to_execute; //the node that needs to be executed
 };
 
 struct AGP_node{
@@ -107,10 +120,11 @@ struct Message{
 
 
 void *CPU_start();
+void *CPU_H_start();
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
 void Message_printing(struct Message *message);
 void bin_representation(int n);
 
-
+void message_listening(struct CPU_H *cpu);
 
 #endif

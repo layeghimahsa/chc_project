@@ -1565,72 +1565,80 @@ void run_sim(){
 
 	//pthread_mutex_lock(&mem_lock);
 	struct Message *buffer;
-	int op = check_buss;
+	int op = CB; int serving_cpu = 0;
 	while(1){
 				switch(op){
 					case CB:  //check buss
-					if(buff_Min->size > 0){
-						pthread_mutex_lock(&mem_lock);
-						struct Message *m = popMessage(buff_Min);
-						pthread_mutex_unlock(&mem_lock);
-						if(getAddr(m) == OPR){
-							serving_cpu = getCpuNum(m); op = getData(m);
-						}else{
-							buffer = m;
-							op = getRW(m)
-						}
-						free(m);
-					}else{sleep(0.05);}
+					{
+						if(buss_Min->size > 0){
+							pthread_mutex_lock(&mem_lock);
+							struct Message *m = popMessage(buss_Min);
+							pthread_mutex_unlock(&mem_lock);
+							if(getAddr(m) == OPR){
+								serving_cpu = getCpuNum(m); op = getData(m);
+							}else{
+								buffer = m;
+								op = getRW(m);
+							}
+							free(m);
+						}else{sleep(0.05);}
 						break;
+					}
 					case REQ_TASK: //request new task
-						struct AGP_node *task = schedule_me(serving_cpu);
-						pthread_mutex_lock(&mem_lock);
-						//send dependent cpus the dest for their task or previous task
-						struct Dependables *dep = task->depend;
-						while(dep != NULL){
-							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
-							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
-							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
-							sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
-							sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
-							dep = dep->next;
-						}
-						//send requesting cpu their task
-						int i;
-						for( i=0; i<(6+task->code[6]+1); i++){
-							sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,code[i+1]));
-						}
-						i++;
-						struct Destination *dest = task->dest;
-						for(int j=0; j<task->num_dest; j++){
-							sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
-							sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
-							sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2,code[i+1]));
+						{
+							struct AGP_node *task = schedule_me(serving_cpu);
+							pthread_mutex_lock(&mem_lock);
+							//send dependent cpus the dest for their task or previous task
+							struct Dependables *dep = task->depend;
+							while(dep != NULL){
+								sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
+								sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
+								sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
+								sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+								//sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
+								dep = dep->next;
+							}
+							//send requesting cpu their task
+							int i;
+							for( i=0; i<(6+task->code[6]+1); i++){
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,code[i+1]));
+							}
 							i++;
-							dest = dest->next;
+							struct Destination *dest = task->dest;
+							for(int j=0; j<task->num_dest; j++){
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2,code[i+1]));
+								i++;
+								dest = dest->next;
+							}
+							sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+							pthread_mutex_unlock(&mem_lock);
+							op = CB;
+							serving_cpu = 0;
+							free(task);
+							break;
 						}
-						sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
-						pthread_mutex_unlock(&mem_lock);
-						op = CB;
-						serving_cpu = 0;
-						free(task);
-						break;
 					case MD:  //mark as dead
-						pthread_mutex_lock(&mem_lock);
-						struct Message *m = popMessage(buff_Min);
-						pthread_mutex_unlock(&mem_lock);
-						mark_as_dead(getData(m));
-						op = CB;
-						free(m);
-						break;
+						{
+							pthread_mutex_lock(&mem_lock);
+							struct Message *m = popMessage(buss_Min);
+							pthread_mutex_unlock(&mem_lock);
+							mark_as_dead(getData(m));
+							op = CB;
+							free(m);
+							break;
+						}
 					case PD: //propogate death
-						pthread_mutex_lock(&mem_lock);
-						struct Message *m = popMessage(buff_Min);
-						pthread_mutex_unlock(&mem_lock);
-						propagate_death(getData(m));
-						op = CB;
-						free(m);
-						break;
+						{
+							pthread_mutex_lock(&mem_lock);
+							struct Message *m = popMessage(buss_Min);
+							pthread_mutex_unlock(&mem_lock);
+							propagate_death(getData(m));
+							op = CB;
+							free(m);
+							break;
+						}
 					case READ:
 						//runtime_code[getAddr(buffer)] = getData(buffer);
 						printf("no reads needed yet\n");
@@ -1641,7 +1649,6 @@ void run_sim(){
 						break;
 				}
 		}
-	}
 }
 
 
@@ -1730,8 +1737,6 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
 			cpu_status[i] = CPU_AVAILABLE;
     }
-
-
 
     //create cpu struct
 		struct CPU_H *cpus[NUM_CPU];
