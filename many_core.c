@@ -1574,6 +1574,9 @@ void run_sim(){
 							pthread_mutex_lock(&mem_lock);
 							struct Message *m = popMessage(buss_Min);
 							pthread_mutex_unlock(&mem_lock);
+
+							printf("Message: [%d][%d][%d]	  [%d]\n",getCpuNum(m),getRW(m),getAddr(m),getData(m));
+
 							if(getAddr(m) == OPR){
 								serving_cpu = getCpuNum(m); op = getData(m);
 							}else{
@@ -1586,6 +1589,7 @@ void run_sim(){
 					}
 					case REQ_TASK: //request new task
 						{
+							printf("sending task to cpu %d\n",serving_cpu);
 							struct AGP_node *task = schedule_me(serving_cpu);
 							pthread_mutex_lock(&mem_lock);
 							//send dependent cpus the dest for their task or previous task
@@ -1932,8 +1936,11 @@ struct Message *popMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		return NULL;
 	}
-	struct Message *m = fifo->front;
+	struct Message *m = (struct Message*)malloc(sizeof(struct Message));
+	*m = *fifo->front;
+	struct Message *remove = fifo->front;
 	fifo->front = fifo->front->next;
+	free(remove);
 	m->next = NULL;
 
 	if(fifo->front == NULL)

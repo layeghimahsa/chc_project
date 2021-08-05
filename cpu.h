@@ -125,6 +125,6 @@ struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
 void Message_printing(struct Message *message);
 void bin_representation(int n);
 
-void message_listening(struct CPU_H *cpu);
+void *message_listening();
 
 #endif

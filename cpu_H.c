@@ -30,6 +30,10 @@ void *CPU_H_start(struct CPU_H *cpu){
 		cpu->stack[i] = UNDEFINED;
 	}
 
+	//create listening thread
+	pthread_t thread_id;
+	pthread_create(&thread_id, NULL, &message_listening, cpu);
+
 	//struct AGP_node *NTE = cpu->node_to_execute;
 
 	//TODO: create RAM
@@ -164,28 +168,28 @@ void *CPU_H_start(struct CPU_H *cpu){
 											(cpu->stack[2] = cpu->stack[7]);
 											pthread_mutex_lock(&mem_lock);
 											//mark_as_dead(cpu->stack[sp]);
-											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,MD));
+											sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
 											pthread_mutex_unlock(&mem_lock);
 										}
 										else
 										{
 											cpu->stack[2] = 0;
 											pthread_mutex_lock(&mem_lock);
-											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,PD));
+											sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
 											pthread_mutex_unlock(&mem_lock);
 										} break;
 			case code_else:			if(cpu->stack[6] == 0)
 										{
 											(cpu->stack[2] = cpu->stack[7]);
 											pthread_mutex_lock(&mem_lock);
-											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,MD));
+											sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
 											pthread_mutex_unlock(&mem_lock);
 										}
 										else
 										{
 											cpu->stack[2] = 0;
 											pthread_mutex_lock(&mem_lock);
-											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,PD));
+											sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
 											pthread_mutex_unlock(&mem_lock);
 										} break;
 
@@ -244,7 +248,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 }
 
 
-void message_listening(struct CPU_H *cpu){
+void *message_listening(struct CPU_H *cpu){
 	int op = CB;
 	while(1){
 
@@ -255,6 +259,7 @@ void message_listening(struct CPU_H *cpu){
 				if(m != NULL){
 					int cpu_n = getCpuNum(m); //fetch cpu number
 					if(cpu_n == cpu->cpu_num){
+						printf("CPU %d received message from buss\n",cpu->cpu_num);
 						removeMessage(buss_Min); //remove the message from the buss
 						if(getAddr(m) == OPR){
 							pthread_mutex_lock(&cpu_lock);
