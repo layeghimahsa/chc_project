@@ -42,7 +42,7 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-#define ADDRASABLE_SPACE 64
+#define ADDRASABLE_SPACE 256
 
 struct Destination{
 	int cpu_dest;
@@ -78,7 +78,7 @@ struct CPU_H{
 	int bp; //base pointer
 	int sp; //stack pointer
 	int pc; //program counter
-	struct Queue **look_up; //lookup queue table.
+	struct FIFO **look_up; //lookup FIFO table.
 	struct AGP_node *node_to_execute; //the node that needs to be executed
 };
 

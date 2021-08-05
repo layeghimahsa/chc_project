@@ -1738,14 +1738,32 @@ int main(int argc, char **argv)
 			cpu_status[i] = CPU_AVAILABLE;
     }
 
+
+		//instantiate FIFOs for all CPUs
+    struct FIFO *cpu_fifos[NUM_CPU];
+    for(int i = 0; i<NUM_CPU; i++){
+			cpu_fifos[i] = create_FIFO();
+    }
+
     //create cpu struct
 		struct CPU_H *cpus[NUM_CPU];
 		for(int i = 0; i<NUM_CPU; i++){
 			struct CPU_H *cpu_t = (struct CPU_H*)malloc(sizeof(struct CPU_H));
 			cpu_t->cpu_num = i+1;
-			cpu_t->look_up = (struct Queue **) malloc(sizeof(struct Queue*) *NUM_CPU);
+			cpu_t->look_up = (struct FIFO **) malloc(sizeof(struct FIFO*) *NUM_CPU);
 			cpus[i] = cpu_t;
 		}
+
+
+		//initializing cpu queue connections
+		int queue_index;
+	  for(int i = 0; i<NUM_CPU; i++){
+			for(int j = 0; j<NUM_CPU; j++){
+				//printf("%d ",queue_index);
+				queue_index = binary_routing(NUM_CPU, i, j);
+				cpus[i]->look_up[j] = cpu_fifos[queue_index];
+			}
+	  }
 
 
 

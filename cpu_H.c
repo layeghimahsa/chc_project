@@ -79,33 +79,41 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//for number of destinations
 			//send or save result
 			case FND:
-				if(cpu->stack[6+cpu->stack[5]] == 0){
-					if(cpu->sp == 0){cpu->pc=RT;}
-					else{
-						cpu->pc = cpu->stack[cpu->sp-1];
-						cpu->sp = cpu->stack[cpu->sp-2];
+				{
+					if(cpu->stack[6+cpu->stack[5]] == 0){
+						if(cpu->sp == 0){cpu->pc=RT;}
+						else{
+							cpu->pc = cpu->stack[cpu->sp-1];
+							cpu->sp = cpu->stack[cpu->sp-2];
+						}
+					}else{
+						int todo = cpu->stack[6+cpu->stack[5]]*3;
+						//todo = (code[5+code[5]] * 2)-1;
+						if(cpu->stack[todo-2] == SAVE_VAL){cpu->pc=SAVE_RES;}
+						else if(cpu->stack[todo-2] == OUTPUT){
+							printf("OUTPUT: %d",cpu->stack[cpu->sp+2]);
+							pthread_mutex_lock(&mem_lock);
+							sendMessage(buss_Min,Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
+							pthread_mutex_unlock(&mem_lock);
+						}
+						else{
+							   cpu->pc=SEND_RES;
+						}
 					}
-				}else{
-					int todo = cpu->stack[6+cpu->stack[5]]*3;
-					//todo = (code[5+code[5]] * 2)-1;
-					if(cpu->stack[todo-2] == SAVE_VAL){cpu->pc=SAVE_RES;}
-					else if(cpu->stack[todo-2] == OUTPUT){
-						printf("OUTPUT: %d",cpu->stack[cpu->sp+2]);
-						pthread_mutex_lock(&mem_lock);
-						sendMessage(buss_Min,Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
-						pthread_mutex_unlock(&mem_lock);
-					}
-					else{
-						   cpu->pc=SEND_RES;
-					}
+					break;
 				}
-				break;
 			case SEND_RES:
-				//TODO: send to a cpu
+				{
+					//TODO: send to a cpu
+					int todo = cpu->stack[6+cpu->stack[5]]*3;
+					pthread_mutex_lock(&mem_lock);
+					sendMessage(cpu->look_up[cpu->stack[todo-2]],Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
+					pthread_mutex_unlock(&mem_lock);
 
-				cpu->pc = FND;
-				cpu->stack[6+cpu->stack[5]] -= 1;
-				break;
+					cpu->pc = FND;
+					cpu->stack[6+cpu->stack[5]] -= 1;
+					break;
+				}
 			case SAVE_RES:
 			{
 				//should save node_num, value and offset_address
@@ -150,6 +158,44 @@ void *CPU_H_start(struct CPU_H *cpu){
 				cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] > cpu->stack[cpu->sp+7]) ? 1 : 0;
 				cpu->pc = FND;
 				break;
+
+			case code_if:			if((cpu->stack[6] != 0))
+										{
+											(cpu->stack[2] = cpu->stack[7]);
+											pthread_mutex_lock(&mem_lock);
+											//mark_as_dead(cpu->stack[sp]);
+											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,MD));
+											pthread_mutex_unlock(&mem_lock);
+										}
+										else
+										{
+											cpu->stack[2] = 0;
+											pthread_mutex_lock(&mem_lock);
+											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,PD));
+											pthread_mutex_unlock(&mem_lock);
+										} break;
+			case code_else:			if(cpu->stack[6] == 0)
+										{
+											(cpu->stack[2] = cpu->stack[7]);
+											pthread_mutex_lock(&mem_lock);
+											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,MD));
+											pthread_mutex_unlock(&mem_lock);
+										}
+										else
+										{
+											cpu->stack[2] = 0;
+											pthread_mutex_lock(&mem_lock);
+											sendMessage(buss_Min,Message_packing(cpu->stack[cpu->sp],1,OPR,PD));
+											pthread_mutex_unlock(&mem_lock);
+										} break;
+
+				//TODO: Fix merge so it has a single argument
+			case code_merge:
+						cpu->stack[2] = (cpu->stack[6] | cpu->stack[7]);
+						//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,cpu->stack[6],cpu->stack[7],cpu->stack[2]);
+						break;
+			case code_identity:		if(cpu->stack[2] == NAV){cpu->stack[2] = cpu->stack[6];}break;
+
 			case NVA:
 				{
 					int node_needed = getData(popMessage(buss_Mout));
@@ -205,6 +251,7 @@ void message_listening(struct CPU_H *cpu){
 			if(buss_Mout->size > 0){
 				pthread_mutex_lock(&mem_lock);
 				struct Message *m = peekMessage(buss_Mout);
+				pthread_mutex_unlock(&mem_lock);
 				if(m != NULL){
 					int cpu_n = getCpuNum(m); //fetch cpu number
 					if(cpu_n == cpu->cpu_num){
@@ -223,9 +270,32 @@ void message_listening(struct CPU_H *cpu){
 					}
 				}
 				free(m);
-				pthread_mutex_unlock(&mem_lock);
 			}
 			//now check cpu fifo
+			if(cpu->look_up[cpu->cpu_num-1]->size > 0){
+				pthread_mutex_lock(&mem_lock);
+				struct Message *m = popMessage(cpu->look_up[cpu->cpu_num-1]);
+				pthread_mutex_unlock(&mem_lock);
+				if(m!=NULL){
+						int cpu_n = getCpuNum(m); //fetch cpu number
+						if(cpu_n != cpu->cpu_num){ //the message is not for you
+							pthread_mutex_lock(&mem_lock);
+							sendMessage(cpu->look_up[cpu_n-1],Message_packing(cpu_n,getRW(m),getAddr(m),getData(m)));
+							pthread_mutex_unlock(&mem_lock);
+						}else{ //this should only be operation for now
+							/*pthread_mutex_lock(&cpu_lock);
+							cpu->stack[cpu->stack[cpu->sp+3]] = cpu->pc; //save old pc
+							cpu->pc = getData(m);
+							pthread_mutex_unlock(&cpu_lock);*/
+							pthread_mutex_lock(&cpu_lock);
+							cpu->stack[getAddr(m)] = getData(m);
+							pthread_mutex_unlock(&cpu_lock);
+
+						}
+				}
+				free(m);
+
+			}
 		}
 
 }
