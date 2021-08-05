@@ -60,7 +60,7 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 	struct Dependables *next;
 };
 
-/*struct CPU{
+struct CPU{
 	int cpu_num; //the actual cpu number
 
 	int local_mem[5][LS_SIZE]; //local variable storage
@@ -69,7 +69,7 @@ struct Dependables{ //this is a list of all variable a cpu must call upon to get
 
 	struct AGP_node *node_to_execute; //the node that needs to be executed
 
-};*/
+};
 
 struct CPU_H{
 	int cpu_num; //the actual cpu number

@@ -3,22 +3,23 @@
 
 #define OPR 131071
 #define REQ_TASK 3
-#define RT 0
-#define DEC 1
-#define FND 2
+#define RT -9
+#define DEC -3
+#define FND -10
 #define SAVE_VAL 0
-#define SAVE_RES 13
-#define SEND_RES 14
-#define IDLE 15
+#define SAVE_RES -8
+#define SEND_RES -7
+#define IDLE -6
 
 #define READ 0
 #define WRITE 1
-#define CB 2      //check buss
+#define CB -1     //check buss
 //#define RNT 3
 #define MD 4      //mark as dead
 #define PD 5      //propagate death
-#define EOM 1010  //end of message
-#define NVA 16    //new variable address
+#define EOM -5  //end of message
+#define NVA -4    //new variable address
+#define WTS -2
 
 
 

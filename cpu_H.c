@@ -59,7 +59,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 	*/
 	cpu->bp = 0;
-	cpu->pc = 0;
+	cpu->pc = RT;
 	cpu->sp = 0;
 
 	while(1){
@@ -73,12 +73,19 @@ void *CPU_H_start(struct CPU_H *cpu){
 				pthread_mutex_unlock(&mem_lock);
 				cpu->pc=IDLE;
 				break;
-			//decode operation
+			//wait for dependables to start
+			case WTS:
+				if(cpu->stack[cpu->sp+1]==0){
+					cpu->pc = DEC;
+				}
+				break;
+				//decode operation
 			case DEC:
 				cpu->pc = cpu->stack[cpu->sp+4];
 				break;
 			//NO operation
 			case IDLE:
+				sleep(0.01);
 				break;
 			//for number of destinations
 			//send or save result
@@ -95,7 +102,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 						//todo = (code[5+code[5]] * 2)-1;
 						if(cpu->stack[todo-2] == SAVE_VAL){cpu->pc=SAVE_RES;}
 						else if(cpu->stack[todo-2] == OUTPUT){
-							printf("OUTPUT: %d",cpu->stack[cpu->sp+2]);
+							printf("\n\nOUTPUT: %d\n\n",cpu->stack[cpu->sp+2]);
 							pthread_mutex_lock(&mem_lock);
 							sendMessage(buss_Min,Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
 							pthread_mutex_unlock(&mem_lock);
@@ -202,9 +209,11 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 			case NVA:
 				{
+					pthread_mutex_lock(&mem_lock);
 					int node_needed = getData(popMessage(buss_Mout));
 					int cpu_dest = getData(popMessage(buss_Mout));
 					int node_dest = getData(popMessage(buss_Mout));
+					pthread_mutex_unlock(&mem_lock);
 					if(node_needed == cpu->stack[cpu->sp]){
 						//modify correst dest
 						int num_dest = cpu->stack[6+cpu->stack[5]];
@@ -229,10 +238,9 @@ void *CPU_H_start(struct CPU_H *cpu){
 			case EOM:
 				{
 					cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]] = UNDEFINED;
-					cpu->pc = DEC;
+					cpu->pc = WTS;
 					break;
 				}
-
 			//shouldnt happen
 			default:
 				printf("cpu->pc %d undefined operation\n",cpu->pc);
@@ -259,8 +267,8 @@ void *message_listening(struct CPU_H *cpu){
 				if(m != NULL){
 					int cpu_n = getCpuNum(m); //fetch cpu number
 					if(cpu_n == cpu->cpu_num){
-						printf("CPU %d received message from buss\n",cpu->cpu_num);
-						removeMessage(buss_Min); //remove the message from the buss
+						//printf("CPU %d received message from buss\n",cpu->cpu_num);
+						removeMessage(buss_Mout); //remove the message from the buss
 						if(getAddr(m) == OPR){
 							pthread_mutex_lock(&cpu_lock);
 							cpu->stack[cpu->stack[cpu->sp+3]] = cpu->pc;
@@ -278,6 +286,7 @@ void *message_listening(struct CPU_H *cpu){
 			}
 			//now check cpu fifo
 			if(cpu->look_up[cpu->cpu_num-1]->size > 0){
+				printf("CPU %d received message from cpu com\n",cpu->cpu_num);
 				pthread_mutex_lock(&mem_lock);
 				struct Message *m = popMessage(cpu->look_up[cpu->cpu_num-1]);
 				pthread_mutex_unlock(&mem_lock);
@@ -288,12 +297,10 @@ void *message_listening(struct CPU_H *cpu){
 							sendMessage(cpu->look_up[cpu_n-1],Message_packing(cpu_n,getRW(m),getAddr(m),getData(m)));
 							pthread_mutex_unlock(&mem_lock);
 						}else{ //this should only be operation for now
-							/*pthread_mutex_lock(&cpu_lock);
-							cpu->stack[cpu->stack[cpu->sp+3]] = cpu->pc; //save old pc
-							cpu->pc = getData(m);
-							pthread_mutex_unlock(&cpu_lock);*/
+							//writing var in
 							pthread_mutex_lock(&cpu_lock);
 							cpu->stack[getAddr(m)] = getData(m);
+							cpu->stack[cpu->sp+1]--;
 							pthread_mutex_unlock(&cpu_lock);
 
 						}
