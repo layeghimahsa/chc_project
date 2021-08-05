@@ -58,7 +58,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 	while(1){
 
 		sleep(0.01);
-
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if(getFifoSize(buss_Mout) > 0){
 			pthread_mutex_lock(&mem_lock);
 			struct Message *m = peekMessage(buss_Mout);
@@ -93,7 +93,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 			}
 			free(m);
 		}
-
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		//now check cpu fifo
 		if(getFifoSize(cpu->look_up[cpu->cpu_num-1]) > 0){
 			printf("CPU %d received message from cpu com\n",cpu->cpu_num);
@@ -120,15 +121,17 @@ void *CPU_H_start(struct CPU_H *cpu){
 			}
 			free(m);
 		}
-
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		switch(cpu->pc){
 			//request task
 			case RT:
 			{
+				pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 				pthread_mutex_lock(&mem_lock);
 				sendMessage(buss_Min,Message_packing(cpu_num,1,OPR,REQ_TASK));
 				pthread_mutex_unlock(&mem_lock);
 				cpu->pc=IDLE;
+				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
 			//wait for dependables to start
@@ -162,6 +165,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//send or save result
 			case FND:
 				{
+					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					if(cpu->stack[6+cpu->stack[5]] == 0){
 						cpu->pc = RT;
 					}else{
@@ -188,12 +192,13 @@ void *CPU_H_start(struct CPU_H *cpu){
 								 //printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
 						}
 					}
+					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 			case SEND_RES:
 				{
 					//TODO: send to a cpu
-
+					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					//int todo = cpu->stack[6+cpu->stack[5]]*3;
 					int todo = 6+cpu->stack[5]+(cpu->stack[6+cpu->stack[5]]*3);
 					/*for(int i = 0; i<cpu->stack[3]; i++){
@@ -207,6 +212,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 					cpu->pc = FND;
 					cpu->stack[6+cpu->stack[5]] -= 1;
+					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 			case SAVE_RES:
@@ -261,6 +267,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 				break;
 			case code_if:
 			{
+				pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 				if((cpu->stack[6] != 0))
 				{
 					(cpu->stack[2] = cpu->stack[7]);
@@ -279,10 +286,12 @@ void *CPU_H_start(struct CPU_H *cpu){
 					pthread_mutex_unlock(&mem_lock);
 				}
 				cpu->pc = FND;
+				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
 			case code_else:
 			{
+				pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 				if(cpu->stack[6] == 0)
 				{
 					(cpu->stack[2] = cpu->stack[7]);
@@ -300,6 +309,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 					pthread_mutex_unlock(&mem_lock);
 				}
 				cpu->pc = FND;
+				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
 			case code_merge:
@@ -318,6 +328,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//changing a destination address or sending a var needed to another cpu
 			case NVA:
 				{
+						pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 						printf("CPU %d got var request\n",cpu->cpu_num);
 						int node_needed = getData(cpu->buffer);
 						int cpu_dest = getData(cpu->buffer->next);
@@ -361,6 +372,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 					cpu->pc = cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]];
 					printf("CPU %d returning to task %d\n",cpu->cpu_num,cpu->pc);
+					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 			//shouldnt happen

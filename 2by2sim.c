@@ -450,68 +450,68 @@ void expansion(struct AGP_node *current){
 /*int generate_lookup_table(int row, int start, int end){
 
 	if(end<0) return -1;
-	
+
 	if(end == start+1 && end%row = row-1) return -1;
-	
+
 	if(end == start-1 && end%row = 0) return -1;
-	
+
 	if(end>=row*row) return -1;
-	
+
 	return 0;*/
 
 int binary_routing(int row, int start, int end){
-	
+
 	/*
 					j ->
 	0000 0001 0010 0011	      i 0  1  2  3
 	0100 0101 0110 0111	      | 4  5  6  7
 	1000 1001 1010 1011	      v 8  9  10 11
 	1100 1101 1110 1111		12 13 14 15
-	
+
 	*/
-	
-	
+
+
 	int first_cpu_dest = UNDEFINED;
-	
+
 	/* x = least significant (j)   y = most significant (i)*/
 	int x_start, y_start;
 	int x_end, y_end;
-	
+
 	x_start = start%row; //j
 	y_start = start/row; //i
 	x_end = end%row; //j
 	y_end = end/row; //i
-	
+
 	int routing_x, routing_y;
 	routing_x = x_end - x_start;
 	routing_y = y_end - y_start;
-	
+
 	struct path *routing = (struct path*)malloc(sizeof(struct path));
-	
+
 	routing->x = routing_x;
 	routing->y = routing_y;
-	
+
 	//printf("x: %d ",routing_x);
 	//printf("y: %d \n",routing_y);
-	
-	//one option could be returning the whole path struct 
-	//return routing; 
-	
+
+	//one option could be returning the whole path struct
+	//return routing;
+
 	int sign_x, sign_y;
 	sign_x = (routing_x >0) ? 1 : -1;
 	sign_y = (routing_y >0) ? 1 : -1;
-	
+
 	// the other option would be returning the first cpu, the start cpu can send the result to
 	if(routing_x == 0 && routing_y == 0) first_cpu_dest = start;
 	else if(routing_x == 0) first_cpu_dest = start + (row * sign_y); //move one in y axis
-	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis 
+	else if (routing_y == 0) first_cpu_dest = start + sign_x; //move one in x axis
 	else first_cpu_dest = start + sign_x; //all other cases would start transfering the message towards the x axis first.
-	
+
 	if(first_cpu_dest == UNDEFINED){
 		printf("ROUTING WAS UNSUCCESSFUL!\n");
 		return -1;
 	}
-	
+
 	//printf("first cpu dest: %d \n",first_cpu_dest);
 	return first_cpu_dest;
 }
@@ -998,7 +998,7 @@ int main(int argc, char **argv)
     }
 
 
-    int queue_index; 
+    int queue_index;
 
     /*top right bottom left -> (0,1,2,3)*/
     /*for(int i = 0; i<NUM_CPU; i++){
@@ -1011,9 +1011,9 @@ int main(int argc, char **argv)
 	queue_index = generate_lookup_table(NUM_CPU, i, i-1); //left cpu
 	cpus[i]->look_up[3] = (queue_index != -1) ? cpu_queues[i-1] : NULL;
     }*/
-	
 
-    //int queue_index; 	
+
+    //int queue_index;
     //initializing cpu queue connections
     for(int i = 0; i<NUM_CPU; i++){
 	for(int j = 0; j<NUM_CPU; j++){
@@ -1062,7 +1062,7 @@ int main(int argc, char **argv)
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
-				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_start, cpus[i]);
+				pthread_create(&(thread_id[i]), NULL, &CPU_start, cpus[i]);
         if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
 					cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
 				else

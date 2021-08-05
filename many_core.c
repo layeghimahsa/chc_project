@@ -1165,7 +1165,7 @@ int main(int argc, char **argv)
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
-				pthread_create(&(thread_id[i]), NULL, &CPU_H_start, cpus[i]);
+				pthread_create(&thread_id[i], NULL, &CPU_H_start, cpus[i]);
 			  cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }//*/
 
@@ -1208,17 +1208,17 @@ int main(int argc, char **argv)
 		/////////////////////////////////////////////////////////
 
 		printf("\n***SIMULATION COMPLETE***\n\n");
-    for(int i = 0; i<NUM_CPU; i++){
+
+		//this should prob be in but it causes a seg fault 
+  /*  for(int i = 0; i<NUM_CPU; i++){
 				pthread_cancel(thread_id[i]); //cancel all threads
 				pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely
-    }
+    }*/
 
 		clock_t finish = clock();
 		double elapsed = (double)(finish - BEGIN)/CLOCKS_PER_SEC;
 
     pthread_mutex_destroy(&mem_lock);
-
-		//printf("\n***SIMULATION COMPLETE***\n\n");
 
 		printf("TIME ELAPSED: %f\n\n", elapsed);
 
