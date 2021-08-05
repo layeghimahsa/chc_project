@@ -41,6 +41,8 @@ void sendMessage(struct FIFO *fifo, struct Message *m);
 struct Message *popMessage(struct FIFO *fifo);
 struct Message *peekMessage(struct FIFO *fifo);
 void removeMessage(struct FIFO *fifo);
+int getFifoSize(struct FIFO *fifo);
+
 void bin_representation(int n);
 int getCpuNum(struct Message *message);
 int getRW(struct Message *message);

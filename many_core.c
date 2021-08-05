@@ -353,6 +353,7 @@ void expansion(struct AGP_node *current){
 			count++; dest--;
 		}
 		dest = (node_to_point->node_size - count - 1)*4;
+		dest_node->offset = dest;
 		if(node_to_change->dest == NULL){
 			node_to_change->dest = dest_node;
 		}
@@ -416,6 +417,7 @@ void expansion(struct AGP_node *current){
 		inputed_node = inputed_node->next;
 		num_args--;
 		requ_node->code[1]++;
+		//requ_node->code[4] = code_identity;
 		dep = dep->next;
 	}
 }
@@ -515,6 +517,7 @@ void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 					dest = (temp->node_size - count - 1)*4;
 					current->code[current->node_size-i] = dest;
 					dest_struct->state = DONT_REFACTOR;
+					dest_struct->offset = dest;
 				}
 			}
 			dest_struct = dest_struct->next;
@@ -840,50 +843,52 @@ void print_nodes(struct AGP_node *nodes){
 
 void run_sim(){
 
-	struct Message *buffer;
+	print_node_short();
+	struct Message *buffer; //need malloc
 	int op = CB; int serving_cpu = 0;
 	int terminate_sim = 0;
 	while(terminate_sim == 0){
 				switch(op){
 					case CB:  //check buss
 					{
-						if(buss_Min->size > 0){
+						if(getFifoSize(buss_Min) > 0){
+
 							pthread_mutex_lock(&mem_lock);
 							struct Message *m = popMessage(buss_Min);
 							pthread_mutex_unlock(&mem_lock);
 
 							printf("Message: [%d][%d][%d]	  [%d]\n",getCpuNum(m),getRW(m),getAddr(m),getData(m));
-							printf("buss_Min size %d\n",buss_Min->size);
+
 							if(getAddr(m) == OPR){
 								serving_cpu = getCpuNum(m); op = getData(m);
 							}else{
-								buffer = m;
+								*buffer = *m;
 								op = getRW(m);
 							}
 							free(m);
 						}else{
+
 							//look if any idle cpu it can try to schedule
-							/*int i = 0;
+							int i = 0;
 							for(int i=0; i<NUM_CPU;i++){
 								if(cpu_status[i] == CPU_IDLE){
 									op = REQ_TASK; serving_cpu = i+1;
 									break;
 								}
-							}*/
+							}
 						}
-
 						break;
 					}
 					case REQ_TASK: //request new task
 						{
-
 							struct AGP_node *task = schedule_me(serving_cpu);
 
 							if(task->code[4] == -1){
-
-								printf("sending dummy node task to cpu %d\n",serving_cpu);
+								//printf("sending dummy node task to cpu %d\n",serving_cpu);
+								pthread_mutex_lock(&mem_lock);
 								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,IDLE));
-								//cpu_status[serving_cpu] = CPU_IDLE;
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+								pthread_mutex_unlock(&mem_lock);
 
 								//sending dummy node... should check if all are idle and sim over
 								int idle_count = 0;
@@ -893,9 +898,55 @@ void run_sim(){
 								}
 								if(idle_count == NUM_CPU)
 									terminate_sim = 1;
+
 							}else{
 								printf("sending task %d to cpu %d\n",task->node_num,serving_cpu);
-								//cpu_status[serving_cpu] = CPU_UNAVAILABLE;
+								for(int i=0; i<task->node_size; i++){
+									printf("code [%d] [%d]\n",i,task->code[i]);
+								}
+
+								//send requesting cpu their task
+								int i;
+								pthread_mutex_lock(&mem_lock);
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,0,task->node_num));
+								pthread_mutex_unlock(&mem_lock);
+								for( i=1; i<=(6+task->code[5]); i++){
+										pthread_mutex_lock(&mem_lock);
+										sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,task->code[i]));
+										pthread_mutex_unlock(&mem_lock);
+
+								}
+								printf("I %d\n",i);
+								struct Destination *dest = task->dest;
+								int addr;
+								for(int j=0; j<task->num_dest; j++){
+									if(dest->node_dest == IGNORE){
+										addr = -1;
+									}else if(dest->node_dest == OUTPUT){
+										addr = task->code_address + 2;
+									}else{
+										addr = dest->destination->node_size - dest->offset/4 - 1;
+									}
+
+									printf("Dest cpu %d  Dest node %d  offset %d\n",dest->cpu_dest,dest->node_dest,addr);
+
+									pthread_mutex_lock(&mem_lock);
+									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
+									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
+									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2,addr));
+									pthread_mutex_unlock(&mem_lock);
+									i+=3;
+									dest = dest->next;
+								}
+								printf("I %d\n",i);
+								pthread_mutex_lock(&mem_lock);
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,3,i));//code size
+								pthread_mutex_unlock(&mem_lock);
+
+								pthread_mutex_lock(&mem_lock);
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,WTS));
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+								pthread_mutex_unlock(&mem_lock);
 
 								//send dependent cpus the dest for their task or previous task
 								struct Dependables *dep = task->depend;
@@ -905,33 +956,21 @@ void run_sim(){
 									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
 									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
 									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
-									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+									if(dep->key == UNDEFINED){
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+									}else{
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,dep->key));
+									}
+									sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
 									pthread_mutex_unlock(&mem_lock);
-									//sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
 									dep = dep->next;
 								}
-								//send requesting cpu their task
-								int i;
-								for( i=0; i<(6+task->code[6]+1); i++){
-									pthread_mutex_lock(&mem_lock);
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,code[i+1]));
-									pthread_mutex_unlock(&mem_lock);
-								}
-								i++;
-								struct Destination *dest = task->dest;
-								for(int j=0; j<task->num_dest; j++){
-									pthread_mutex_lock(&mem_lock);
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2,code[i+1]));
-									pthread_mutex_unlock(&mem_lock);
-									i++;
-									dest = dest->next;
-								}
-								pthread_mutex_lock(&mem_lock);
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
-								pthread_mutex_unlock(&mem_lock);
 							}
+
+
+
+
+
 							op = CB;
 							serving_cpu = 0;
 							//free(task);
@@ -962,9 +1001,11 @@ void run_sim(){
 						printf("no reads needed yet\n");
 						break;
 					case WRITE:
+					{
 						runtime_code[getAddr(buffer)] = getData(buffer);
 						op = CB;
 						break;
+					}
 				}
 		}
 }
@@ -1124,11 +1165,8 @@ int main(int argc, char **argv)
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
-				pthread_create(&(thread_id[cpus[i]->cpu_num-1]), NULL, &CPU_H_start, cpus[i]);
-      //  if(cpus[i]->node_to_execute->node_num == DUMMY_NODE)
-					//cpu_status[cpus[i]->cpu_num-1] = CPU_IDLE;
-			//	else
-			//		cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
+				pthread_create(&(thread_id[i]), NULL, &CPU_H_start, cpus[i]);
+			  cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }//*/
 
     /***********************/
@@ -1169,7 +1207,7 @@ int main(int argc, char **argv)
 		//////////////// Send message test end////////////////////
 		/////////////////////////////////////////////////////////
 
-
+		printf("\n***SIMULATION COMPLETE***\n\n");
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_cancel(thread_id[i]); //cancel all threads
 				pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely
@@ -1180,7 +1218,7 @@ int main(int argc, char **argv)
 
     pthread_mutex_destroy(&mem_lock);
 
-		printf("\n***SIMULATION COMPLETE***\n\n");
+		//printf("\n***SIMULATION COMPLETE***\n\n");
 
 		printf("TIME ELAPSED: %f\n\n", elapsed);
 
@@ -1265,6 +1303,9 @@ struct Message *popMessage(struct FIFO *fifo){
 		return m;
 }
 
+int getFifoSize(struct FIFO *fifo){
+	return fifo->size;
+}
 
 
 void GNUPLOT(int NUM_CPU){

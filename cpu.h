@@ -48,6 +48,7 @@ struct Destination{
 	int cpu_dest;
 	int node_dest;
 	int state;
+	int offset;
 	struct AGP_node *destination;
 	struct Destination *next;
 };
@@ -79,7 +80,7 @@ struct CPU_H{
 	int sp; //stack pointer
 	int pc; //program counter
 	struct FIFO **look_up; //lookup FIFO table.
-	struct AGP_node *node_to_execute; //the node that needs to be executed
+	struct Message *buffer;
 };
 
 struct AGP_node{
