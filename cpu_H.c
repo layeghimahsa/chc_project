@@ -110,7 +110,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		//now check cpu fifo
 		if(getFifoSize(cpu->look_up[cpu->cpu_num-1]) > 0){
-			printf("CPU %d received message from cpu com\n",cpu->cpu_num);
+			if(MESSAGE == 1)
+				printf("CPU %d received message from cpu com\n",cpu->cpu_num);
 			pthread_mutex_lock(&mem_lock);
 			struct Message *m = popMessage(cpu->look_up[cpu->cpu_num-1]);
 			pthread_mutex_unlock(&mem_lock);
@@ -122,7 +123,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 						pthread_mutex_unlock(&mem_lock);
 					}else{ //this should only be operation for now
 						//writing var in
-						//printf("Writing %d to address %d\n",getData(m), getAddr(m));
+						if(MESSAGE == 1)
+							printf("CPU %d Writing %d to address %d\n",cpu->cpu_num, getData(m), getAddr(m));
 						if(cpu->stack[cpu->sp+4] == code_input){
 							cpu->stack[cpu->sp+2] = getData(m);
 							cpu->stack[cpu->sp+4] = code_identity;
@@ -171,6 +173,10 @@ void *CPU_H_start(struct CPU_H *cpu){
 			case DEC:
 			{
 				cpu->pc = cpu->stack[cpu->sp+4];
+				pthread_mutex_lock(&mem_lock);
+				sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+				sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+				pthread_mutex_unlock(&mem_lock);
 				break;
 			}
 			//NO operation
@@ -192,12 +198,16 @@ void *CPU_H_start(struct CPU_H *cpu){
 				{
 					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					if(cpu->stack[6+cpu->stack[5]] == 0){
-						cpu->pc = RT;
+						cpu->pc = CS;
 					}else{
 						int todo = 6+cpu->stack[5]+(cpu->stack[6+cpu->stack[5]]*3);
-						printf("CPU %d Dest offset address is %d\n",cpu->cpu_num,todo);
+						if(MESSAGE == 1)
+							printf("CPU %d Dest offset address is %d\n",cpu->cpu_num,todo);
 
-						if(cpu->stack[todo-2] == UNKNOWN){cpu->pc=SAVE_RES;printf("CPU %d saving val %d for node %d\n",cpu->cpu_num,cpu->stack[cpu->sp],cpu->stack[todo-1]);}
+						if(cpu->stack[todo-2] == UNKNOWN){cpu->pc=SAVE_RES;
+							if(MESSAGE == 1)
+								printf("CPU %d saving val %d for node %d\n",cpu->cpu_num,cpu->stack[cpu->sp],cpu->stack[todo-1]);
+						}
 						else if(cpu->stack[todo-2] == IGNORE){
 							cpu->stack[6+cpu->stack[5]] -= 1;
 						}
@@ -214,7 +224,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 						}
 						else{
 							   cpu->pc=SEND_RES;
-								 //printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
+								 if(MESSAGE == 1)
+								 		printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
 						}
 					}
 					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -229,7 +240,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 					/*for(int i = 0; i<cpu->stack[3]; i++){
 						printf("stack [%d] [%d]\n",i,cpu->stack[i]);
 					}*/
-					printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
+					if(MESSAGE == 1)
+						printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
 					sleep(0.01);
 					pthread_mutex_lock(&mem_lock);
 					sendMessage(cpu->look_up[cpu->stack[todo-2]-1],Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
@@ -339,7 +351,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 			}
 			case code_merge:
 			{
-				cpu->stack[2] = (cpu->stack[6] | cpu->stack[7]);
+				cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+ 6] | cpu->stack[cpu->sp+7]);
 				//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,cpu->stack[6],cpu->stack[7],cpu->stack[2]);
 				cpu->pc = FND;
 				break;
@@ -354,14 +366,16 @@ void *CPU_H_start(struct CPU_H *cpu){
 			case NVA:
 				{
 						pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-						printf("CPU %d got var request\n",cpu->cpu_num);
+						if(MESSAGE == 1)
+							printf("CPU %d got var request\n",cpu->cpu_num);
 						int node_needed = getData(cpu->buffer);
 						int cpu_dest = getData(cpu->buffer->next);
 						int node_dest = getData(cpu->buffer->next->next);
 
 						if(node_needed == cpu->stack[cpu->sp]){
-							if(cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]] < -3){
-								printf("CPU %d seding var\n",cpu_num);
+							if(cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]] < -5){
+								if(MESSAGE == 1)
+									printf("CPU %d sending var\n",cpu_num);
 								for(int i = 6+cpu->stack[cpu->sp+5]+2; i < cpu->stack[cpu->sp+3];i+=3){
 									if(cpu->stack[cpu->sp+i]==node_dest){
 										pthread_mutex_lock(&mem_lock);
@@ -372,34 +386,53 @@ void *CPU_H_start(struct CPU_H *cpu){
 								}
 
 							}else{
-								printf("CPU %d changing dest address\n",cpu_num);
+								if(MESSAGE == 1)
+									printf("CPU %d changing dest address\n",cpu_num);
 								int num_dest = cpu->stack[6+cpu->stack[5]];
 								//modify correst dest
 								for(int i =0; i<num_dest; i++){
 									if(cpu->stack[(6+cpu->stack[5]+2)+(3*i)] == node_dest){
+										//printf("FOUND\n");
 										cpu->stack[(6+cpu->stack[5]+1)+(3*i)] = cpu_dest;
 										break;
 									}
 								}
-							}
+							}//*/
 
 						}else{
-							printf("CPU %d fetching from mem\n",cpu->cpu_num);
+							if(MESSAGE == 1)
+								printf("CPU %d fetching from mem\n",cpu->cpu_num);
 							//should be in local mem
+							int found = 0;
 							for(int i = 0; i<LS_SIZE; i++){
 								if(cpu->local_mem[0][i] == node_needed && cpu->local_mem[3][i] == node_dest){
-									pthread_mutex_lock(&mem_lock);
-									sendMessage(cpu->look_up[cpu_dest-1],Message_packing(cpu_dest,1,cpu->local_mem[1][i],cpu->local_mem[2][i])); //1 for writing
-									pthread_mutex_unlock(&mem_lock);
+										pthread_mutex_lock(&mem_lock);
+										sendMessage(cpu->look_up[cpu_dest-1],Message_packing(cpu_dest,1,cpu->local_mem[1][i],cpu->local_mem[2][i])); //1 for writing
+										pthread_mutex_unlock(&mem_lock);
+										found =1;
+										break;
 								}
+							}
+							if(found == 0){
+								printf("FAILED TO FIND MEM %d for %d\n",node_needed,node_dest);
 							}
 						}
 
 					cpu->pc = cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]];
-					printf("CPU %d returning to task %d\n",cpu->cpu_num,cpu->pc);
+					if(MESSAGE == 1)
+						printf("CPU %d returning to task %d\n",cpu->cpu_num,cpu->pc);
 					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
+			case CS:
+			{
+				//clear stack
+				for(int i = 0; i<ADDRASABLE_SPACE; i++){
+					cpu->stack[i] = UNDEFINED;
+				}
+				cpu->pc = RT;
+				break;
+			}
 			//shouldnt happen
 			default:
 				printf("CPU %d cpu->pc %d undefined operation\n",cpu->cpu_num,cpu->pc);
