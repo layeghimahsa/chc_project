@@ -24,16 +24,28 @@ void generate_output()
 	FILE *source_fp = fopen("startup/startup.c","r");
 
 	/////////////////////////////////////////////
-	FILE *code_fp = fopen("../2by2sim.c","r");
-	FILE *temp_fp = fopen("../temp.c","w");
+	FILE *code_F_fp = fopen("../2by2sim.c","r");
+	FILE *code_H_fp = fopen("../many_core.c","r");
+
+	FILE *temp_F_fp = fopen("../temp_F.c","w");
+  FILE *temp_H_fp = fopen("../temp_H.c","w");
+
 	char buffer[256];
-	while(fgets(buffer, 256, code_fp) != NULL ) {
+	while(fgets(buffer, 256, code_F_fp) != NULL ) {
 	//printf("%s\n", buffer);
-    		fprintf(temp_fp,"%s",buffer);
+    		fprintf(temp_F_fp,"%s",buffer);
 		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
 			break;
 		}
-    	}
+  }
+
+	while(fgets(buffer, 256, code_H_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(temp_H_fp,"%s",buffer);
+		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
+			break;
+		}
+  }
 	/////////////////////////////////////////////
 
 	struct code_scope *main_finder = program_code;
@@ -49,9 +61,10 @@ void generate_output()
 
 	fprintf(fp,"#include<stdio.h>\n #include<stdlib.h>\n#include<time.h>\n");
 
-	fprintf(fp,"int code[] = {"); 
-	fprintf(temp_fp,"const int code[] = {");
-	
+	fprintf(fp,"int code[] = {");
+	fprintf(temp_F_fp,"const int code[] = {");
+	fprintf(temp_H_fp,"const int code[] = {");
+
 	int total_code_size = 0;
 
 
@@ -59,104 +72,140 @@ void generate_output()
 
 	code_ptr = program_code;
 
-	
+
 
 
 	while(code_ptr != (struct code_scope *)0)
 	{
 		int length = code_ptr->length ;
-		
+
 		int *ip = code_ptr->code_ptr;
 		int ctr = 0;
 
-		fprintf(fp,"//End %s:\n",code_ptr->scope_name); 
-		fprintf(temp_fp,"//End %s:\n",code_ptr->scope_name);
-
+		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
+		fprintf(temp_F_fp,"//End %s:\n",code_ptr->scope_name);
+		fprintf(temp_H_fp,"//End %s:\n",code_ptr->scope_name);
 
 		while(length > 0)
 		{
 			if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
-				fprintf(fp,"0x%x\n",*ip); 
-				fprintf(temp_fp,"0x%x\n",*ip);
-			}else{		
-				fprintf(fp,"0x%x,\n",*ip); 
-				fprintf(temp_fp,"0x%x,\n",*ip);
+				fprintf(fp,"0x%x\n",*ip);
+				fprintf(temp_F_fp,"0x%x\n",*ip);
+				fprintf(temp_H_fp,"0x%x\n",*ip);
+			}else{
+				fprintf(fp,"0x%x,\n",*ip);
+				fprintf(temp_F_fp,"0x%x,\n",*ip);
+				fprintf(temp_H_fp,"0x%x,\n",*ip);
 			}
 			ip++;
 			length--;
 			total_code_size++;
 		}
-		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address); 
-		fprintf(temp_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
-		
+		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
+		fprintf(temp_F_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
+		fprintf(temp_H_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 
 		code_ptr = code_ptr->next;
 	}
 
-	fprintf(fp,"};\n"); 
-	fprintf(temp_fp,"};\n");
-	fprintf(fp,"int code_size = %d;\n",total_code_size); 
-	fprintf(temp_fp,"int code_size = %d;\n",total_code_size);
+	fprintf(fp,"};\n");
+	fprintf(temp_F_fp,"};\n");
+	fprintf(temp_H_fp,"};\n");
+	fprintf(fp,"int code_size = %d;\n",total_code_size);
+	fprintf(temp_F_fp,"int code_size = %d;\n",total_code_size);
+	fprintf(temp_H_fp,"int code_size = %d;\n",total_code_size);
 
 	//for 2by2sim
-	fprintf(temp_fp,"int main_addr = %d;\n",main_addr);
-	fprintf(temp_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
+	fprintf(temp_F_fp,"int main_addr = %d;\n",main_addr);
+	fprintf(temp_H_fp,"int main_addr = %d;\n",main_addr);
+	fprintf(temp_F_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
+	fprintf(temp_H_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 
 	//create subgraph dictionary
-	fprintf(fp,"int dictionary[][3] = {"); 
-	fprintf(temp_fp,"int dictionary[][3] = {");
+	fprintf(fp,"int dictionary[][3] = {");
+	fprintf(temp_F_fp,"int dictionary[][3] = {");
+	fprintf(temp_H_fp,"int dictionary[][3] = {");
 
 	code_ptr = program_code;
 	int count = 0;
 	while(code_ptr != (struct code_scope *)0)
 	{
 		if((code_ptr->next == (struct code_scope *)0)){
-			fprintf(fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes); fprintf(temp_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_F_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_H_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}else{
-			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes); fprintf(temp_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_F_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_H_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		code_ptr = code_ptr->next;
 		count++;
 	}
 
-	fprintf(fp,"};\n"); fprintf(temp_fp,"};\n");
+	fprintf(fp,"};\n");
+	fprintf(temp_F_fp,"};\n");
+	fprintf(temp_H_fp,"};\n");
 
-	fprintf(temp_fp,"int num_dict_entries = %d;\n",count);
+	fprintf(temp_F_fp,"int num_dict_entries = %d;\n",count);
+	fprintf(temp_H_fp,"int num_dict_entries = %d;\n",count);
 
 	/////////////////////////////////////////////////
-	while(fgets(buffer, 256, code_fp) != NULL ) {
+	while(fgets(buffer, 256, code_F_fp) != NULL ) {
 		if(strcmp(buffer,"//CODE END//\n") == 0){
-			fprintf(temp_fp,"%s",buffer);
+			fprintf(temp_F_fp,"%s",buffer);
 			break;
 		}
 	}
-	while(fgets(buffer, 256, code_fp) != NULL ) {
+	while(fgets(buffer, 256, code_F_fp) != NULL ) {
 	//printf("%s\n", buffer);
-    		fprintf(temp_fp,"%s",buffer);
+    		fprintf(temp_F_fp,"%s",buffer);
     	}
-	fclose(code_fp);
-	fclose(temp_fp);
-	code_fp = fopen("../2by2sim.c","w");
-	temp_fp = fopen("../temp.c","r");
-	while(fgets(buffer, 256, temp_fp) != NULL ) {
+	fclose(code_F_fp);
+	fclose(temp_F_fp);
+	code_F_fp = fopen("../2by2sim.c","w");
+	temp_F_fp = fopen("../temp_F.c","r");
+	while(fgets(buffer, 256, temp_F_fp) != NULL ) {
 	//printf("%s\n", buffer);
-    		fprintf(code_fp,"%s",buffer);
+    		fprintf(code_F_fp,"%s",buffer);
     	}
-	fclose(code_fp);
-	fclose(temp_fp);
-	remove("../temp.c");
+	fclose(code_F_fp);
+	fclose(temp_F_fp);
+	remove("../temp_F.c");
+
+	while(fgets(buffer, 256, code_H_fp) != NULL ) {
+		if(strcmp(buffer,"//CODE END//\n") == 0){
+			fprintf(temp_H_fp,"%s",buffer);
+			break;
+		}
+	}
+	while(fgets(buffer, 256, code_H_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(temp_H_fp,"%s",buffer);
+    	}
+	fclose(code_H_fp);
+	fclose(temp_H_fp);
+	code_H_fp = fopen("../many_core.c","w");
+	temp_H_fp = fopen("../temp_H.c","r");
+	while(fgets(buffer, 256, temp_H_fp) != NULL ) {
+	//printf("%s\n", buffer);
+    		fprintf(code_H_fp,"%s",buffer);
+    	}
+	fclose(code_H_fp);
+	fclose(temp_H_fp);
+	remove("../temp_H.c");
 	/////////////////////////////////////////////////
 
 
 	char tmp;
-	do 
+	do
 	{
  		tmp = fgetc(source_fp);
  		if(tmp == EOF)
  			break;
   		fputc(tmp, fp);
 	} while (tmp != EOF);
-	
+
 	fprintf(fp,"\nint main()\n{\tstartup(%d,%d);\n\tclock_t tic = clock();\n\tinterpret();clock_t toc = clock();\n\t",main_addr,main_finder->num_nodes);
 
 
@@ -179,8 +228,8 @@ void generate_output()
 	First, it has to color "main" program nodes to allocate them to a thread
 		This can be done through some sophisticated graph analysis algorithms, but for now we'll just do random assignment
 
-	Then, it has to generate multithreaded code (where all threads operate on the same data structure), 
-	starting each thread in the first corresponding node in the main function 
+	Then, it has to generate multithreaded code (where all threads operate on the same data structure),
+	starting each thread in the first corresponding node in the main function
 
 	(must also keep a record of where the first node in each thread is, as an offset relative to st)
 */
@@ -190,7 +239,7 @@ struct thread_sp
 {
 	int offset;
 	int num_nodes;
-	struct thread_sp *next;	
+	struct thread_sp *next;
 };
 
 struct thread_sp *thread_stack_offsets = (struct thread_sp *)0;
@@ -201,7 +250,7 @@ int colour_length;
 void generate_output_mt(int n_threads)
 {
 	FILE *fp = fopen("chc_output.c","w");
-	FILE *source_fp; 
+	FILE *source_fp;
 
 
 	if(n_threads > 1)
@@ -213,7 +262,7 @@ void generate_output_mt(int n_threads)
 		source_fp = fopen("startup/startup.c","r");
 	}
 
-	
+
 
 	struct code_scope *main_finder = program_code;
 
@@ -236,7 +285,7 @@ void generate_output_mt(int n_threads)
 
 	if(n_threads > 1)
 	{
-		
+
 		//fprintf(fp,"#include <sched.h>\n");
 		fprintf(fp,"#include <unistd.h>\n#include <pthread.h>\n");
 
@@ -251,13 +300,13 @@ void generate_output_mt(int n_threads)
 
 	code_ptr = program_code;
 
-	
+
 
 
 	while(code_ptr != (struct code_scope *)0)
 	{
 		int length = code_ptr->length ;
-		
+
 		int *ip = code_ptr->code_ptr;
 		int ctr = 0;
 
@@ -274,12 +323,12 @@ void generate_output_mt(int n_threads)
 			//TODO : for test only, return here
 	********************************************************************************************/
 			//return;
-			
+
 			while(length > 0)
 			{
 				if((code_ptr->next == (struct code_scope *)0) && (length == 1))
 					fprintf(fp,"0x%x\n",*main_ip);
-				else		
+				else
 					fprintf(fp,"0x%x,\n",*main_ip);
 				main_ip++;
 				length--;
@@ -294,15 +343,15 @@ void generate_output_mt(int n_threads)
 			{
 				if((code_ptr->next == (struct code_scope *)0) && (length == 1))
 					fprintf(fp,"0x%x\n",*ip);
-				else		
+				else
 					fprintf(fp,"0x%x,\n",*ip);
 				ip++;
 				length--;
 				total_code_size++;
 			}
-		}	
+		}
 		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
-		
+
 
 		code_ptr = code_ptr->next;
 	}
@@ -367,19 +416,19 @@ void generate_output_mt(int n_threads)
 	}
 
 	char tmp;
-	do 
+	do
 	{
  		tmp = fgetc(source_fp);
  		if(tmp == EOF)
  			break;
   		fputc(tmp, fp);
 	} while (tmp != EOF);
-	
+
 	if(n_threads > 1)
 	{
 
 
-		
+
 
 		fprintf(fp,"\nint main()\n{\n\tnum_threads = %d;\n",n_threads);
 
@@ -387,7 +436,7 @@ void generate_output_mt(int n_threads)
 
 		/*while(i > 0)
 		{
-			
+
 			fprintf(fp,"\ttcb[%d].stack_size = 0;\n",i-1);
 			i--;
 		}*/
@@ -396,12 +445,12 @@ void generate_output_mt(int n_threads)
 
 		while(i > 0)
 		{
-			
+
 			fprintf(fp,"\tsb_tracker[%d]=&(tcb[%d].sb);\n",i-1,i-1);
 			i--;
 		}
 		i = n_threads;
-			
+
 		struct thread_sp *t_ptr = thread_stack_offsets;
 		while(t_ptr != (struct thread_sp *)0)
 		{
@@ -410,15 +459,15 @@ void generate_output_mt(int n_threads)
 			t_ptr = t_ptr->next;
 			i--;
 		}
-	
+
 		i = n_threads;
 
 		while(i > 0)
 		{
-			
-	
-	
-	
+
+
+
+
 			//fprintf(fp,"\ttcb[%d].nodes_to_evaluate = 0;\n",i-1);
 			//fprintf(fp,"\ttcb[%d].nodes_evaluated = 0;\n",i-1);
 			//fprintf(fp,"\ttcb[%d].nodes_visited = 0;\n",i-1);
@@ -435,7 +484,7 @@ void generate_output_mt(int n_threads)
 
 		while(i > 0)
 		{
-			
+
 			fprintf(fp,"\ttcb[%d].sb = (int *)((long unsigned int)((long unsigned int)sb + (long unsigned int)thread_info[%d][0]));\n",i-1,i-1);
 			fprintf(fp,"\ttcb[%d].sp = tcb[%d].sb;\n",i-1,i-1);
 			//fprintf(fp,"\ttcb[%d].stack_size = thread_info[%d][1];\n",i-1,i-1);
@@ -452,18 +501,18 @@ void generate_output_mt(int n_threads)
 		while(i > 0)
 		{
 
-	
+
 			//fprintf(fp,"\ttcb[%d].fp = fopen(\"results_mt%d.txt\",\"w\");\n",i-1,i-1);
 
 			//fprintf(fp,"\tfprintf(tcb[%d].fp,\"g_to_evaluate\\tto_evaluate\\tevaluated\\tvisited\\tGCed\\n\");",i-1);
 			//fprintf(fp,"\tfprintf(tcb[%d].fp,\"%%d\\t%%d\\t%%d\\t%%d\\t%%d\\n\",nodes_to_evaluate,tcb[%d].nodes_to_evaluate,tcb[%d].nodes_evaluated,tcb[%d].nodes_visited,tcb[%d].nodes_GCed);",i-1,i-1,i-1,i-1,i-1);
-	
-			
+
+
 			i--;
 		}
 
 
-		
+
 
 		fprintf(fp,"pthread_barrier_init(&bar, NULL, %d);",n_threads+1);
 
@@ -484,7 +533,7 @@ void generate_output_mt(int n_threads)
 		fprintf(fp,"pthread_barrier_wait(&bar);");
 
 		fprintf(fp,"\n\tclock_t tic = clock();\n");
-	
+
 		fprintf(fp,"pthread_barrier_destroy(&bar);");
 
 		i = n_threads;
@@ -503,9 +552,9 @@ void generate_output_mt(int n_threads)
 		while(i > 0)
 		{
 
-	
+
 			//fprintf(fp,"\tfclose(tcb[%d].fp);\n",i-1);
-			
+
 			i--;
 		}
 
@@ -515,7 +564,7 @@ void generate_output_mt(int n_threads)
 	else
 	{
 		fprintf(fp,"\nint main()\n{\tstartup(%d,%d);\n\tinterpret();\n\treturn 0;\n}",main_addr,main_finder->num_nodes);
-	}	
+	}
 	fclose(fp);
 
 	system("gcc -o output chc_output.c -lpthread -lrt -O3 -g");
@@ -523,7 +572,7 @@ void generate_output_mt(int n_threads)
 
 
 /*
-	Creates a copy of main code with coloured nodes, 
+	Creates a copy of main code with coloured nodes,
 	changes sizes of nodes in copy for N threads, returns pointer to newly created copy of code
 */
 int *coloured_main(int n_threads, struct code_scope *code_ptr)
@@ -563,7 +612,7 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 	}*/
 
 	//just for MT 4 test
-	
+
 	/*int best[12] = {0,1,2,3,0,1,2,3,0,1,2,3};
 	int i = 0;
 	while(node_ctr > 0)
@@ -580,14 +629,14 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 	//debug prints
 	/*int colour_printer = code_ptr->num_nodes;
 	colouring_ptr = colouring;
-	
+
 	//printf("Coloured %d nodes:\n",colour_printer);
-	
+
 	while(colour_printer > 0)
 	{
 		printf("%d\n",*colouring_ptr);
 		colouring_ptr++;
-		colour_printer--;	
+		colour_printer--;
 	}
 	colouring_ptr = colouring;
 */
@@ -644,9 +693,9 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 			}
 			//printf("Adding %x size\n",added_size);
 			//increment size
-			
+
 			//*(ptr + 3) = ((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(added_size));
-			//ptr += ((long unsigned int)((long unsigned int)(*(ptr + 3))) -  (long unsigned int)(added_size)); 
+			//ptr += ((long unsigned int)((long unsigned int)(*(ptr + 3))) -  (long unsigned int)(added_size));
 
 			int *tmp_ptr = ptr;
 			ptr = (int *)((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(ptr));
@@ -659,7 +708,7 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 			ptr = (int *)((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(ptr));
 			//ptr += *(ptr + 3);
 		}
-		
+
 		colouring_ptr++;
 		node_ctr--;
 		done_nodes++;
@@ -671,7 +720,7 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 
 	//thread_stack_offsets = (struct thread_sp *)malloc(sizeof(struct thread_sp));
 
-	//thread 0 
+	//thread 0
 	//thread_stack_offsets->offset = 0;
 	//thread_stack_offsets->next = (struct thread_sp *)0;
 
@@ -698,12 +747,12 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 				thread_tmp->num_nodes++;
 			}
 
-			total_nodes--;	
-			colouring_ptr++;			
+			total_nodes--;
+			colouring_ptr++;
 		}
 
 		//find offset of first node assigned to this thread
-		
+
 		int first_element = 0;
 		total_nodes = code_ptr->num_nodes;
 		colouring_ptr = colouring;
@@ -721,9 +770,9 @@ int *coloured_main(int n_threads, struct code_scope *code_ptr)
 			}
 
 			first_element++;
-			total_nodes--;	
-			colouring_ptr++;	
-		}		
+			total_nodes--;
+			colouring_ptr++;
+		}
 
 		//thread_tmp->offset now contains the index of first corresponding node
 		//need to transform into offset in bytes (by traversing main)

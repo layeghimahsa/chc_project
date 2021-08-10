@@ -39,7 +39,7 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x7,
+0x1,
 0x20,
 0xc,
 0x0,
@@ -61,46 +61,140 @@ const int code[] = {//End main:
 0x0,
 0x1,
 0x0,
-0x64,
+0x1dc,
 0x1,
 0x0,
 0x38,
-0x24,
-//Start main @(26):
-//End func:
+0x1b4,
+//Start main @(120):
+//End fact:
 0x7fffffff,
 0x0,
 0xfffffffc,
-0x20,
+0x28,
 0x1,
 0x0,
-0x1,
-0xc,
+0x3,
+0xa8,
+0xf4,
+0x124,
 0x7fffffff,
+0x1,
+0xfffffffc,
+0x28,
+0xb,
+0x2,
 0x0,
-0x7,
-0x20,
-0xc,
 0x0,
 0x1,
-0x8,
+0xffffffff,
 0x7fffffff,
 0x2,
 0xfffffffc,
 0x28,
-0x3,
+0x8,
 0x2,
 0x0,
 0x0,
 0x1,
-0xffffffff
-//Start func @(0):
+0x19c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x198,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x30,
+0x5,
+0x2,
+0x0,
+0x0,
+0x3,
+0x80,
+0x14c,
+0x174,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x4,
+0x2,
+0x0,
+0x0,
+0x1,
+0x148,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xf0,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0xa,
+0x2,
+0x0,
+0x0,
+0x1,
+0x7c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x0,
+0x0,
+0x20,
+0xc,
+0x0,
+0x1,
+0x120,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0xa4,
+0x170,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0xcc,
+0x1b4
+//Start fact @(0):
 };
-int code_size = 55;
-int main_addr = 26;
+int code_size = 149;
+int main_addr = 120;
 int main_num_nodes = 3;
-int dictionary[][3] = {{26,29,3},
-{0,26,3}
+int dictionary[][3] = {{120,29,3},
+{0,120,12}
 };
 int num_dict_entries = 2;
 //CODE END//
@@ -868,20 +962,25 @@ void run_sim(){
 							free(m);
 						}else{
 
-							//look if any idle cpu it can try to schedule
+						/*	//look if any idle cpu it can try to schedule
 							int i = 0;
 							for(int i=0; i<NUM_CPU;i++){
 								if(cpu_status[i] == CPU_IDLE){
 									op = REQ_TASK; serving_cpu = i+1;
 									break;
 								}
-							}
+							}*/
 						}
 						break;
 					}
 					case REQ_TASK: //request new task
 						{
 							struct AGP_node *task = schedule_me(serving_cpu);
+							printf("SENDING CPU %d A TASK\n",serving_cpu);
+
+							if(serving_cpu <1 || serving_cpu >4 ){
+								exit(0);
+							}
 
 							if(task->code[4] == -1){
 								//printf("sending dummy node task to cpu %d\n",serving_cpu);
@@ -916,7 +1015,6 @@ void run_sim(){
 										pthread_mutex_unlock(&mem_lock);
 
 								}
-								printf("I %d\n",i);
 								struct Destination *dest = task->dest;
 								int addr;
 								for(int j=0; j<task->num_dest; j++){
@@ -929,7 +1027,6 @@ void run_sim(){
 									}
 
 									printf("Dest cpu %d  Dest node %d  offset %d\n",dest->cpu_dest,dest->node_dest,addr);
-
 									pthread_mutex_lock(&mem_lock);
 									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
 									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
@@ -953,15 +1050,19 @@ void run_sim(){
 
 								while(dep != NULL){
 									pthread_mutex_lock(&mem_lock);
-									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
-									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
-									sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
-									if(dep->key == UNDEFINED){
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+									if(dep->cpu_num < 1){
+										sendMessage(buss_Mout,Message_packing(serving_cpu ,1,1,task->code[1]-1));
 									}else{
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,dep->key));
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
+										if(dep->key == UNDEFINED){
+											sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+										}else{
+											sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,dep->key));
+										}
+										sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
 									}
-									sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
 									pthread_mutex_unlock(&mem_lock);
 									dep = dep->next;
 								}
@@ -981,6 +1082,7 @@ void run_sim(){
 							pthread_mutex_lock(&mem_lock);
 							struct Message *m = popMessage(buss_Min);
 							pthread_mutex_unlock(&mem_lock);
+							printf("NODE %d MARKED AS DEAD\n",getData(m));
 							mark_as_dead(getData(m));
 							op = CB;
 							free(m);
@@ -991,6 +1093,7 @@ void run_sim(){
 							pthread_mutex_lock(&mem_lock);
 							struct Message *m = popMessage(buss_Min);
 							pthread_mutex_unlock(&mem_lock);
+							printf("NODE %d PROPOGATE DEATH\n",getData(m));
 							propagate_death(getData(m));
 							op = CB;
 							free(m);
@@ -1209,7 +1312,7 @@ int main(int argc, char **argv)
 
 		printf("\n***SIMULATION COMPLETE***\n\n");
 
-		//this should prob be in but it causes a seg fault 
+		//this should prob be in but it causes a seg fault
   /*  for(int i = 0; i<NUM_CPU; i++){
 				pthread_cancel(thread_id[i]); //cancel all threads
 				pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely
@@ -1255,11 +1358,11 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 	*new = *m;
 	if(fifo->back == NULL){
 		fifo->front = fifo->back = new;
-		fifo->size++;
+		fifo->size+=1;
 	}else{
 		fifo->back->next = new;
 		fifo->back = fifo->back->next;
-		fifo->size++;
+		fifo->size+=1;
 	}
 }
 struct Message *peekMessage(struct FIFO *fifo){
@@ -1273,6 +1376,7 @@ struct Message *peekMessage(struct FIFO *fifo){
 void removeMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		//return NULL;
+		printf("NO MESSAGES TO REMOVE");
 	}else{
 		struct Message *m = fifo->front;
 		fifo->front = fifo->front->next;
@@ -1281,7 +1385,7 @@ void removeMessage(struct FIFO *fifo){
 		if(fifo->front == NULL)
 			fifo->back = NULL;
 
-		fifo->size--;
+		fifo->size-=1;
 		free(m);
 	}
 }
@@ -1299,8 +1403,8 @@ struct Message *popMessage(struct FIFO *fifo){
 	if(fifo->front == NULL)
 		fifo->back = NULL;
 
-		fifo->size--;
-		return m;
+	fifo->size-=1;
+	return m;
 }
 
 int getFifoSize(struct FIFO *fifo){

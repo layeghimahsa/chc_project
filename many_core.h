@@ -20,7 +20,7 @@
 #define EOM -5  //end of message
 #define NVA -4    //new variable address
 #define WTS -2
-
+#define WFC -11
 
 
 

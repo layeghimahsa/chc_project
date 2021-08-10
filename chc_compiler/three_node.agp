@@ -1,14 +1,3 @@
-SUBGRAPH(func)
-	DATUM(x);
-	INPUT(x);
-	CONST(y,7);
-	DATUM(result);
-	OUTPUT(result);
-	OPERATOR(result,op_PLUS,x,y);
-	
-
 SUBGRAPH(main)
 	CONST(a,7);
-        DATUM(b);
-        EXPAND(func,MAP_IN(x,a);MAP_OUT(result,b););
-        OUTPUT(b);
+  OUTPUT(a);

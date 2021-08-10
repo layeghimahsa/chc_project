@@ -46,6 +46,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 	dest... addr
 
 	*/
+	int count = 0;
 	int next_op = 0;
 	int add_to_buff = 0;
 	struct Message *buff = cpu->buffer;
@@ -58,6 +59,18 @@ void *CPU_H_start(struct CPU_H *cpu){
 	while(1){
 
 		sleep(0.01);
+
+	//	printf("CPU %d op: %d\n",cpu->cpu_num, cpu->pc);
+	//	printf("buss_Min size %d\n",getFifoSize(buss_Min));
+	//	printf("buss_Mout size %d\n",getFifoSize(buss_Mout));
+	/*	if(getFifoSize(buss_Mout) > 1){
+			printf("buss_Mout first item %d\n",getCpuNum(peekMessage(buss_Mout)));
+
+			printf("buss_Mout first item %d\n",getAddr(peekMessage(buss_Mout)));
+			printf("buss_Mout first item %d\n",getData(peekMessage(buss_Mout)));
+		}//*/
+
+
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if(getFifoSize(buss_Mout) > 0){
 			pthread_mutex_lock(&mem_lock);
@@ -109,7 +122,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 						pthread_mutex_unlock(&mem_lock);
 					}else{ //this should only be operation for now
 						//writing var in
-						printf("Writing %d to address %d\n",getData(m), getAddr(m));
+						//printf("Writing %d to address %d\n",getData(m), getAddr(m));
 						if(cpu->stack[cpu->sp+4] == code_input){
 							cpu->stack[cpu->sp+2] = getData(m);
 							cpu->stack[cpu->sp+4] = code_identity;
@@ -128,9 +141,9 @@ void *CPU_H_start(struct CPU_H *cpu){
 			{
 				pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 				pthread_mutex_lock(&mem_lock);
-				sendMessage(buss_Min,Message_packing(cpu_num,1,OPR,REQ_TASK));
+				sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,REQ_TASK));
 				pthread_mutex_unlock(&mem_lock);
-				cpu->pc=IDLE;
+				cpu->pc=WFC;
 				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
@@ -149,6 +162,11 @@ void *CPU_H_start(struct CPU_H *cpu){
 				}
 				break;
 			}
+			case WFC:
+			{
+				sleep(0.05);
+				break;
+			}
 				//decode operation
 			case DEC:
 			{
@@ -158,7 +176,14 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//NO operation
 			case IDLE:
 			{
-				sleep(0.05);
+				if(count == 500){
+					count = 0;
+					cpu->pc = RT;
+				}else{
+					count++;
+					sleep(0.05);
+				}
+
 				break;
 			}
 			//for number of destinations
@@ -178,10 +203,10 @@ void *CPU_H_start(struct CPU_H *cpu){
 						}
 						else if(cpu->stack[todo-2] == OUTPUT){
 							printf("\n\nCPU %d OUTPUT: %d\n\n",cpu->cpu_num,cpu->stack[cpu->sp+2]);
-							for(int i = 0; i<cpu->stack[3]; i++){
+							/*for(int i = 0; i<cpu->stack[3]; i++){
 								printf("stack [%d] [%d]\n",i,cpu->stack[i]);
-							}
-							printf("CPU %d outputing address [%d] val [%d]\n",cpu->cpu_num,cpu->stack[todo],cpu->stack[cpu->sp+2]);
+							}*/
+							//printf("CPU %d outputing address [%d] val [%d]\n",cpu->cpu_num,cpu->stack[todo],cpu->stack[cpu->sp+2]);
 							pthread_mutex_lock(&mem_lock);
 							sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
 							pthread_mutex_unlock(&mem_lock);
