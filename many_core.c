@@ -34,9 +34,6 @@ int GRAPH;
 struct data_entry **data;
 clock_t BEGIN;
 
-FILE *f_min; //file pointer for writing buss_Min size in each cycle
-FILE *f_mout; //file pointer for writing buss_Mout size in each cycle
-FILE **f_cpus; //file pointer for writing cpu FIFO sizes in each cycle
 
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
@@ -1128,22 +1125,7 @@ void run_sim(){
 	struct Message *buffer; //need malloc
 	int op = CB; int serving_cpu = 0;
 	int terminate_sim = 0;
-	double current_time;
 	while(terminate_sim == 0){
-
-		if(GRAPH){
-					char buss_min_size[100]; //50 was low for buss_min_size and lead to core dumped
-					char buss_min_time[100];
-					sprintf(buss_min_size, "%d", getFifoSize(buss_Min));
-					//printf("buss min size in string format: %s\n",buss_min_size);
-					clock_t t = clock();
-					current_time = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
-					sprintf(buss_min_time, "%f", current_time);
-					fputs(buss_min_time,f_min);
-					fputs(" ",f_min);
-					fputs(buss_min_size, f_min);
-					fputs("\n",f_min);
-			}
 
 				switch(op){
 					case CB:  //check buss
@@ -1397,33 +1379,6 @@ int main(int argc, char **argv)
 	    printf("\n\nSETTING UP ENVIRONMENT\n\n");
 		}
 
-		if(GRAPH){
-			//opening a file for writing buss sizes in it
-				f_min = fopen("buss_min.txt","w"); //write or append. I will decide later
-				if(!f_min) puts("Buss_Min file cannot be oppened.\n");
-				f_mout = fopen("buss_mout.txt","w");
-				if(!f_mout) puts("Buss_Mout file cannot be oppened.\n");
-
-				/*oprning multiple files for cpu FIFOs*/
-				f_cpus = malloc(sizeof(FILE*) * NUM_CPU);
-				char filename_format[] = "cpu_%d.txt";
-				//printf("size of filename format: %ld\n", sizeof(filename_format));
-		    char filename[sizeof(filename_format) + 3];  // for up to 4 digit numbers
-
-		    for (int i = 0; i < NUM_CPU; i++) {
-		        snprintf(filename, sizeof(filename), filename_format, i);
-		        f_cpus[i] = fopen(filename, "w");
-
-		        if(!f_cpus[i]){
-							printf("cpu_%d file cannot be oppened.\n",i);
-							break;  // break the loop
-						}
-		    }
-
-		}
-
-
-
     //create array of thread id
     pthread_t thread_id[NUM_CPU];
     list_index = 1;
@@ -1530,15 +1485,6 @@ int main(int argc, char **argv)
 
 		run_sim();
 
-		if(GRAPH){
-			fclose(f_min);
-			fclose(f_mout);
-			for (int i = 0; i < NUM_CPU; i++) {
-					fclose(f_cpus[i]);
-			}
-			free(f_cpus);
-		}
-
 	/*	int count = 1;
 		struct AGP_node *test;
 		struct Message *m;
@@ -1574,6 +1520,14 @@ int main(int argc, char **argv)
 
 		//print_nodes(program_APG_node_list);
 		if(n == 1){
+			/*printing every single fifos*/
+			puts("\nsize of queues:");
+			puts("-----------------");
+			printf("buss_mout size: %d\n",buss_Mout->message_counter);
+			printf("buss_min size: %d\n",buss_Min->message_counter);
+			for(int i = 0; i<NUM_CPU; i++){
+				printf("cpu %d size: %d\n",i+1, cpu_fifos[i]->message_counter);
+	    }
 			print_node_short();
 			nodes_never_ran();
 		}
@@ -1604,10 +1558,12 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 	if(fifo->back == NULL){
 		fifo->front = fifo->back = new;
 		fifo->size+=1;
+		fifo->message_counter+=1;
 	}else{
 		fifo->back->next = new;
 		fifo->back = fifo->back->next;
 		fifo->size+=1;
+		fifo->message_counter+=1;
 	}
 }
 struct Message *peekMessage(struct FIFO *fifo){
@@ -1663,41 +1619,33 @@ void GNUPLOT(int NUM_CPU){
     int i;
 
 		fprintf(gnuplotPipe, "set title '%s'\n", "NODES RAN ON CORES OVER TIME");
-		char name[32];
+		char filename_format[] = "cpu_%d.txt";
+		char filename[sizeof(filename_format) + 3];  // for up to 4 digit numbers
 
-		for(int i = 0; i< NUM_CPU; i++){
-				sprintf(name, "%d", i+1);
-				FILE * temp = fopen(name, "w");
+		for (int i = 0; i < NUM_CPU; i++) {
+				snprintf(filename, sizeof(filename), filename_format, i);
+				FILE * temp = fopen(filename, "w");
+
+				if(!temp){
+					printf("cpu_%d file cannot be oppened.\n",i);
+					break;  // break the loop
+				}
+
 				struct data_entry *d = data[i];
 				while(d!=NULL){
 					fprintf(temp, "%f %f \n", d->x, d->y);
 					d = d->n;
 				}
+
 		}
-		fprintf(gnuplotPipe, "plot '1'");
-		for(int i = 1; i< NUM_CPU; i++){
-			sprintf(name, "%d", i+1);
-			fprintf(gnuplotPipe, ", '%s'",name);
-		}
-		fprintf(gnuplotPipe, " \n");
 
-
-		FILE * gnuplotPipe_queues = popen ("gnuplot -persistent", "w");
-		char filename_format[] = "cpu_%d.txt";
-		char filename[sizeof(filename_format) + 3];
-
-		fprintf(gnuplotPipe_queues, "set title '%s'\n", "FIFO SIZES OVER TIME");
-
-		fprintf(gnuplotPipe_queues, "plot 'cpu_0.txt'");
+		fprintf(gnuplotPipe, "plot 'cpu_0.txt'");
 		for (int i = 1; i < NUM_CPU; i++) {
 				snprintf(filename, sizeof(filename), filename_format, i);
-				fprintf(gnuplotPipe_queues, ", '%s'",filename);
+				fprintf(gnuplotPipe, ", '%s'",filename);
 		}
 
-		//fprintf(gnuplotPipe_queues, "set autoscale \n");
-		fprintf(gnuplotPipe_queues, ", 'buss_min.txt', 'buss_mout.txt'");
-		fprintf(gnuplotPipe_queues, " \n");
-
+		fprintf(gnuplotPipe, " \n");
 }
 
 /***********************/

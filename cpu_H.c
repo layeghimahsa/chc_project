@@ -7,12 +7,6 @@
 #include "2by2sim.h"
 #include "many_core.h"
 
-extern FILE *f_min;
-extern FILE *f_mout;
-extern FILE **f_cpus;
-extern int GRAPH;
-extern clock_t BEGIN;
-
 
 void *CPU_H_start(struct CPU_H *cpu){
 
@@ -55,8 +49,6 @@ void *CPU_H_start(struct CPU_H *cpu){
 	int count = 0;
 	int next_op = 0;
 	int add_to_buff = 0;
-	double ct;//curre time
-	double pt;// previous time
 	struct Message *buff = cpu->buffer;
 	cpu->buffer = (struct Message*)malloc(sizeof(struct Message));
 
@@ -77,37 +69,6 @@ void *CPU_H_start(struct CPU_H *cpu){
 			printf("buss_Mout first item %d\n",getAddr(peekMessage(buss_Mout)));
 			printf("buss_Mout first item %d\n",getData(peekMessage(buss_Mout)));
 		}//*/
-
-		if(GRAPH){
-					char buss_mout_size[100]; //50 was low for buss_mout_size and lead to core dumped
-					char buss_mout_time[100];
-					char buss_cpu_size[100];
-					char buss_cpu_time[100];
-					sprintf(buss_mout_size, "%d", getFifoSize(buss_Mout));
-					sprintf(buss_cpu_size, "%d", getFifoSize(cpu->look_up[cpu->cpu_num-1]));
-					clock_t t = clock();
-					ct = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
-
-					if(ct - pt > 0.1){ //to avoid so many similar data measurement.
-						if(cpu->cpu_num == 1){
-							sprintf(buss_mout_time, "%f", ct);
-							fputs(buss_mout_time,f_mout);
-							fputs(" ",f_mout);
-							fputs(buss_mout_size, f_mout);
-							fputs("\n",f_mout);
-						}
-						//personal queue size
-						//printf(" %s \n",buss_cpu_size);
-						sprintf(buss_cpu_time, "%f", ct);
-						fputs(buss_cpu_time,f_cpus[cpu->cpu_num-1]);
-						fputs(" ",f_cpus[cpu->cpu_num-1]);
-						fputs(buss_cpu_size, f_cpus[cpu->cpu_num-1]);
-						fputs("\n",f_cpus[cpu->cpu_num-1]);
-
-						pt = ct;
-					}
-			}
-
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if(getFifoSize(buss_Mout) > 0){
@@ -447,6 +408,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 										pthread_mutex_lock(&mem_lock);
 										sendMessage(cpu->look_up[cpu_dest-1],Message_packing(cpu_dest,1,cpu->local_mem[1][i],cpu->local_mem[2][i])); //1 for writing
 										pthread_mutex_unlock(&mem_lock);
+										cpu->local_mem[0][i] = UNDEFINED;
 										found =1;
 										break;
 								}

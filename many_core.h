@@ -30,6 +30,7 @@ extern struct FIFO *buss_Mout; //buss master output
 
 struct FIFO{
     int size;
+    int message_counter;
     struct Message *front, *back;
 };
 
