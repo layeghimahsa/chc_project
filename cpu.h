@@ -83,6 +83,32 @@ struct CPU_H{
 	struct Message *buffer;
 };
 
+
+struct CPU_SA{
+    int cpu_num;
+    int PM[ADDRASABLE_SPACE]; //hold cpu portion of program
+    int *dictionary;
+    int num_dict_entries;
+		//int *sb;
+		//int *sp;
+		int nodes_to_evaluate;
+		int nodes_evaluated;
+		int nodes_visited;
+    int t_offset;//top (or sp?)
+    int b_offset;//bottom (or sb?)
+};
+
+/*struct tcb{
+		int *sb;
+		int *sp;
+		int nodes_to_evaluate;
+		int nodes_evaluated;
+		int nodes_visited;
+		int nodes_GCed;
+		FILE *fp;
+};*/
+//struct tcb tcb[NUM_CPU];
+
 struct AGP_node{
 	int assigned_cpu; //the cpu the node was or is run on. This is important for scheduling, destination refactoring, and keeping track of who has what node results
 
