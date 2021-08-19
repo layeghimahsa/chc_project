@@ -1069,17 +1069,7 @@ int main(int argc, char **argv)
     /*struct FIFO *cpu_fifos[NUM_CPU];
     for(int i = 0; i<NUM_CPU; i++){
 			cpu_fifos[i] = create_FIFO();
-    }*/
-
-    //create cpu struct
-		/*struct CPU_H *cpus[NUM_CPU];
-		for(int i = 0; i<NUM_CPU; i++){
-			struct CPU_H *cpu_t = (struct CPU_H*)malloc(sizeof(struct CPU_H));
-			cpu_t->cpu_num = i+1;
-			cpu_t->look_up = (struct FIFO **) malloc(sizeof(struct FIFO*) *NUM_CPU);
-			cpus[i] = cpu_t;
-		}
-
+    }
 
 		//initializing cpu queue connections
 		int queue_index;
@@ -1092,12 +1082,12 @@ int main(int argc, char **argv)
 	  }*/
 
 		program_APG_node_list = create_list(main_addr);
-		struct AGP_node *current_agp_node = *program_APG_node_list;
+		struct AGP_node *current_agp_node = program_APG_node_list;
 
 		//create cpu struct
     struct CPU_SA *cpus[NUM_CPU];
     for(int i = 0; i<NUM_CPU; i++){
-        struct CPU_SA cpu_t = (struct CPU_SA)malloc(sizeof(struct CPU_SA));
+        struct CPU_SA *cpu_t = (struct CPU_SA*) malloc(sizeof(struct CPU_SA));
         cpu_t->cpu_num = i+1;
 				cpu_t->nodes_to_evaluate = 0; //initiallization
 				cpu_t->nodes_evaluated = 0;
@@ -1110,26 +1100,20 @@ int main(int argc, char **argv)
 		for(int i = 0; i<NUM_CPU; i++){
 				for(int j=0; j< NODE_NUM_MAX; j++){
 						//struct AGP_node *agp_node = schedule_me(cpus[i]->cpu_num);
-						for(int k=0; k<current_agp_node->node_size; k++){
-		            cpus[i]->PM[k] = agp_node->code[k];
-		        }
-						cpus[i]->nodes_to_evaluate++;
-						cpus[i]->b_offset = current_agp_node->code_address; //update base poiner
-						cpus[i]->t_offset = current_agp_node->code_address + current_agp_node->node_size; //update stack pointer
+						if(current_agp_node != NULL){
+								for(int k=0; k<current_agp_node->node_size; k++){
+				            cpus[i]->PM[k] = current_agp_node->code[k];
+				        }
+								printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[i]->cpu_num);
+								cpus[i]->nodes_to_evaluate++;
+								cpus[i]->t_offset += current_agp_node->node_size; //update stack pointer
+								current_agp_node = current_agp_node->next;
+						}else{
+								puts("All nodes assigned.\n");
+								break;
+						}
 				}
 		}
-
-    /*for(int i = 0; i<NUM_CPU; i++){
-        struct AGP_node *agp_node = schedule_me(cpus[i]->cpu_num);
-        cpus[i]->b_offset = agp_node->code_address;
-        cpus[i]->t_offset = agp_node->code_address + agp_node->node_size; //assuming t_offset is defining end of stack
-        cpus[i]->num_dict_entries = 0; //on initiallization
-        for(int j=0; j<agp_node->node_size; j++){
-            cpus[i]->PM[j] = agp_node->code[j];
-        }
-		}*/
-
-
 
 	//data entry array
 	if(GRAPH==1){
@@ -1237,9 +1221,9 @@ int main(int argc, char **argv)
 			puts("-----------------");
 			printf("buss_mout size: %d\n",buss_Mout->message_counter);
 			printf("buss_min size: %d\n",buss_Min->message_counter);
-			for(int i = 0; i<NUM_CPU; i++){
+			/*for(int i = 0; i<NUM_CPU; i++){
 				printf("cpu %d size: %d\n",i+1, cpu_fifos[i]->message_counter);
-	    }
+	    }*/
 			print_node_short();
 			nodes_never_ran();
 		}
