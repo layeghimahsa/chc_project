@@ -148,6 +148,7 @@ struct Message{
 
 void *CPU_start();
 void *CPU_H_start();
+void *CPU_SA_start();
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
 void Message_printing(struct Message *message);
 void bin_representation(int n);

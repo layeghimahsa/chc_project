@@ -10,6 +10,7 @@
 #include "2by2sim.h"
 #include "cpu.h"
 
+
 //dynamic code array (starts as copy of original code)
 int *runtime_code;
 //cpu status array
@@ -1182,7 +1183,7 @@ int main(int argc, char **argv)
 	  }*/
 
 		program_APG_node_list = create_list(main_addr);
-		struct AGP_node *current_agp_node = program_APG_node_list;
+
 
 		//create cpu struct
     struct CPU_SA *cpus[NUM_CPU];
@@ -1196,7 +1197,6 @@ int main(int argc, char **argv)
 				cpu_t->b_offset = 0;
         cpus[i] = cpu_t;
     }
-
 		/*for(int i = 0; i<NUM_CPU; i++){
 				for(int j=0; j< NODE_NUM_MAX; j++){
 						//struct AGP_node *agp_node = schedule_me(cpus[i]->cpu_num);
@@ -1216,6 +1216,7 @@ int main(int argc, char **argv)
 				}
 		}*/
 
+		struct AGP_node *current_agp_node = program_APG_node_list;
 		//using profs compiler
 		int node_num;
 		int coloring_size = sizeof(colouring)/sizeof(colouring[0]);
@@ -1275,7 +1276,7 @@ int main(int argc, char **argv)
 		BEGIN = clock();
 
     for(int i = 0; i<NUM_CPU; i++){
-				pthread_create(&thread_id[i], NULL, &CPU_H_start, cpus[i]);
+				pthread_create(&thread_id[i], NULL, &CPU_SA_start, cpus[i]);
 			  cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }//*/
 

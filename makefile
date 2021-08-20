@@ -5,7 +5,7 @@ DEPS = chc_compiler/parser.tab.h chc_compiler/ast.h chc_compiler/display.h chc_c
 
 OBJ = cpu_F.o 2by2sim.o
 
-OBJH = cpu_H.o many_core.o
+OBJH = cpu_SA.o many_core.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
