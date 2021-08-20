@@ -40,20 +40,120 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x7,
+0x1,
+0x28,
+0xc,
+0x0,
+0x3,
+0x74,
+0xc0,
+0xf0,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x28,
+0xb,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x8,
+0x2,
+0x0,
+0x0,
+0x1,
+0x168,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x164,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x30,
+0x5,
+0x2,
+0x0,
+0x0,
+0x3,
+0x4c,
+0x118,
+0x140,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x4,
+0x2,
+0x0,
+0x0,
+0x1,
+0x114,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xbc,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0xa,
+0x2,
+0x0,
+0x0,
+0x1,
+0x48,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x24,
+0x9,
+0x2,
+0x0,
+0x0,
+0x0,
+0x7fffffff,
+0x0,
+0x0,
 0x20,
 0xc,
 0x0,
 0x1,
-0xffffffff
+0xec,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0x70,
+0x13c
 //Start main @(0):
 };
-int code_size = 8;
+int code_size = 107;
 int main_addr = 0;
-int main_num_nodes = 1;
-int dictionary[][3] = {{0,8,1}
+int main_num_nodes = 11;
+int dictionary[][3] = {{0,107,11}
 };
 int num_dict_entries = 1;
+int colouring[] = {0,1,0,3,3,1,2,2,2,0,2};
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -1097,12 +1197,13 @@ int main(int argc, char **argv)
         cpus[i] = cpu_t;
     }
 
-		for(int i = 0; i<NUM_CPU; i++){
+		/*for(int i = 0; i<NUM_CPU; i++){
 				for(int j=0; j< NODE_NUM_MAX; j++){
 						//struct AGP_node *agp_node = schedule_me(cpus[i]->cpu_num);
 						if(current_agp_node != NULL){
 								for(int k=0; k<current_agp_node->node_size; k++){
 				            cpus[i]->PM[k] = current_agp_node->code[k];
+										//printf("PM[%d] : %d\n",k, cpus[i]->PM[k]);
 				        }
 								printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[i]->cpu_num);
 								cpus[i]->nodes_to_evaluate++;
@@ -1113,6 +1214,26 @@ int main(int argc, char **argv)
 								break;
 						}
 				}
+		}*/
+
+		//using profs compiler
+		int node_num;
+		int coloring_size = sizeof(colouring)/sizeof(colouring[0]);
+		printf("coloring size : %d\n", coloring_size);
+		for(int i = 0; i<=coloring_size; i++){
+			if(current_agp_node != NULL){
+					for(int j=0; j<current_agp_node->node_size; j++){
+							cpus[colouring[i]]->PM[j] = current_agp_node->code[j];
+							//printf("PM[%d] : %d\n",j, cpus[colouring[i]]->PM[j]);
+					}
+					printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[colouring[i]]->cpu_num);
+					cpus[colouring[i]]->nodes_to_evaluate++;
+					cpus[colouring[i]]->t_offset += current_agp_node->node_size; //update stack pointer
+					current_agp_node = current_agp_node->next;
+			}else{
+					puts("All nodes assigned.\n");
+					break;
+			}
 		}
 
 	//data entry array
