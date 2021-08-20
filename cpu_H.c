@@ -76,13 +76,11 @@ void *CPU_H_start(struct CPU_H *cpu){
 			struct Message *m = peekMessage(buss_Mout);
 			pthread_mutex_unlock(&mem_lock);
 			if(m != NULL){
-				int cpu_n = getCpuNum(m); //fetch cpu number
-				if(cpu_n == cpu->cpu_num){
+				if(getCpuNum(m) == cpu->cpu_num){
 					//printf("CPU %d received message from buss\n",cpu->cpu_num);
 					pthread_mutex_lock(&mem_lock);
 					removeMessage(buss_Mout); //remove the message from the buss
 					pthread_mutex_unlock(&mem_lock);
-
 					if(add_to_buff==1){
 						if(getAddr(m) == OPR && getData(m)==EOM){
 							cpu->stack[cpu->stack[cpu->sp+3]] = cpu->pc;
@@ -124,6 +122,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 						//writing var in
 						if(MESSAGE == 1)
 							printf("CPU %d Writing %d to address %d\n",cpu->cpu_num, getData(m), getAddr(m));
+
 						if(cpu->stack[cpu->sp+4] == code_input){
 							cpu->stack[cpu->sp+2] = getData(m);
 							cpu->stack[cpu->sp+4] = code_identity;
@@ -151,10 +150,6 @@ void *CPU_H_start(struct CPU_H *cpu){
 			//wait for dependables to start
 			case WTS:
 			{
-			/*	printf("CPU %d \n",cpu->cpu_num);
-				for(int i = 0; i<64; i++){
-					printf(" [%d]\n",i,cpu->stack[i]);
-				}*/
 				if(cpu->stack[cpu->sp+1]==0){
 					cpu->pc = DEC;
 				}else{
@@ -203,18 +198,15 @@ void *CPU_H_start(struct CPU_H *cpu){
 						if(MESSAGE == 1)
 							printf("CPU %d Dest offset address is %d\n",cpu->cpu_num,todo);
 
-						if(cpu->stack[todo-2] == UNKNOWN){cpu->pc=SAVE_RES;
+						if(cpu->stack[todo-2] == UNKNOWN){
+							cpu->pc=SAVE_RES;
 							if(MESSAGE == 1)
 								printf("CPU %d saving val %d for node %d\n",cpu->cpu_num,cpu->stack[cpu->sp],cpu->stack[todo-1]);
-						}
-						else if(cpu->stack[todo-2] == IGNORE){
+						}else if(cpu->stack[todo-2] == IGNORE){
 							cpu->stack[6+cpu->stack[5]] -= 1;
 						}
 						else if(cpu->stack[todo-2] == OUTPUT){
-							printf("\n\nCPU %d OUTPUT: %d\n\n",cpu->cpu_num,cpu->stack[cpu->sp+2]);
-							/*for(int i = 0; i<cpu->stack[3]; i++){
-								printf("stack [%d] [%d]\n",i,cpu->stack[i]);
-							}*/
+							printf("CPU %d OUTPUT: %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2]);
 							//printf("CPU %d outputing address [%d] val [%d]\n",cpu->cpu_num,cpu->stack[todo],cpu->stack[cpu->sp+2]);
 							pthread_mutex_lock(&mem_lock);
 							sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
@@ -236,12 +228,8 @@ void *CPU_H_start(struct CPU_H *cpu){
 					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					//int todo = cpu->stack[6+cpu->stack[5]]*3;
 					int todo = 6+cpu->stack[5]+(cpu->stack[6+cpu->stack[5]]*3);
-					/*for(int i = 0; i<cpu->stack[3]; i++){
-						printf("stack [%d] [%d]\n",i,cpu->stack[i]);
-					}*/
 					if(MESSAGE == 1)
 						printf("CPU %d sending result %d to cpu %d address %d\n",cpu->cpu_num,cpu->stack[cpu->sp+2],cpu->stack[todo-2],cpu->stack[todo]);
-					sleep(0.01);
 					pthread_mutex_lock(&mem_lock);
 					sendMessage(cpu->look_up[cpu->stack[todo-2]-1],Message_packing(cpu->stack[todo-2],1,cpu->stack[todo],cpu->stack[cpu->sp+2])); //1 for writing
 					pthread_mutex_unlock(&mem_lock);
@@ -371,7 +359,7 @@ void *CPU_H_start(struct CPU_H *cpu){
 						int cpu_dest = getData(cpu->buffer->next);
 						int node_dest = getData(cpu->buffer->next->next);
 
-						if(node_needed == cpu->stack[cpu->sp]){
+						if(node_needed == cpu->stack[cpu->sp]){ //if current node
 							if(cpu->stack[cpu->sp+cpu->stack[cpu->sp+3]] < -5){
 								if(MESSAGE == 1)
 									printf("CPU %d sending var\n",cpu_num);
