@@ -358,13 +358,13 @@ void generate_output_mt(int n_threads)
 			{
 				if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
 					fprintf(fp,"0x%x\n",*main_ip);
-					fprintf(temp_F_fp,"0x%x\n",*ip);
-					fprintf(temp_H_fp,"0x%x\n",*ip);
+					fprintf(temp_F_fp,"0x%x\n",*main_ip);
+					fprintf(temp_H_fp,"0x%x\n",*main_ip);
 				}
 				else{
 					fprintf(fp,"0x%x,\n",*main_ip);
-					fprintf(temp_F_fp,"0x%x\n",*ip);
-					fprintf(temp_H_fp,"0x%x\n",*ip);
+					fprintf(temp_F_fp,"0x%x,\n",*main_ip);
+					fprintf(temp_H_fp,"0x%x,\n",*main_ip);
 				}
 				main_ip++;
 				length--;
@@ -384,8 +384,8 @@ void generate_output_mt(int n_threads)
 				}
 				else{
 					fprintf(fp,"0x%x,\n",*ip);
-					fprintf(temp_F_fp,"0x%x\n",*ip);
-					fprintf(temp_H_fp,"0x%x\n",*ip);
+					fprintf(temp_F_fp,"0x%x,\n",*ip);
+					fprintf(temp_H_fp,"0x%x,\n",*ip);
 				}
 				ip++;
 				length--;
@@ -424,13 +424,13 @@ void generate_output_mt(int n_threads)
 	{
 		if((code_ptr->next == (struct code_scope *)0)){
 			fprintf(fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_H_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_F_fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_H_fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		else{
 			fprintf(fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_H_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_F_fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
+			fprintf(temp_H_fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		code_ptr = code_ptr->next;
 		count++;
