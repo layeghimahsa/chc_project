@@ -40,171 +40,22 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0xa4,
-0x7fffffff,
-0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0x74,
-0x7fffffff,
-0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0x44,
-0x7fffffff,
-0x0,
-0x1,
-0x20,
-0xc,
-0x0,
-0x1,
-0x14,
-0x7fffffff,
-0x1,
-0xfffffffc,
+0x2,
 0x24,
 0xc,
-0x1,
 0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0xffffffff,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x850,
-0x1,
-0x78,
-0x134,
-0x4a4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x850,
-0x1,
-0x78,
-0x110,
-0x4a4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x850,
-0x1,
-0x78,
+0x2,
+0x54,
 0xec,
-0x4a4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x850,
-0x1,
-0x78,
-0xc8,
-0x4a4,
-//Start main @(661):
-//End single:
 0x7fffffff,
 0x0,
-0x14,
-0x20,
+0x2,
+0x24,
 0xc,
 0x0,
-0x1,
-0x810,
-0x7fffffff,
-0x0,
-0xfffffffc,
-0x24,
-0x1,
-0x0,
 0x2,
-0x434,
-0x814,
-0x7fffffff,
-0x2,
-0xfffffffc,
-0x80,
-0x3,
-0x2,
-0x0,
-0x0,
-0x17,
-0x14,
-0x44,
-0x74,
-0xa4,
-0xd4,
-0x104,
-0x134,
-0x164,
-0x194,
-0x1c4,
-0x1f4,
-0x224,
-0x254,
-0x284,
-0x2b4,
-0x2e4,
-0x314,
-0x344,
-0x374,
-0x3a4,
-0x3d4,
-0x404,
-0x464,
+0x4c,
+0xc4,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -213,192 +64,7 @@ const int code[] = {//End main:
 0x1,
 0x0,
 0x1,
-0x488,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x24,
-0xc,
-0x1,
-0x0,
-0x1,
-0x48c,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x20,
-0xc,
-0x1,
-0x0,
-0x0,
+0xffffffff,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -408,19 +74,140 @@ const int code[] = {//End main:
 0x0,
 0x0,
 0x1,
+0x1c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0xc0,
+0xe8,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
 0xffffffff,
 0x7fffffff,
+0x2,
+0xfffffffc,
+0x38,
+0x0,
+0x2,
+0x0,
+0x134,
+0x0,
+0x158,
+0x1,
+0x92,
+0x110,
+0x114,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x38,
+0x0,
+0x2,
+0x0,
+0x134,
+0x0,
+0x158,
+0x1,
+0x92,
+0x78,
+0x114,
+//Start main @(233):
+//End test:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x24,
+0x1,
+0x0,
+0x2,
+0x8c,
+0x68,
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0x64,
+0x7fffffff,
 0x1,
 0xfffffffc,
-0x30,
+0x28,
+0xb,
+0x2,
+0x0,
 0x0,
 0x1,
+0xffffffff,
+0x7fffffff,
 0x0,
-0x1dc,
+0x0,
+0x20,
+0xc,
+0x0,
+0x1,
+0x38,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
 0x1,
 0x0,
-0x794,
-0x1b4,
+0x1,
+0xfc,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x8,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x2c,
+0x5,
+0x2,
+0x0,
+0x0,
+0x2,
+0x3c,
+0x90,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0xf8,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -430,274 +217,10 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x0,
-0x770,
+0x1a,
+0xb4,
 0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x74c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x72c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x70c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x6ec,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x6cc,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x6ac,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x68c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x66c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x64c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x62c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x60c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x5ec,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x5cc,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x5ac,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x58c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x56c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x54c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x52c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x50c,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x4ec,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x4cc,
-0x1b4,
-0x7fffffff,
-0x1,
-0xfffffffc,
-0x30,
-0x0,
-0x1,
-0x0,
-0x1dc,
-0x1,
-0x0,
-0x4ac,
-0x1b4,
-//Start single @(120):
+//Start test @(146):
 //End fact:
 0x7fffffff,
 0x0,
@@ -816,19 +339,48 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x0,
+0x1a,
 0xcc,
-0x1b4
-//Start fact @(0):
+0x1b4,
+//Start fact @(26):
+//End plus1:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0x2c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x0,
+0x1,
+0x20,
+0xc,
+0x0,
+0x1,
+0x28
+//Start plus1 @(0):
 };
-int code_size = 777;
-int main_addr = 661;
-int main_num_nodes = 12;
-int dictionary[][3] = {{661,116,12},
-{120,541,52},
-{0,120,12}
+int code_size = 326;
+int main_addr = 233;
+int main_num_nodes = 9;
+int dictionary[][3] = {{233,93,9},
+{146,87,9},
+{26,120,12},
+{0,26,3}
 };
-int num_dict_entries = 3;
+int num_dict_entries = 4;
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -1316,7 +868,6 @@ struct AGP_node *schedule_me(int cpu_num){
 		dummy->assigned_cpu = cpu_num;
 		dummy->code[1] = 1;
 		dummy->code[4] = -1;
-		cpu_status[cpu_num-1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 
 		if(GRAPH){
 			struct data_entry *d = data[cpu_num-1];
@@ -1339,10 +890,10 @@ struct AGP_node *schedule_me(int cpu_num){
 			if(current->code[1] == 0){//if the node has no dependent
 				current->assigned_cpu = cpu_num;
 				refactor_destinations(current, program_APG_node_list);
-				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				//*return_node = *current;
-				return_node = current;
+				*return_node = *current;
+				return_node->next = NULL;
+				//return_node = current;
 
 				if(GRAPH){
 					struct data_entry *d = data[cpu_num-1];
@@ -1353,8 +904,8 @@ struct AGP_node *schedule_me(int cpu_num){
 					clock_t t = clock();
 					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
 				}
-				if(MESSAGE == 1)
-					printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
+				//if(MESSAGE == 1)
+					//printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
 				return return_node;
 			}else{ //if the node has dependables
 				struct Dependables *dep = current->depend;
@@ -1368,11 +919,11 @@ struct AGP_node *schedule_me(int cpu_num){
 				//return the cpu.
 				current->assigned_cpu = cpu_num;
 				refactor_destinations(current, program_APG_node_list);
-				cpu_status [cpu_num-1] = CPU_UNAVAILABLE;
 				//return copy of node, not actual node
 				struct AGP_node *return_node = (struct AGP_node *)malloc(sizeof(struct AGP_node));
-				//*return_node = *current;
-				return_node = current;
+				*return_node = *current;
+				return_node->next = NULL;
+				//return_node = current;
 
 				if(GRAPH){
 					struct data_entry *d = data[cpu_num-1];
@@ -1383,8 +934,8 @@ struct AGP_node *schedule_me(int cpu_num){
 					clock_t t = clock();
 					d->x = ((double)(t - BEGIN)/CLOCKS_PER_SEC);
 				}
-				if(MESSAGE == 1)
-					printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
+				//if(MESSAGE == 1)
+					//printf("sending CPU %d node %d\n",cpu_num,return_node->node_num);
 				return return_node;
 			}
 		}
@@ -1570,19 +1121,19 @@ void print_nodes(struct AGP_node *nodes){
 void run_sim(){
 
 	//print_node_short();
-	struct Message *buffer; //need malloc
+	struct Message *buffer = (struct Message*)malloc(sizeof(struct Message)); //need malloc
 	int op = CB; int serving_cpu = 0;
 	int terminate_sim = 0;
 	while(terminate_sim == 0){
-
+				//printf("OP %d\n",op);
 				switch(op){
 					case CB:  //check buss
 					{
 						if(getFifoSize(buss_Min) > 0){
 
-							pthread_mutex_lock(&mem_lock);
+							pthread_mutex_lock(&buss_Min->fifo_lock);
 							struct Message *m = popMessage(buss_Min);
-							pthread_mutex_unlock(&mem_lock);
+							pthread_mutex_unlock(&buss_Min->fifo_lock);
 
 							if(MESSAGE == 1)
 								printf("Buss_Min Message in: [%d][%d][%d]	  [%d]\n",getCpuNum(m),getRW(m),getAddr(m),getData(m));
@@ -1594,120 +1145,159 @@ void run_sim(){
 								op = getRW(m);
 							}
 							free(m);
-						}else{
-
-						/*	//look if any idle cpu it can try to schedule
-							int i = 0;
-							for(int i=0; i<NUM_CPU;i++){
-								if(cpu_status[i] == CPU_IDLE){
-									op = REQ_TASK; serving_cpu = i+1;
-									break;
-								}
-							}*/
 						}
 						break;
 					}
 					case REQ_TASK: //request new task
 						{
-							struct AGP_node *task = schedule_me(serving_cpu);
-							if(MESSAGE == 1)
-								printf("SENDING CPU %d A TASK\n",serving_cpu);
 
 							if(serving_cpu <1 || serving_cpu >4 ){
 								exit(0);
 							}
 
-							if(task->code[4] == -1){
-								//printf("sending dummy node task to cpu %d\n",serving_cpu);
-								pthread_mutex_lock(&mem_lock);
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,IDLE));
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
-								pthread_mutex_unlock(&mem_lock);
-
-								//sending dummy node... should check if all are idle and sim over
-								int idle_count = 0;
-								for(int i = 0; i<NUM_CPU;i++){
-									if(cpu_status[i] == CPU_IDLE)
-										idle_count++;
-								}
-								if(idle_count == NUM_CPU)
-									terminate_sim = 1;
-
-							}else{
-								if(MESSAGE == 1)
-									printf("sending task %d to cpu %d\n",task->node_num,serving_cpu);
-
-								if(task->code[4] == 11){
-									task->code[1]++;
-									//printf("\n\n dependants %d\n\n",task->code[1]);
-								}
-								//send requesting cpu their task
-								int i;
-								pthread_mutex_lock(&mem_lock);
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,0,task->node_num));
-								pthread_mutex_unlock(&mem_lock);
-								for( i=1; i<=(6+task->code[5]); i++){
-										pthread_mutex_lock(&mem_lock);
-										sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,task->code[i]));
-										pthread_mutex_unlock(&mem_lock);
-
-								}
-								struct Destination *dest = task->dest;
-								int addr;
-								for(int j=0; j<task->num_dest; j++){
-									if(dest->node_dest == IGNORE){
-										addr = -1;
-									}else if(dest->node_dest == OUTPUT){
-										addr = task->code_address + 2;
-									}else{
-										addr = dest->destination->node_size - dest->offset/4 - 1;
-									}
-									if(MESSAGE == 1)
-										printf("Dest cpu %d  Dest node %d  offset %d\n",dest->cpu_dest,dest->node_dest,addr);
-									pthread_mutex_lock(&mem_lock);
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i,dest->cpu_dest));
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1,dest->node_dest));
-									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2,addr));
-									pthread_mutex_unlock(&mem_lock);
-									i+=3;
-									dest = dest->next;
-								}
-								pthread_mutex_lock(&mem_lock);
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,3,i));//code size
-								pthread_mutex_unlock(&mem_lock);
-
-								pthread_mutex_lock(&mem_lock);
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,WTS));
-								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
-								pthread_mutex_unlock(&mem_lock);
-
-								//send dependent cpus the dest for their task or previous task
-								struct Dependables *dep = task->depend;
-
-								while(dep != NULL){
-									pthread_mutex_lock(&mem_lock);
-									if(dep->cpu_num < 1){
-										sendMessage(buss_Mout,Message_packing(serving_cpu ,1,1,task->code[1]-1));
-									}else{
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
-										if(dep->key == UNDEFINED){
-											sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
-										}else{
-											sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,dep->key));
-										}
-										sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
-									}
-									pthread_mutex_unlock(&mem_lock);
-									dep = dep->next;
+							struct AGP_node *task = schedule_me(serving_cpu);
+							struct AGP_node *extra_task = task;
+							for(int i=1; i<MNNC; i++){
+								task = schedule_me(serving_cpu);
+								if(task->code[4] == -1){
+									break;
+								}else{
+									task->next = extra_task;
+									extra_task = task;
 								}
 							}
 
+							task = extra_task;
 
+								if(task->code[4] == -1){
+									//printf("sending dummy node task to cpu %d\n",serving_cpu);
+									pthread_mutex_lock(&buss_Mout->fifo_lock);
+									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,IDLE));
+									sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+									pthread_mutex_unlock(&buss_Mout->fifo_lock);
 
+									cpu_status[serving_cpu -1] = CPU_IDLE; //there are no nodes left! go to idle mode.
 
+									//sending dummy node... should check if all are idle and sim over
+									int idle_count = 0;
+									for(int i = 0; i<NUM_CPU;i++){
+										if(cpu_status[i] == CPU_IDLE)
+											idle_count++;
+									}
+									if(idle_count == NUM_CPU)
+										terminate_sim = 1;
 
+								}else{
+
+									cpu_status[serving_cpu-1] = CPU_UNAVAILABLE;
+
+									int offset = 0;
+									int sp=0;
+									while(task != NULL){
+										sp = offset;
+
+										if(MESSAGE == 1)
+											printf("SENDING CPU %d TASK %d\n",serving_cpu,task->node_num);
+
+											if(task->code[4] == 11){
+												task->code[1]++;
+												//printf("\n\n dependants %d\n\n",task->code[1]);
+											}
+											//send requesting cpu their task
+											int i;
+											pthread_mutex_lock(&buss_Mout->fifo_lock);
+											sendMessage(buss_Mout,Message_packing(serving_cpu ,1,0+offset,task->node_num));
+											pthread_mutex_unlock(&buss_Mout->fifo_lock);
+											for( i=1; i<=(6+task->code[5]); i++){
+													pthread_mutex_lock(&buss_Mout->fifo_lock);
+													sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+offset,task->code[i]));
+													pthread_mutex_unlock(&buss_Mout->fifo_lock);
+
+											}
+											struct Destination *dest = task->dest;
+											int addr;
+											for(int j=0; j<task->num_dest; j++){
+												if(dest->node_dest == IGNORE){
+													addr = -1;
+												}else if(dest->node_dest == OUTPUT){
+													addr = task->code_address + 2;
+												}else{
+													addr = dest->destination->node_size - dest->offset/4 - 1;
+												}
+												if(MESSAGE == 1)
+													printf("Dest cpu %d  Dest node %d  offset %d\n",dest->cpu_dest,dest->node_dest,addr);
+												pthread_mutex_lock(&buss_Mout->fifo_lock);
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+offset,dest->cpu_dest));
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+1+offset,dest->node_dest));
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,i+2+offset,addr));
+												pthread_mutex_unlock(&buss_Mout->fifo_lock);
+												i+=3;
+												dest = dest->next;
+											}
+
+											pthread_mutex_lock(&buss_Mout->fifo_lock);
+											sendMessage(buss_Mout,Message_packing(serving_cpu ,1,3+offset,i));//code size
+											pthread_mutex_unlock(&buss_Mout->fifo_lock);
+
+											if(task->next == NULL){
+												pthread_mutex_lock(&buss_Mout->fifo_lock);
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,SP));
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,0,sp));
+												sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+												pthread_mutex_unlock(&buss_Mout->fifo_lock);
+											}
+
+											//send dependent cpus the dest for their task or previous task
+											struct Dependables *dep = task->depend;
+
+											while(dep != NULL){
+												pthread_mutex_lock(&buss_Mout->fifo_lock);
+												if(dep->cpu_num < 1){
+													sendMessage(buss_Mout,Message_packing(serving_cpu ,1,1+offset,task->code[1]-1));
+												}else{
+													//if the first task to be ran on the cpu
+													if(task->next == NULL){
+														sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,OPR,NVA));
+														sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,dep->node_needed));
+														sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,0,serving_cpu));
+														if(dep->key == UNDEFINED){
+															sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,task->node_num));
+														}else{
+															sendMessage(buss_Mout,Message_packing(dep->cpu_num,1,1,dep->key));
+														}
+														sendMessage(buss_Mout,Message_packing(dep->cpu_num ,1,OPR,EOM));
+													}else{ //its a secondary task so cant request variables yet
+
+														sendMessage(buss_Mout,Message_packing(serving_cpu,1,i+offset,dep->node_needed));
+														sendMessage(buss_Mout,Message_packing(serving_cpu,1,i+1+offset,dep->cpu_num));
+														if(dep->key == UNDEFINED){
+															sendMessage(buss_Mout,Message_packing(serving_cpu,1,i+2+offset,task->node_num));
+														}else{
+															sendMessage(buss_Mout,Message_packing(serving_cpu,1,i+2+offset,dep->key));
+														}
+														i+=3;
+													}
+
+												}
+												pthread_mutex_unlock(&buss_Mout->fifo_lock);
+												dep = dep->next;
+											}
+										//printf("i %d offset %d\n",i,offset);
+										//printf("i+offset %d\n",i+offset);
+										pthread_mutex_lock(&buss_Mout->fifo_lock);
+										sendMessage(buss_Mout,Message_packing(serving_cpu,1,i+offset,offset));
+										pthread_mutex_unlock(&buss_Mout->fifo_lock);
+										i++;
+										offset += i;
+										task = task->next;
+								}
+								//printf("SP is %d\n",sp);
+					/*			pthread_mutex_lock(&buss_Mout->fifo_lock);
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,SP));
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,0,sp));
+								sendMessage(buss_Mout,Message_packing(serving_cpu ,1,OPR,EOM));
+								pthread_mutex_unlock(&buss_Mout->fifo_lock);*/
+						}
 							op = CB;
 							serving_cpu = 0;
 							//free(task);
@@ -1715,9 +1305,9 @@ void run_sim(){
 						}
 					case MD:  //mark as dead
 						{
-							pthread_mutex_lock(&mem_lock);
+							pthread_mutex_lock(&buss_Min->fifo_lock);
 							struct Message *m = popMessage(buss_Min);
-							pthread_mutex_unlock(&mem_lock);
+							pthread_mutex_unlock(&buss_Min->fifo_lock);
 							if(MESSAGE == 1)
 								printf("NODE %d MARKED AS DEAD\n",getData(m));
 							mark_as_dead(getData(m));
@@ -1727,9 +1317,9 @@ void run_sim(){
 						}
 					case PD: //propogate death
 						{
-							pthread_mutex_lock(&mem_lock);
+							pthread_mutex_lock(&buss_Min->fifo_lock);
 							struct Message *m = popMessage(buss_Min);
-							pthread_mutex_unlock(&mem_lock);
+							pthread_mutex_unlock(&buss_Min->fifo_lock);
 							if(MESSAGE == 1)
 								printf("NODE %d PROPOGATE DEATH\n",getData(m));
 							propagate_death(getData(m));
@@ -1851,6 +1441,8 @@ int main(int argc, char **argv)
 			struct CPU_H *cpu_t = (struct CPU_H*)malloc(sizeof(struct CPU_H));
 			cpu_t->cpu_num = i+1;
 			cpu_t->look_up = (struct FIFO **) malloc(sizeof(struct FIFO*) *NUM_CPU);
+			cpu_t->buff = create_FIFO();
+			cpu_t->buff_2 = create_FIFO();
 			cpus[i] = cpu_t;
 		}
 
@@ -1996,6 +1588,7 @@ int main(int argc, char **argv)
 
 struct FIFO *create_FIFO(){
 	struct FIFO *fifo = (struct FIFO*)malloc(sizeof(struct FIFO));
+	pthread_mutex_init(&fifo->fifo_lock, NULL);
 	fifo->front = fifo->back = NULL;
 	fifo->size = 0;
 	return fifo;
@@ -2013,6 +1606,7 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 		fifo->size+=1;
 		fifo->message_counter+=1;
 	}
+	//printf("message added\n");
 }
 struct Message *peekMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
@@ -2020,6 +1614,7 @@ struct Message *peekMessage(struct FIFO *fifo){
 	}
 	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
 	*new = *fifo->front;
+	new->next = NULL;
 	return new;
 }
 void removeMessage(struct FIFO *fifo){
@@ -2042,18 +1637,20 @@ struct Message *popMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		return NULL;
 	}
-	struct Message *m = (struct Message*)malloc(sizeof(struct Message));
-	*m = *fifo->front;
+	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
+	*new = *fifo->front;
+	new->next = NULL;
+
 	struct Message *remove = fifo->front;
 	fifo->front = fifo->front->next;
+	remove->next = NULL;
 	free(remove);
-	m->next = NULL;
 
 	if(fifo->front == NULL)
 		fifo->back = NULL;
 
 	fifo->size-=1;
-	return m;
+	return new;
 }
 
 int getFifoSize(struct FIFO *fifo){

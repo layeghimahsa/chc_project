@@ -42,7 +42,7 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-#define ADDRASABLE_SPACE 256
+#define ADDRASABLE_SPACE 1024
 
 struct Destination{
 	int cpu_dest;
@@ -80,7 +80,8 @@ struct CPU_H{
 	int sp; //stack pointer
 	int pc; //program counter
 	struct FIFO **look_up; //lookup FIFO table.
-	struct Message *buffer;
+	struct FIFO *buff;
+	struct FIFO *buff_2;
 };
 
 struct CPU_SA{
