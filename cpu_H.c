@@ -47,6 +47,9 @@ void *CPU_H_start(struct CPU_H *cpu){
 
 	*/
 
+	clock_t t_e;
+	clock_t t_s;
+
 	int count = 0;
 	int next_op = 0;
 	int next_op_2 = 0;
@@ -56,12 +59,13 @@ void *CPU_H_start(struct CPU_H *cpu){
 	cpu->pc = RT; //first instruction is to request task
 	cpu->sp = 0;
 
-	int req_made = 0;
 
 	while(1){
 
 		sleep(0.01);
-		//printf("CPU %d node num %d pc %d sp %d dep %d req %d\n",cpu_num,cpu->stack[cpu->sp],cpu->pc,cpu->sp,cpu->stack[cpu->sp+1],req_made);
+		//printf("CPU %d node num %d pc %d sp %d dep %d\n",cpu_num,cpu->stack[cpu->sp],cpu->pc,cpu->sp,cpu->stack[cpu->sp+1]);
+
+		t_s = clock();
 
 
 		if(getFifoSize(buss_Mout) > 0 ){
@@ -154,12 +158,18 @@ void *CPU_H_start(struct CPU_H *cpu){
 					}
 			free(m);
 		}
+		t_e = clock();
+		COM_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
 
+
+		t_s = clock();
+		int pc = cpu->pc;
 		//now for the atual processing
 		switch(cpu->pc){
 			//request task
 			case RT:
 			{
+
 				pthread_mutex_lock(&buss_Min->fifo_lock);
 				sendMessage(buss_Min,Message_packing(cpu_num,1,OPR,REQ_TASK));
 				pthread_mutex_unlock(&buss_Min->fifo_lock);
@@ -192,11 +202,11 @@ void *CPU_H_start(struct CPU_H *cpu){
 						sendMessage(cpu->look_up[cpu_dest-1],Message_packing(cpu_dest,1,OPR_V,for_node));
 						sendMessage(cpu->look_up[cpu_dest-1],Message_packing(cpu_dest,1,OPR,EOM));
 						pthread_mutex_unlock(&cpu->look_up[cpu_dest-1]->fifo_lock);
-
-						req_made++;
 						//printf("queue %d size %d\n",cpu_dest,getFifoSize(cpu->look_up[cpu_dest-1]));
 					}
 				cpu->pc = WTS;
+
+				break;
 			}
 			//wait for dependables to start
 			case WTS:
@@ -615,7 +625,6 @@ void *CPU_H_start(struct CPU_H *cpu){
 				sendMessage(buss_Min,Message_packing(cpu_num,1,OPR,MD));
 				sendMessage(buss_Min,Message_packing(cpu_num,1,0,cpu->stack[cpu->sp]));
 				pthread_mutex_unlock(&buss_Min->fifo_lock);
-				req_made = 0;
 				if(cpu->sp == 0){
 					//clear stack
 					for(int i = 0; i<ADDRASABLE_SPACE; i++){
@@ -635,6 +644,25 @@ void *CPU_H_start(struct CPU_H *cpu){
 				exit(0);
 				break;
 		}
+
+		t_e = clock();
+
+		if(pc>0 || pc==CS || pc==SAVE_RES || pc==FND || pc==DEC || pc==SP){
+			PROS_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
+		}else if(pc==SEND_RES || pc==NVA || pc==NVA_C || pc==SDR || pc==RT){
+			COM_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
+		}else if(pc==WFC || pc==WTS || pc==IDLE){
+			IDLE_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
+			if(pc==WFC){
+				WFC_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
+			}else if(pc==WTS){
+				WTS_t[cpu_num-1] += ((double)(t_e - t_s)/CLOCKS_PER_SEC);
+			}
+		}else{
+			printf("FAILED TO RECORD PC\n");
+		}
+
+
 	}
 }
 

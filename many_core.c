@@ -34,6 +34,12 @@ int GRAPH;
 struct data_entry **data;
 clock_t BEGIN;
 
+double *COM_t;
+double *PROS_t;
+double *IDLE_t;
+double *WFC_t;
+double *WTS_t;
+
 
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
@@ -1186,7 +1192,6 @@ void run_sim(){
 									}
 									if(idle_count == NUM_CPU)
 										terminate_sim = 1;
-
 								}else{
 
 									cpu_status[serving_cpu-1] = CPU_UNAVAILABLE;
@@ -1470,6 +1475,13 @@ int main(int argc, char **argv)
 	}
 
 
+	COM_t = (double *)malloc(sizeof(double) * NUM_CPU);
+	PROS_t= (double *)malloc(sizeof(double) * NUM_CPU);
+  IDLE_t= (double *)malloc(sizeof(double) * NUM_CPU);
+	WFC_t= (double *)malloc(sizeof(double) * NUM_CPU);
+	WTS_t= (double *)malloc(sizeof(double) * NUM_CPU);
+
+
     runtime_code = (int *)malloc(sizeof(int) *code_size);
     for(int i = 0; i<code_size; i++){
 			if(MESSAGE == 1)
@@ -1557,6 +1569,15 @@ int main(int argc, char **argv)
 		printf("TIME ELAPSED: %f\n\n", elapsed);
 
     printf("%d AGP nodes created\n",list_index-1);
+
+		for(int i = 0; i<NUM_CPU; i++){
+			printf("\nCPU %d SPECIFIC TIME\n",i+1);
+			printf("Processing:	%f\n",PROS_t[i]);
+			printf("Com:		%f\n",COM_t[i]);
+			printf("Idle: 		%f\n",IDLE_t[i]);
+			printf(" - wfc:		%f\n",WFC_t[i]);
+			printf(" - wts:		%f\n",WTS_t[i]);
+		}
 
 		//print_nodes(program_APG_node_list);
 		if(n == 1){

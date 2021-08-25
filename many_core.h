@@ -40,10 +40,15 @@
 
 
 
-#define MNNC 3 //max node num per cpu
+#define MNNC 2 //max node num per cpu
 
 
 
+extern double *COM_t;
+extern double *PROS_t;
+extern double *IDLE_t;
+extern double *WFC_t;
+extern double *WTS_t;
 extern struct FIFO *buss_Min; //buss master input
 extern struct FIFO *buss_Mout; //buss master output
 
