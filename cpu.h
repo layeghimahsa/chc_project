@@ -146,6 +146,18 @@ struct Message{
 };
 
 
+//Structure to hold a scope (subgraph) and its code representation
+struct code_scope
+{
+	char *scope_name;
+	int address;
+	int length; //in sizeof(int)
+	int *code_ptr;
+	int num_nodes; //number of nodes in scope
+
+	struct code_scope *next;
+};
+
 void *CPU_start();
 void *CPU_H_start();
 void *CPU_SA_start();

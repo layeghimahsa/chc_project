@@ -41,12 +41,134 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x1,
-0x74,
+0x2,
+0x24,
 0xc,
+0x0,
+0x2,
+0x54,
+0xec,
+0x7fffffff,
+0x0,
+0x2,
+0x48,
+0xc,
+0x0,
+0x2,
+0x4c,
+0xc4,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0xbc,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x50,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0x1c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x4c,
+0x3,
+0x2,
+0x0,
 0x0,
 0x1,
 0x14,
+0x7fffffff,
+0x0,
+0x1,
+0x80,
+0xc,
+0x0,
+0x2,
+0xc0,
+0xe8,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x94,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x70,
+0x0,
+0x2,
+0x0,
+0x134,
+0x0,
+0x158,
+0x1,
+0x92,
+0x110,
+0x114,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x38,
+0x0,
+0x2,
+0x0,
+0x134,
+0x0,
+0x158,
+0x1,
+0x92,
+0x78,
+0x114,
+//Start main @(233):
+//End test:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x24,
+0x1,
+0x0,
+0x2,
+0x8c,
+0x68,
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0x64,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x28,
+0xb,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x0,
+0x0,
+0x20,
+0xc,
+0x0,
+0x1,
+0x38,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -55,7 +177,38 @@ const int code[] = {//End main:
 0x1,
 0x0,
 0x1,
-0xffffffff,
+0xfc,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x8,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x2c,
+0x5,
+0x2,
+0x0,
+0x0,
+0x2,
+0x3c,
+0x90,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0xf8,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -65,10 +218,10 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x0,
-0x38,
+0x1a,
+0xb4,
 0x1b4,
-//Start main @(120):
+//Start test @(146):
 //End fact:
 0x7fffffff,
 0x0,
@@ -187,16 +340,44 @@ const int code[] = {//End main:
 0x0,
 0x1dc,
 0x1,
-0x0,
+0x1a,
 0xcc,
-0x1b4
-//Start fact @(0):
+0x1b4,
+//Start fact @(26):
+//End plus1:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x20,
+0x1,
+0x0,
+0x1,
+0x2c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x3,
+0x2,
+0x0,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x0,
+0x1,
+0x20,
+0xc,
+0x0,
+0x1,
+0x28
+//Start plus1 @(0):
 };
-int code_size = 149;
-int main_addr = 120;
-int main_num_nodes = 3;
-int dictionary[][3] = {{120,29,3},{0,120,12}};
-int num_dict_entries = 2;
+int code_size = 326;
+int main_addr = 233;
+int main_num_nodes = 9;
+int dictionary[][3] = {{233,93,9},{146,87,9},{26,120,12},{0,26,3}};
+int num_dict_entries = 4;
 int thread_info[4][2];
 struct tcb{
 	int *sb;
@@ -209,7 +390,7 @@ struct tcb{
 	};
 struct tcb tcb[4];
 int **sb_tracker[4];
-int colouring[] = {0,3,3};
+int colouring[] = {3,3,1,3,2,3,2,1,3};
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -1133,6 +1314,189 @@ void run_sim(){
 }
 
 
+/*int *coloured_subgraph(int n_threads, struct code_scope *code_ptr)
+{
+	srand(time(0));
+
+	//printf("Colouring graph %s, for %d nodes:\n",code_ptr->scope_name,code_ptr->num_nodes);
+
+	colouring = (int *)malloc((code_ptr->num_nodes)*sizeof(int));
+
+	colour_length = code_ptr->num_nodes;
+
+	int *colouring_ptr = colouring;
+	int node_ctr = code_ptr->num_nodes;
+
+	int done_nodes = 0;
+
+	while(node_ctr > 0)
+	{
+		//Insert sophisticated graph analysis algorithm here
+		*colouring_ptr = rand()%n_threads;
+		colouring_ptr++;
+		node_ctr--;
+	}
+
+	//now, based on the color of this and next node, we adjust the size
+	//(threads use node size to move to next node)
+
+	int *new_code = (int *)malloc(code_ptr->length * sizeof(int));
+
+	memcpy((void *)new_code, (const void *)(code_ptr->code_ptr), (size_t)(code_ptr->length * sizeof(int)));
+
+	int *ptr = new_code;
+	colouring_ptr = colouring;
+
+	node_ctr = code_ptr->num_nodes;
+
+	while(node_ctr > 1)
+	{
+
+		//if next node is of different thread
+		if(*(colouring_ptr + 1) != *(colouring_ptr))
+		{
+			//printf("Found size to change\n");
+			//count sizes up to first new node of same thread
+
+				//find how many nodes to skip
+			int skip_number = 0;
+			int *skip_ctr = colouring_ptr + 1;
+
+			//TODO
+			//Needs refactoring so doesnt go out of bounds
+			do
+			{
+				skip_number++;
+				skip_ctr++;
+			} while((*skip_ctr != *colouring_ptr) && ((done_nodes + skip_number) < (code_ptr->num_nodes - 1)));
+
+			//printf("Must skip %d nodes\n",skip_number);
+
+			//calculate skip size
+			int *size_skipper = (int *)((long unsigned int)((long unsigned int)ptr + (long unsigned int)(*(ptr + 3))));
+			//printf("got ptr %lx, +3 %lx\n",(long unsigned int)ptr,(long unsigned int)(*(ptr + 3)));
+			//printf("pointer is %lx, skipper is %lx\n",(long unsigned int)ptr,(long unsigned int)size_skipper);
+			int added_size = 0;
+			while(skip_number > 0)
+			{
+				added_size += *(size_skipper + 3);
+
+				size_skipper = (int *)((long unsigned int)((long unsigned int)(size_skipper) +  (long unsigned int)(*(size_skipper + 3))));
+				skip_number--;
+			}
+			//printf("Adding %x size\n",added_size);
+			//increment size
+
+			//*(ptr + 3) = ((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(added_size));
+			//ptr += ((long unsigned int)((long unsigned int)(*(ptr + 3))) -  (long unsigned int)(added_size));
+
+			int *tmp_ptr = ptr;
+			ptr = (int *)((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(ptr));
+			*(tmp_ptr + 3) = ((long unsigned int)((long unsigned int)(*(tmp_ptr + 3))) +  (long unsigned int)(added_size));
+		}
+		else
+		{
+		//else, next node is of same thread
+			//leave unchanged
+			ptr = (int *)((long unsigned int)((long unsigned int)(*(ptr + 3))) +  (long unsigned int)(ptr));
+			//ptr += *(ptr + 3);
+		}
+
+		colouring_ptr++;
+		node_ctr--;
+		done_nodes++;
+	}
+
+
+	//before we overwrite canonic main code
+	//create thread sp offsets
+
+	//thread_stack_offsets = (struct thread_sp *)malloc(sizeof(struct thread_sp));
+
+	//thread 0
+	//thread_stack_offsets->offset = 0;
+	//thread_stack_offsets->next = (struct thread_sp *)0;
+
+	//struct thread_sp *thread_stack_offsets;
+
+	struct thread_sp *thread_tmp;
+
+	int thread_ctr = 0;
+
+	while(thread_ctr < (n_threads))
+	{
+		thread_tmp = (struct thread_sp *)malloc(sizeof(struct thread_sp));
+		thread_tmp->next = thread_stack_offsets;
+		thread_tmp->num_nodes = 0;
+
+		//find number of nodes assigned to this thread
+		int total_nodes = code_ptr->num_nodes;
+		colouring_ptr = colouring;
+
+		while(total_nodes > 0)
+		{
+			if(*colouring_ptr == thread_ctr)
+			{
+				thread_tmp->num_nodes++;
+			}
+
+			total_nodes--;
+			colouring_ptr++;
+		}
+
+		//find offset of first node assigned to this thread
+
+		int first_element = 0;
+		total_nodes = code_ptr->num_nodes;
+		colouring_ptr = colouring;
+
+		//assign as (first after) last element first
+		thread_tmp->offset = code_ptr->num_nodes;
+
+		while(total_nodes > 0)
+		{
+
+			if(*colouring_ptr == thread_ctr)
+			{
+				if(first_element < thread_tmp->offset)
+					thread_tmp->offset = first_element;
+			}
+
+			first_element++;
+			total_nodes--;
+			colouring_ptr++;
+		}
+
+		//thread_tmp->offset now contains the index of first corresponding node
+		//need to transform into offset in bytes (by traversing main)
+		int offset = thread_tmp->offset;
+
+		thread_tmp->offset = 0;
+
+		int *tmp_code_ptr = code_ptr->code_ptr;
+
+		while(offset > 0)
+		{
+			thread_tmp->offset += *(tmp_code_ptr + 3);
+
+			tmp_code_ptr = (int *)((long unsigned int)((long unsigned int)(*(tmp_code_ptr + 3))) +  (long unsigned int)(tmp_code_ptr));
+
+			offset--;
+		}
+
+
+		thread_stack_offsets = thread_tmp;
+		thread_ctr++;
+	}
+
+	//offsets done, can get rid of original main code
+
+	memcpy((void *)(code_ptr->code_ptr), (const void *)new_code,(size_t)(code_ptr->length * sizeof(int)));
+	//printf("After MT\n");
+	//print_adjusted_machine_code(program_code);
+}*/
+
+
 int main(int argc, char **argv)
 {
     printf("\n***SIMULATION START***\n\n");
@@ -1252,28 +1616,10 @@ int main(int argc, char **argv)
 				cpu_t->b_offset = 0;
         cpus[i] = cpu_t;
     }
-		/*for(int i = 0; i<NUM_CPU; i++){
-				for(int j=0; j< NODE_NUM_MAX; j++){
-						//struct AGP_node *agp_node = schedule_me(cpus[i]->cpu_num);
-						if(current_agp_node != NULL){
-								for(int k=0; k<current_agp_node->node_size; k++){
-				            cpus[i]->PM[k] = current_agp_node->code[k];
-										//printf("PM[%d] : %d\n",k, cpus[i]->PM[k]);
-				        }
-								printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[i]->cpu_num);
-								cpus[i]->nodes_to_evaluate++;
-								cpus[i]->t_offset += current_agp_node->node_size; //update stack pointer
-								current_agp_node = current_agp_node->next;
-						}else{
-								puts("All nodes assigned.\n");
-								break;
-						}
-				}
-		}*/
 
 		struct AGP_node *current_agp_node = program_APG_node_list;
 		//using profs compiler
-		int node_num;
+		/*int node_num;
 		int coloring_size = sizeof(colouring)/sizeof(colouring[0]);
 		printf("coloring size : %d\n", coloring_size);
 		for(int i = 0; i<=coloring_size; i++){
@@ -1290,7 +1636,34 @@ int main(int argc, char **argv)
 					puts("All nodes assigned.\n");
 					break;
 			}
+		}*/
+
+		/**********************************************************************************************************/
+		//using random coloruing for all nodes (including those in subgraph)
+		srand(time(NULL)); //resetting the seed to avoid same result.
+		int node_num = list_index-1;
+		printf("total number of nodes: %d\n", node_num);
+		int colouring_random[node_num];//holds node allocations to cpus. includes all nodes in whole program
+		for(int i = 0; i< node_num; i++){
+				colouring_random[i] = rand() % NUM_CPU; //random allocation
+				printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
 		}
+		for(int i = 0; i< node_num; i++){
+			if(current_agp_node != NULL){
+					for(int j=0; j<current_agp_node->node_size; j++){
+							cpus[colouring_random[i]]->PM[j] = current_agp_node->code[j];
+							//printf("PM[%d] : %d\n",j, cpus[colouring[i]]->PM[j]);
+					}
+					printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[colouring_random[i]]->cpu_num);
+					cpus[colouring_random[i]]->nodes_to_evaluate++;
+					cpus[colouring_random[i]]->t_offset += current_agp_node->node_size; //update stack pointer
+					current_agp_node = current_agp_node->next;
+			}else{
+					puts("All nodes assigned.\n");
+					break;
+			}
+		}
+		/**********************************************************************************************************/
 
 	//data entry array
 	if(GRAPH==1){
