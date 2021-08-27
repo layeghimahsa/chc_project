@@ -1313,6 +1313,46 @@ void run_sim(){
 		}
 }
 
+/*void create_PM(){
+
+	int num_nodes_to_make = 0;
+	for(int i = 0; i<num_dict_entries; i++){
+			num_nodes_to_make += dictionary[i][2];
+	}
+
+	//using random coloruing for all nodes (including those in subgraph)
+	srand(time(NULL)); //resetting the seed to avoid same result.
+	printf("total number of nodes: %d\n", num_nodes_to_make);
+	int colouring_random[num_nodes_to_make];//holds node allocations to cpus.
+	for(int i = 0; i< num_nodes_to_make; i++){
+			colouring_random[i] = rand() % NUM_CPU; //random allocation
+			printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
+	}
+
+	int i = 0;
+	int j = 0;
+	int node_counter = 0;
+	int rand_cpu;
+	while(num_nodes_to_make){
+		while(code[i]!= NODE_BEGIN_FLAG){
+					rand_cpu = colouring_random[node_counter];
+					if(j==0){
+						cpus[rand_cpu]->PM[j] = code[i];
+					}
+					if(j==1){
+							cpus[rand_cpu]->PM[j] = i; //storing MM offest
+					}else{
+							cpus[rand_cpu]->PM[j] = code[i-1];
+					}
+					i++;
+					j++;
+		}
+		j=0;
+		node_counter++;
+		num_nodes_to_make--;
+	}
+
+}*/
 
 /*int *coloured_subgraph(int n_threads, struct code_scope *code_ptr)
 {
@@ -1601,7 +1641,7 @@ int main(int argc, char **argv)
 			}
 	  }*/
 
-		program_APG_node_list = create_list(main_addr);
+		//program_APG_node_list = create_list(main_addr);
 
 
 		//create cpu struct
@@ -1609,61 +1649,59 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
         struct CPU_SA *cpu_t = (struct CPU_SA*) malloc(sizeof(struct CPU_SA));
         cpu_t->cpu_num = i+1;
-				cpu_t->nodes_to_evaluate = 0; //initiallization
-				cpu_t->nodes_evaluated = 0;
-				cpu_t->nodes_visited = 0;
 				cpu_t->t_offset = 0;
 				cpu_t->b_offset = 0;
         cpus[i] = cpu_t;
     }
 
-		struct AGP_node *current_agp_node = program_APG_node_list;
-		//using profs compiler
-		/*int node_num;
-		int coloring_size = sizeof(colouring)/sizeof(colouring[0]);
-		printf("coloring size : %d\n", coloring_size);
-		for(int i = 0; i<=coloring_size; i++){
-			if(current_agp_node != NULL){
-					for(int j=0; j<current_agp_node->node_size; j++){
-							cpus[colouring[i]]->PM[j] = current_agp_node->code[j];
-							//printf("PM[%d] : %d\n",j, cpus[colouring[i]]->PM[j]);
-					}
-					printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[colouring[i]]->cpu_num);
-					cpus[colouring[i]]->nodes_to_evaluate++;
-					cpus[colouring[i]]->t_offset += current_agp_node->node_size; //update stack pointer
-					current_agp_node = current_agp_node->next;
-			}else{
-					puts("All nodes assigned.\n");
-					break;
-			}
-		}*/
-
 		/**********************************************************************************************************/
+		int num_nodes_to_make = 0;
+		for(int i = 0; i<num_dict_entries; i++){
+				num_nodes_to_make += dictionary[i][2];
+		}
+
 		//using random coloruing for all nodes (including those in subgraph)
 		srand(time(NULL)); //resetting the seed to avoid same result.
-		int node_num = list_index-1;
-		printf("total number of nodes: %d\n", node_num);
-		int colouring_random[node_num];//holds node allocations to cpus. includes all nodes in whole program
-		for(int i = 0; i< node_num; i++){
+		printf("total number of nodes: %d\n", num_nodes_to_make);
+		int colouring_random[num_nodes_to_make];//holds node allocations to cpus.
+		int counter = 0;
+		for(int i = 0; i< num_nodes_to_make; i++){
 				colouring_random[i] = rand() % NUM_CPU; //random allocation
-				printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
+				//printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
+				counter++;
 		}
-		for(int i = 0; i< node_num; i++){
-			if(current_agp_node != NULL){
-					for(int j=0; j<current_agp_node->node_size; j++){
-							cpus[colouring_random[i]]->PM[j] = current_agp_node->code[j];
-							//printf("PM[%d] : %d\n",j, cpus[colouring[i]]->PM[j]);
-					}
-					printf("NODE %d assigned to CPU %d\n", current_agp_node->node_num, cpus[colouring_random[i]]->cpu_num);
-					cpus[colouring_random[i]]->nodes_to_evaluate++;
-					cpus[colouring_random[i]]->t_offset += current_agp_node->node_size; //update stack pointer
-					current_agp_node = current_agp_node->next;
-			}else{
-					puts("All nodes assigned.\n");
-					break;
+		//printf("counter: %d\n", counter);
+
+		int i = 0;
+		int j = 0;
+		int node_counter = 0;
+		int rand_cpu;
+		//num_nodes_to_make--;
+		while(num_nodes_to_make){
+			rand_cpu = colouring_random[node_counter];
+			if(j==0){
+				cpus[rand_cpu]->PM[j] = code[i];
 			}
+			else if(j==1){
+					cpus[rand_cpu]->PM[j] = i; //storing MM offest
+			}else{
+					cpus[rand_cpu]->PM[j] = code[i-1];
+			}
+			printf("cpu[%d] PM[%d]: %d\n",rand_cpu,j,cpus[rand_cpu]->PM[j]);
+			i++;
+			j++;
+
+			if(code[i] == NODE_BEGIN_FLAG || i>code_size){
+					//printf("node begin flag %d\n",node_counter);
+					//printf("i : %d\n",i);
+					j=0;
+					node_counter++;
+					num_nodes_to_make--;
+			}
+
 		}
 		/**********************************************************************************************************/
+
 
 	//data entry array
 	if(GRAPH==1){

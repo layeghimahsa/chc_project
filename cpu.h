@@ -89,13 +89,10 @@ struct CPU_SA{
     int PM[ADDRASABLE_SPACE]; //hold cpu portion of program
     int *dictionary;
     int num_dict_entries;
+		int t_offset;//top
+		int b_offset;//bottom
 		//int *sb;
 		//int *sp;
-		int nodes_to_evaluate;
-		int nodes_evaluated;
-		int nodes_visited;
-    int t_offset;//top (or sp?)
-    int b_offset;//bottom (or sb?)
 };
 
 /*struct tcb{

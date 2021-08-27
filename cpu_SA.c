@@ -20,7 +20,26 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 }
 
 
+/*struct Message*  Message_packing(int node_size, int MM_offset ){
 
+			struct Message* temp = (struct Message*)malloc(sizeof(struct Message));
+
+			unsigned int address = ((node_size & 0x000000FF) << 24)
+											 | (MM_offset & 0x00FFFFFF);
+
+			temp->addr = address;
+			temp->next = NULL;
+
+			return temp;
+
+}
+
+int getNodeSize(struct Message *message){
+	return (int) ( message->addr >> 24 ) & 0x000000FF;
+}
+int getMMOffset(struct Message *message){
+	return (int) message->addr & 0x00FFFFFF;
+}*/
 
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 
