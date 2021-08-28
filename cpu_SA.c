@@ -16,30 +16,50 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		printf("CPU %d 	START!!\n",cpu_num);
 
 
+		int stack[ADDRASABLE_SPACE];
+		for(int i = 0; i<ADDRASABLE_SPACE; i++){
+			stack[i]=-1;
+		}
+
+		//fill stack with all nodes from main
+		int sp = ADDRASABLE_SPACE-1;
+		int lp = 0;
+
+		//get main dictionary entries
+		int main_size;
+		for(int i = 0; i<cpu->num_dict_entries; i++){
+			if(cpu->dictionary[i][0] == cpu->main_addr){
+				main_size = cpu->dictionary[i][1];
+				break;
+			}
+		}
+
+		int j;
+		for(int i=0; i<cpu->code_size; i++){
+			//printf("CPU %d if(%d >= %d && %d <= %d)\n",cpu_num,cpu->PM[i+1],cpu->main_addr,cpu->PM[i+1],(cpu->main_addr+main_size));
+			if(cpu->PM[i+1] >= cpu->main_addr && cpu->PM[i+1] <= (cpu->main_addr+main_size)){
+				//add to stack
+				sp--;
+				j=i+cpu->PM[i+4]-1; // node size
+				while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
+					stack[sp]=cpu->PM[j];
+					sp--;j--;
+				}
+				stack[lp] = lp_entry(cpu->PM[j+3],cpu->PM[j]); //needs to be changed to pack size and offset it same
+				lp++;j--;
+				stack[sp] = cpu->PM[j];
+			}
+			i = i + cpu->PM[i+4];
+		}
+
+
 
 }
 
-
-/*struct Message*  Message_packing(int node_size, int MM_offset ){
-
-			struct Message* temp = (struct Message*)malloc(sizeof(struct Message));
-
-			unsigned int address = ((node_size & 0x000000FF) << 24)
-											 | (MM_offset & 0x00FFFFFF);
-
-			temp->addr = address;
-			temp->next = NULL;
-
-			return temp;
-
+int lp_entry(int size, int offset){
+	unsigned int entry = ((size & 0x0000003F) << 26) | (offset & 0x02FFFFFF);
+	return entry;
 }
-
-int getNodeSize(struct Message *message){
-	return (int) ( message->addr >> 24 ) & 0x000000FF;
-}
-int getMMOffset(struct Message *message){
-	return (int) message->addr & 0x00FFFFFF;
-}*/
 
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){
 

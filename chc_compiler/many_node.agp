@@ -1,20 +1,8 @@
 SUBGRAPH(main)
-	CONST(x,1);
+				CONST(x,1);
+				CONST(y,2);
         DATUM(result);
         OUTPUT(result);
-        DATUM(resulttrue);
-        DATUM(resultfalse);
-        DATUM(xis0);
-        DATUM(iter);
-        DATUM(nextiter);
-        DATUM(xminus1);
-        DATUM(xminus1cond);
-        CONST(zero,0);
-        CONST(one,1);
-        OPERATOR(xis0,op_ISEQUAL,x,zero);
-        OPERATOR(resulttrue,op_IF,xis0,one);
-        OPERATOR(resultfalse,op_ELSE,xis0,iter);
-        OPERATOR(iter,op_TIMES,x,nextiter);
-        OPERATOR(result,op_MERGE,resulttrue,resultfalse);
-        OPERATOR(xminus1,op_MINUS,x,one);
-        OPERATOR(xminus1cond,op_ELSE,xis0,xminus1);
+        DATUM(x_y);
+        OPERATOR(x_y,op_PLUS,x,y);
+        OPERATOR(result,op_MERGE,y,x_y);

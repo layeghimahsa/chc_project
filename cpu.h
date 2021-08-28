@@ -87,8 +87,9 @@ struct CPU_H{
 struct CPU_SA{
     int cpu_num;
     int PM[ADDRASABLE_SPACE]; //hold cpu portion of program
-    int *dictionary;
+    int (*dictionary)[3];
     int num_dict_entries;
+		int main_addr;
 		int code_size;
 		//int *sb;
 		//int *sp;
@@ -160,7 +161,7 @@ void *CPU_SA_start();
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
 void Message_printing(struct Message *message);
 void bin_representation(int n);
-
+int lp_entry(int size, int offset);
 void *message_listening();
 
 #endif
