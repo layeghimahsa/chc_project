@@ -89,8 +89,7 @@ struct CPU_SA{
     int PM[ADDRASABLE_SPACE]; //hold cpu portion of program
     int *dictionary;
     int num_dict_entries;
-		int t_offset;//top
-		int b_offset;//bottom
+		int code_size;
 		//int *sb;
 		//int *sp;
 };

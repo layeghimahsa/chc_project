@@ -1649,8 +1649,7 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
         struct CPU_SA *cpu_t = (struct CPU_SA*) malloc(sizeof(struct CPU_SA));
         cpu_t->cpu_num = i+1;
-				cpu_t->t_offset = 0;
-				cpu_t->b_offset = 0;
+				cpu_t->code_size = 0;
         cpus[i] = cpu_t;
     }
 
@@ -1673,23 +1672,24 @@ int main(int argc, char **argv)
 		//printf("counter: %d\n", counter);
 
 		int i = 0;
-		int j = 0;
 		int node_counter = 0;
+		int j;
 		int rand_cpu;
 		//num_nodes_to_make--;
 		while(num_nodes_to_make){
 			rand_cpu = colouring_random[node_counter];
-			if(j==0){
-				cpus[rand_cpu]->PM[j] = code[i];
+			if(j == 0){
+				cpus[rand_cpu]->PM[cpus[rand_cpu]->code_size] = code[i];
 			}
-			else if(j==1){
-					cpus[rand_cpu]->PM[j] = i; //storing MM offest
+			else if(j ==1){
+					cpus[rand_cpu]->PM[cpus[rand_cpu]->code_size] = i; //storing MM offest
 			}else{
-					cpus[rand_cpu]->PM[j] = code[i-1];
+					cpus[rand_cpu]->PM[cpus[rand_cpu]->code_size] = code[i-1];
 			}
-			printf("cpu[%d] PM[%d]: %d\n",rand_cpu,j,cpus[rand_cpu]->PM[j]);
+			printf("cpu[%d] PM[%d]: %d\n",rand_cpu,cpus[rand_cpu]->code_size,cpus[rand_cpu]->PM[cpus[rand_cpu]->code_size]);
 			i++;
 			j++;
+			cpus[rand_cpu]->code_size += 1;
 
 			if(code[i] == NODE_BEGIN_FLAG || i>code_size){
 					//printf("node begin flag %d\n",node_counter);
