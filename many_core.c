@@ -27,6 +27,7 @@ pthread_mutex_t mem_lock;
 struct FIFO *buss_Min;
 //buss master out
 struct FIFO *buss_Mout;
+struct FIFO *buss;
 
 int NUM_CPU;
 //FOR OUTPUT DISPLAY
@@ -1398,25 +1399,6 @@ int main(int argc, char **argv)
 		}
 		/**********************************************************************************************************/
 
-
-	//data entry array
-	if(GRAPH==1){
-		data = (struct data_entry **)malloc(sizeof(struct data_entry*) *NUM_CPU);
-		for(int i=0;i<NUM_CPU; i++){
-			data[i] = (struct data_entry *)malloc(sizeof(struct data_entry));
-			data[i]->x = 0.0;
-			data[i]->y = 0.0;
-		}
-	}
-
-
-    runtime_code = (int *)malloc(sizeof(int) *code_size);
-    for(int i = 0; i<code_size; i++){
-			if(MESSAGE == 1)
-				printf("code[%d]: %d\n", i ,code[i]);
-			runtime_code[i] = code[i];
-    }
-
 		if(MESSAGE == 1)
     	printf("\n\nCREATING NODE LIST\n\n");
 
@@ -1432,8 +1414,9 @@ int main(int argc, char **argv)
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
 
-			buss_Min = create_FIFO();
-			buss_Mout = create_FIFO();
+			//buss_Min = create_FIFO();
+			//buss_Mout = create_FIFO();
+			buss = create_FIFO();
 
 		BEGIN = clock();
 
@@ -1463,8 +1446,10 @@ int main(int argc, char **argv)
 		////////////////// Send message test /////////////////////
 		/////////////////////////////////////////////////////////
 
-		run_sim();
+	//	run_sim();
+	while(1){
 
+	}
 	/*	int count = 1;
 		struct AGP_node *test;
 		struct Message *m;

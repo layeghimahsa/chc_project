@@ -24,7 +24,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		//fill stack with all nodes from main
 		int sp = ADDRASABLE_SPACE-1;
 		int lp = 0;
-
+		int pc = LFN;
 		//get main dictionary entries
 		int main_size;
 		for(int i = 0; i<cpu->num_dict_entries; i++){
@@ -45,13 +45,168 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					stack[sp]=cpu->PM[j];
 					sp--;j--;
 				}
-				stack[lp] = lp_entry(cpu->PM[j+3],cpu->PM[j]); //needs to be changed to pack size and offset it same
-				lp++;j--;
+				stack[lp] = sp; //pointer to node... maybe we can embedded this into the 32 bit if mem size can be more restricted
+				stack[lp+1] = lp_entry(cpu->PM[j+3],cpu->PM[j]); //needs to be changed to pack size and offset it same
+				lp+=2;j--;
 				stack[sp] = cpu->PM[j];
 			}
 			i = i + cpu->PM[i+4];
 		}
 
+		while(1){
+
+			//com part
+			if(getFifoSize(buss)>0){
+				struct Message *m = peekMessage(buss);
+				if(getAddr(m)==OPR){
+
+				}else{ //this would be just a write
+					//check if any entries in lp holds the receiving node
+					int lp_t = lp;
+					int size;
+					int offset;
+					int m_addr = getAddr(m);
+					while(lp_t>=0){
+						if(stack[lp_t]!=-1){
+							size = (int) ( stack[lp_t] >> 26 ) & 0x0000003F;
+							offset = (int) (stack[lp_t] & 0x02FFFFFF);
+							//if true the val is for it
+							if(m_addr > offset && m_addr < offset+size){
+								stack[stack[lp_t-1]+(m_addr-offset)] = getData(m);
+								break;
+							}
+						}
+						lp_t-=2;
+					}
+				}
+				free(m);
+			}
+
+			swtich(pc){
+				case code_input:
+				{
+					printf("\t<< "); scanf("%d",cpu->stack[2]);
+					break;
+				}
+				//op code add
+				case code_plus:
+				  //add
+					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]+cpu->stack[cpu->sp+7];
+					cpu->pc = FND;
+					break;
+				case code_minus:
+					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]-cpu->stack[cpu->sp+7];
+					cpu->pc = FND;
+					break;
+				case code_times:
+					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]*cpu->stack[cpu->sp+7];
+					cpu->pc = FND;
+					break;
+				case code_is_equal:
+					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] == cpu->stack[cpu->sp+7]) ? 1 : 0;
+					cpu->pc = FND;
+					break;
+				case code_is_less:
+					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] < cpu->stack[cpu->sp+7]) ? 1 : 0;
+					cpu->pc = FND;
+					break;
+				case code_is_greater:
+					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] > cpu->stack[cpu->sp+7]) ? 1 : 0;
+					cpu->pc = FND;
+					break;
+				case code_if:
+				{
+					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+					if((cpu->stack[6] != 0))
+					{
+						(cpu->stack[2] = cpu->stack[7]);
+						pthread_mutex_lock(&mem_lock);
+						//mark_as_dead(cpu->stack[sp]);
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						pthread_mutex_unlock(&mem_lock);
+					}
+					else
+					{
+						cpu->stack[2] = 0;
+						pthread_mutex_lock(&mem_lock);
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						pthread_mutex_unlock(&mem_lock);
+					}
+					cpu->pc = FND;
+					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+					break;
+				}
+				case code_else:
+				{
+					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+					if(cpu->stack[6] == 0)
+					{
+						(cpu->stack[2] = cpu->stack[7]);
+						pthread_mutex_lock(&mem_lock);
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						pthread_mutex_unlock(&mem_lock);
+					}
+					else
+					{
+						cpu->stack[2] = 0;
+						pthread_mutex_lock(&mem_lock);
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						pthread_mutex_unlock(&mem_lock);
+					}
+					cpu->pc = FND;
+					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+					break;
+				}
+				case code_merge:
+				{
+					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+ 6] | cpu->stack[cpu->sp+7]);
+					//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,cpu->stack[6],cpu->stack[7],cpu->stack[2]);
+					cpu->pc = FND;
+					break;
+				}
+				case code_identity:
+				{
+					if(cpu->stack[2] == NAV){cpu->stack[2] = cpu->stack[6];}
+					cpu->pc = FND;
+					break;
+				}
+				case LFN: //look for node to run
+				{
+					//find runnable node
+					//if dound
+					// - pc = stack[sp+4];
+					//else
+					// - pc stays the same of request task on cpu bus 
+					break;
+				}
+				case MAD: //mark as dead
+				{
+					//send out MAD op on bus for all dest
+					//remove lp and sp enty of node
+					//shift down
+					//recover pc
+					break;
+				}
+				case SDOWN: //shift down **cant be interupted**
+				{
+					//remove lp and sp entry of node
+					//shift down
+					//pc = LFN;
+					break;
+				}
+				default:
+				{
+					printf("CPU %d unrecognized operation %d\n",cpu_num,pc);
+					exit(0);
+				}
+
+			}
+
+		}
 
 
 }

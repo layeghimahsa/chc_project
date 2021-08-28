@@ -25,8 +25,7 @@
 
 
 
-extern struct FIFO *buss_Min; //buss master input
-extern struct FIFO *buss_Mout; //buss master output
+extern struct FIFO *buss;//buss master output
 
 struct FIFO{
     int size;
