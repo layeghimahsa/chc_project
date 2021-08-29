@@ -18,11 +18,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 		int stack[ADDRASABLE_SPACE];
 		for(int i = 0; i<ADDRASABLE_SPACE; i++){
-			stack[i]=-1;
+			stack[i] = STACK_UNDEFINED;
 		}
 
-		//fill stack with all nodes from main
-		int sp = ADDRASABLE_SPACE-1;
+		//BEGIN: fill stack with all nodes from main
+		int sp_top = ADDRASABLE_SPACE-1; //always point to the top of the stack
 		int lp = 0;
 		int pc = LFN;
 		//get main dictionary entries
@@ -35,23 +35,25 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		}
 
 		int j;
-		for(int i=0; i<cpu->code_size; i++){
+		for(int i=0; i<cpu->code_size; i++){//traverse through all the nodes in a cpu
 			//printf("CPU %d if(%d >= %d && %d <= %d)\n",cpu_num,cpu->PM[i+1],cpu->main_addr,cpu->PM[i+1],(cpu->main_addr+main_size));
-			if(cpu->PM[i+1] >= cpu->main_addr && cpu->PM[i+1] <= (cpu->main_addr+main_size)){
+			//if (lp_offset<r_offset<lp_offset+lp_size)
+			if(cpu->PM[i+1] >= cpu->main_addr && cpu->PM[i+1] <= (cpu->main_addr+main_size)){ //check if the node is in main
 				//add to stack
-				sp--;
+				sp_top--;
 				j=i+cpu->PM[i+4]-1; // node size
 				while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
-					stack[sp]=cpu->PM[j];
-					sp--;j--;
+					stack[sp_top]=cpu->PM[j];
+					sp_top--;j--;
 				}
-				stack[lp] = sp; //pointer to node... maybe we can embedded this into the 32 bit if mem size can be more restricted
+				stack[lp] = sp_top; //pointer to node... maybe we can embedded this into the 32 bit if mem size can be more restricted
 				stack[lp+1] = lp_entry(cpu->PM[j+3],cpu->PM[j]); //needs to be changed to pack size and offset it same
 				lp+=2;j--;
-				stack[sp] = cpu->PM[j];
+				stack[sp_top] = cpu->PM[j];
 			}
 			i = i + cpu->PM[i+4];
 		}
+		/*END: stack is filled*/
 
 		while(1){
 
@@ -68,8 +70,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int m_addr = getAddr(m);
 					while(lp_t>=0){
 						if(stack[lp_t]!=-1){
-							size = (int) ( stack[lp_t] >> 26 ) & 0x0000003F;
-							offset = (int) (stack[lp_t] & 0x02FFFFFF);
+							size = getsize(stack[lp_t]);
+							offset = getOffset(stack[lp_t]);
 							//if true the val is for it
 							if(m_addr > offset && m_addr < offset+size){
 								stack[stack[lp_t-1]+(m_addr-offset)] = getData(m);
@@ -85,7 +87,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			swtich(pc){
 				case code_input:
 				{
-					printf("\t<< "); scanf("%d",cpu->stack[2]);
+					printf("\t<< "); scanf("%d",cpu->stack[2]);//stack[2] or stack[cpu->sp_top+2]
 					break;
 				}
 				//op code add
@@ -180,7 +182,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					//if dound
 					// - pc = stack[sp+4];
 					//else
-					// - pc stays the same of request task on cpu bus 
+					// - pc stays the same of request task on cpu bus
 					break;
 				}
 				case MAD: //mark as dead
@@ -196,6 +198,53 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					//remove lp and sp entry of node
 					//shift down
 					//pc = LFN;
+
+					/*we enter SDOWN after LFN, so after we found a node to be executed, we want to delete it and shift down the stack.
+					in this regard, we should save the beggining and end of a node to be deleted and make the spacese between these two pointers -1.
+					then we shift all nodes from top of the stack down.
+					ASSUMPTION:
+					sp_top: always point to the top of the stack
+					sp: points to the current node
+					pc: points to the beggining of the next node to be executed as it's been set in LFN
+					*/
+					int tbd_start = sp; //the start of a node to be deleted
+					int tbd_end = sp+stack[sp+4]; //the end of a node to be deleted
+					int tn_start = sp_top; //the beggining of the toppest node in stack
+					int tn_end = tbd_start-1; //the end of the node before the tbd node
+
+					//replacing values with -100
+					int available_space = 0;
+					for(int i = tbd_start; i<tbd_end; i++){
+						stack[i] = STACK_UNDEFINED;
+						available_space++;
+					}
+
+					while(available_space > 0){
+						stack[tbd_end] = stack[tn_end];
+						tbd_end--;
+						tn_end--;
+						available_space--;
+					}
+
+					for(int i = tbd_end; i>= tn_start; i--){
+						if(tn_end < tn_start){
+							//end of shifting
+							//store current pointer to update sp later
+							int new_sp = i+1;
+							break; //break from the loop
+						}else{
+							stack[i] = stack[tn_end];
+							tn_end--;
+						}
+					}
+
+					//replacing the remaining parts with -100
+					for(int i=sp_top; i<new_sp; i++){
+						stack[i] = STACK_UNDEFINED;
+					}
+					//update sp_top
+					sp_top = new_sp;
+
 					break;
 				}
 				default:
@@ -212,8 +261,16 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 }
 
 int lp_entry(int size, int offset){
-	unsigned int entry = ((size & 0x0000003F) << 26) | (offset & 0x02FFFFFF);
+	unsigned int entry = ((size & 0x000000FF) << 24) | (offset & 0x00FFFFFF);
 	return entry;
+}
+
+int getSize(int entry){
+	return (int) ( entry >> 24 ) & 0x000000FF;
+}
+
+int getOffset(int entry){
+	return (int) (entry & 0x00FFFFFF);
 }
 
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data ){

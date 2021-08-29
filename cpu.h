@@ -5,6 +5,7 @@
 //#include <stdbool.h>
 
 #define UNDEFINED -1
+#define STACK_UNDEFINED -100
 #define UNKNOWN 0
 #define IGNORE -2
 #define OUTPUT -99
