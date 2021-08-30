@@ -95,17 +95,17 @@ int num_dict_entries = 1;
  * @param [in] addr is the beggining of the node.
  * @param [out] size of the node.
  * @return int
- */
-int size(int addr){
-	//find size
-	int i = addr + 1;
-	int size = 1;
-	while(code[i] != NODE_BEGIN_FLAG && i < code_size){
-		size++;
-		i++;
-	}
-	return size;
-}
+ **/
+ int size(int addr){
+ 	//find size
+ 	int i = addr + 1;
+ 	int size = 1;
+ 	while(code[i] != NODE_BEGIN_FLAG && i < code_size){
+ 		size++;
+ 		i++;
+ 	}
+ 	return size;
+ }
 
 /**
  * @brief find_num_node function
@@ -115,7 +115,7 @@ int size(int addr){
  * @param [in] end the offset from top of the stack te end search
  * @param [out] number of nodes between the given offset
  * @return int
- */
+ *
 int find_num_node(int begin, int end){
 
 	int dest = code_size - (end/4);
@@ -414,12 +414,12 @@ int binary_routing(int row, int start, int end){
 	1000 1001 1010 1011	      v 8  9  10 11
 	1100 1101 1110 1111		12 13 14 15
 
-	*/
+	*
 
 
 	int first_cpu_dest = UNDEFINED;
 
-	/* x = least significant (j)   y = most significant (i)*/
+	/* x = least significant (j)   y = most significant (i)*
 	int x_start, y_start;
 	int x_end, y_end;
 
@@ -469,7 +469,7 @@ int binary_routing(int row, int start, int end){
  * @param [in] current is the current node we are evaluating
  * @param [in] top is the top of the AGP nodes' list
  * @return void
- */
+ *
 void refactor_destinations(struct AGP_node *current, struct AGP_node *top){
 	if(current == NULL){
 		printf("cant refactor a null node!!!\n");
@@ -529,7 +529,7 @@ int check_dep_unscheduled(struct AGP_node *current){
  * This function is called to schedule a new task to be run on the current cpu. (on-demand scheduling)
  * @param [in] cpu_num specifies the cpu which requests for a new task to execute it.
  * @return struct AGP_node a new node that can be executed on the current cpu. it can be a dummy node in case there are no nodes left.
- */
+ *
 struct AGP_node *schedule_me(int cpu_num){
 
 	//initial while that we will traverse through and try to find the node we want to schedule
@@ -544,7 +544,7 @@ struct AGP_node *schedule_me(int cpu_num){
 	struct AGP_node *current = program_APG_node_list;
 	int unode_num = 0; //number of unscheduled nodes
 	int count=0;
-	/*finding unscheduled nodes and store them into a new list*/
+	/*finding unscheduled nodes and store them into a new list*
 
 	while(current != NULL){
 		if(current->state != DEAD){
@@ -696,7 +696,7 @@ void mark_as_dead(int node_num){
  * @param [in] ind the code address for writing back to memory array.
  * @param [in] val the result.
  * @return void
- */
+ *
 void writeMem(int ind, int val){
 
 	runtime_code[ind] = val;
@@ -796,7 +796,7 @@ void print_node_short(){
  * This function is just a pretty printer which prints all the AGP_nodes
  * @param [in] nodes the pointer to AGP nodes' list
  * @return void
- */
+ *
 void print_nodes(struct AGP_node *nodes){
 	if(nodes == NULL){
 
@@ -853,14 +853,6 @@ void run_sim(){
 							free(m);
 						}else{
 
-						/*	//look if any idle cpu it can try to schedule
-							int i = 0;
-							for(int i=0; i<NUM_CPU;i++){
-								if(cpu_status[i] == CPU_IDLE){
-									op = REQ_TASK; serving_cpu = i+1;
-									break;
-								}
-							}*/
 						}
 						break;
 					}
@@ -1007,6 +999,7 @@ void run_sim(){
 				}
 		}
 }
+*/
 
 int main(int argc, char **argv)
 {
@@ -1058,11 +1051,6 @@ int main(int argc, char **argv)
 			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
 			return 1;
     }
-    //create mutex
-    if (pthread_mutex_init(&mem_lock, NULL) != 0){
-        printf("\n mutex init failed\n");
-        return 1;
-    }
 
     int row_col = UNDEFINED;
 
@@ -1088,13 +1076,6 @@ int main(int argc, char **argv)
     pthread_t thread_id[NUM_CPU];
     list_index = 1;
     nodes_removed = 0;
-
-    //create status array
-    cpu_status = (int *)malloc(sizeof(int) * NUM_CPU);
-    for(int i = 0; i<NUM_CPU; i++){
-			cpu_status[i] = CPU_AVAILABLE;
-    }
-
 
 		//instantiate FIFOs for all CPUs
     /*struct FIFO *cpu_fifos[NUM_CPU];
@@ -1184,8 +1165,7 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
 			cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
     }*/
-		if(MESSAGE == 1)
-    	print_nodes(program_APG_node_list);
+	
 
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
@@ -1242,36 +1222,25 @@ int main(int argc, char **argv)
 		//////////////// Send message test end////////////////////
 		/////////////////////////////////////////////////////////
 
-		printf("\n***SIMULATION COMPLETE***\n\n");
+
 
 		//this should prob be in but it causes a seg fault
-  /*  for(int i = 0; i<NUM_CPU; i++){
-				pthread_cancel(thread_id[i]); //cancel all threads
+    for(int i = 0; i<NUM_CPU; i++){
+				//pthread_cancel(thread_id[i]); //cancel all threads
 				pthread_join(thread_id[i], NULL); //wait for all threads to clean and cancel safely
-    }*/
+    }
+
+		printf("\n***SIMULATION COMPLETE***\n\n");
 
 		clock_t finish = clock();
 		double elapsed = (double)(finish - BEGIN)/CLOCKS_PER_SEC;
 
-    pthread_mutex_destroy(&mem_lock);
+    //pthread_mutex_destroy(&mem_lock);
 
 		printf("TIME ELAPSED: %f\n\n", elapsed);
 
     printf("%d AGP nodes created\n",list_index-1);
 
-		//print_nodes(program_APG_node_list);
-		if(n == 1){
-			/*printing every single fifos*/
-			puts("\nsize of queues:");
-			puts("-----------------");
-			printf("buss_mout size: %d\n",buss_Mout->message_counter);
-			printf("buss_min size: %d\n",buss_Min->message_counter);
-			/*for(int i = 0; i<NUM_CPU; i++){
-				printf("cpu %d size: %d\n",i+1, cpu_fifos[i]->message_counter);
-	    }*/
-			print_node_short();
-			nodes_never_ran();
-		}
 
 		if(KG==1){
 		}else if(GRAPH==1){

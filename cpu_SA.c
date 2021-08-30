@@ -75,7 +75,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int m_addr = getAddr(m);
 					while(lp_t>=0){
 						if(stack[lp_t]!=-1){
-							size = getsize(stack[lp_t]);
+							size = getSize(stack[lp_t]);
 							offset = getOffset(stack[lp_t]);
 							//if true the val is for it
 							if(m_addr > offset && m_addr < offset+size){
@@ -93,7 +93,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			switch(pc){
 				case code_input:
 				{
-					printf("\t<< "); scanf("%d",stack[2]);//stack[2] or stack[sp_top+2]
+					printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
 					break;
 				}
 				//op code add
@@ -124,49 +124,49 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					break;
 				case code_if:
 				{
-					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+					//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					if((stack[6] != 0))
 					{
 						(stack[2] = stack[7]);
-						pthread_mutex_lock(&mem_lock);
+					//	pthread_mutex_lock(&mem_lock);
 						//mark_as_dead(stack[sp]);
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
-						pthread_mutex_unlock(&mem_lock);
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
+					//	pthread_mutex_unlock(&mem_lock);
 					}
 					else
 					{
 						stack[2] = 0;
-						pthread_mutex_lock(&mem_lock);
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
-						pthread_mutex_unlock(&mem_lock);
+					//	pthread_mutex_lock(&mem_lock);
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
+					//	pthread_mutex_unlock(&mem_lock);
 					}
 					pc = FND;
-					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+					//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 				case code_else:
 				{
-					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+					//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 					if(stack[6] == 0)
 					{
 						(stack[2] = stack[7]);
-						pthread_mutex_lock(&mem_lock);
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
-						pthread_mutex_unlock(&mem_lock);
+					//	pthread_mutex_lock(&mem_lock);
+						//sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
+					//	pthread_mutex_unlock(&mem_lock);
 					}
 					else
 					{
 						stack[2] = 0;
-						pthread_mutex_lock(&mem_lock);
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
-						pthread_mutex_unlock(&mem_lock);
+					//	pthread_mutex_lock(&mem_lock);
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
+					//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
+					//	pthread_mutex_unlock(&mem_lock);
 					}
 					pc = FND;
-					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+					//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 				case code_merge:
@@ -191,7 +191,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					// - see if its failed to find a node too many times
 					//	- if no then pc = idle
 					//	- if yes then send node request on broadcast
-					sp=top_sp;
+					sp=sp_top;
 					int found = 0;
 					while(sp<ADDRASABLE_SPACE-2 && found == 0){
 						if(stack[sp+1]==0){
@@ -242,7 +242,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					sp_top: always point to the top of the stack
 					sp: points to the current node
 					pc: points to the beggining of the next node to be executed as it's been set in LFN
-					*/
+
 					int tbd_start = sp; //the start of a node to be deleted
 					int tbd_end = sp+stack[sp+4]; //the end of a node to be deleted
 					int tn_start = sp_top; //the beggining of the toppest node in stack
@@ -280,7 +280,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 					//update sp_top
 					sp_top = new_sp;
-
+					*/
 					break;
 				}
 				case IDLE:

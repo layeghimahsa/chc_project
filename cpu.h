@@ -169,5 +169,7 @@ void Message_printing(struct Message *message);
 void bin_representation(int n);
 int lp_entry(int size, int offset);
 void *message_listening();
+int getSize(int entry);
+int getOffset(int entry);
 
 #endif
