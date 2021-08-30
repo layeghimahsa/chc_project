@@ -55,6 +55,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		}
 		/*END: stack is filled*/
 
+		int ftfn = 0; //failed to find node count
+		int idle_count = 0;
+
+		int sp = sp_top;
+
 		while(1){
 
 			//com part
@@ -75,6 +80,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							//if true the val is for it
 							if(m_addr > offset && m_addr < offset+size){
 								stack[stack[lp_t-1]+(m_addr-offset)] = getData(m);
+								stack[stack[lp_t-1]+1] -= 1; //reduce number of dependants by one
 								break;
 							}
 						}
@@ -84,105 +90,135 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				free(m);
 			}
 
-			swtich(pc){
+			switch(pc){
 				case code_input:
 				{
-					printf("\t<< "); scanf("%d",cpu->stack[2]);//stack[2] or stack[cpu->sp_top+2]
+					printf("\t<< "); scanf("%d",stack[2]);//stack[2] or stack[sp_top+2]
 					break;
 				}
 				//op code add
 				case code_plus:
 				  //add
-					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]+cpu->stack[cpu->sp+7];
-					cpu->pc = FND;
+					stack[sp+2] = stack[sp+6]+stack[sp+7];
+					pc = FND;
 					break;
 				case code_minus:
-					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]-cpu->stack[cpu->sp+7];
-					cpu->pc = FND;
+					stack[sp+2] = stack[sp+6]-stack[sp+7];
+					pc = FND;
 					break;
 				case code_times:
-					cpu->stack[cpu->sp+2] = cpu->stack[cpu->sp+6]*cpu->stack[cpu->sp+7];
-					cpu->pc = FND;
+					stack[sp+2] = stack[sp+6]*stack[sp+7];
+					pc = FND;
 					break;
 				case code_is_equal:
-					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] == cpu->stack[cpu->sp+7]) ? 1 : 0;
-					cpu->pc = FND;
+					stack[sp+2] = (stack[sp+6] == stack[sp+7]) ? 1 : 0;
+					pc = FND;
 					break;
 				case code_is_less:
-					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] < cpu->stack[cpu->sp+7]) ? 1 : 0;
-					cpu->pc = FND;
+					stack[sp+2] = (stack[sp+6] < stack[sp+7]) ? 1 : 0;
+					pc = FND;
 					break;
 				case code_is_greater:
-					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+6] > cpu->stack[cpu->sp+7]) ? 1 : 0;
-					cpu->pc = FND;
+					stack[sp+2] = (stack[sp+6] > stack[sp+7]) ? 1 : 0;
+					pc = FND;
 					break;
 				case code_if:
 				{
 					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-					if((cpu->stack[6] != 0))
+					if((stack[6] != 0))
 					{
-						(cpu->stack[2] = cpu->stack[7]);
+						(stack[2] = stack[7]);
 						pthread_mutex_lock(&mem_lock);
-						//mark_as_dead(cpu->stack[sp]);
+						//mark_as_dead(stack[sp]);
 						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 						pthread_mutex_unlock(&mem_lock);
 					}
 					else
 					{
-						cpu->stack[2] = 0;
+						stack[2] = 0;
 						pthread_mutex_lock(&mem_lock);
 						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 						pthread_mutex_unlock(&mem_lock);
 					}
-					cpu->pc = FND;
+					pc = FND;
 					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 				case code_else:
 				{
 					pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-					if(cpu->stack[6] == 0)
+					if(stack[6] == 0)
 					{
-						(cpu->stack[2] = cpu->stack[7]);
+						(stack[2] = stack[7]);
 						pthread_mutex_lock(&mem_lock);
 						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 						pthread_mutex_unlock(&mem_lock);
 					}
 					else
 					{
-						cpu->stack[2] = 0;
+						stack[2] = 0;
 						pthread_mutex_lock(&mem_lock);
 						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
-						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,cpu->stack[cpu->sp]));
+						sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 						pthread_mutex_unlock(&mem_lock);
 					}
-					cpu->pc = FND;
+					pc = FND;
 					pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 					break;
 				}
 				case code_merge:
 				{
-					cpu->stack[cpu->sp+2] = (cpu->stack[cpu->sp+ 6] | cpu->stack[cpu->sp+7]);
-					//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,cpu->stack[6],cpu->stack[7],cpu->stack[2]);
-					cpu->pc = FND;
+					stack[sp+2] = (stack[sp+ 6] | stack[sp+7]);
+					//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,stack[6],stack[7],stack[2]);
+					pc = FND;
 					break;
 				}
 				case code_identity:
 				{
-					if(cpu->stack[2] == NAV){cpu->stack[2] = cpu->stack[6];}
-					cpu->pc = FND;
+					if(stack[2] == NAV){stack[2] = stack[6];}
+					pc = FND;
 					break;
 				}
 				case LFN: //look for node to run
 				{
 					//find runnable node
-					//if dound
+					//if found
 					// - pc = stack[sp+4];
 					//else
-					// - pc stays the same of request task on cpu bus
+					// - see if its failed to find a node too many times
+					//	- if no then pc = idle
+					//	- if yes then send node request on broadcast
+					sp=top_sp;
+					int found = 0;
+					while(sp<ADDRASABLE_SPACE-2 && found == 0){
+						if(stack[sp+1]==0){
+							found = 1;
+							break;
+						}else{
+							sp = sp + stack[sp+3];
+						}
+					}
+
+					if(found == 1){
+						//yay we found a node and can begin
+						pc = stack[sp+4];
+						//reset ftfn
+						ftfn = 0;
+					}else{
+						//no node found. go idle for (blah) amount of time then try again
+						//if failed attempts to find node = REQ_TIME then send bradcast request message for a node
+						if(ftfn == FTFN_MAX){
+							//send node request broadcast
+							pc = IDLE;
+						}else{
+							pc = IDLE;
+						}
+						ftfn++;
+					}
+
 					break;
 				}
 				case MAD: //mark as dead
@@ -245,6 +281,15 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					//update sp_top
 					sp_top = new_sp;
 
+					break;
+				}
+				case IDLE:
+				{
+					if(idle_count == 150){
+						pc=LFN;
+					}else{
+						sleep(0.05);
+					}
 					break;
 				}
 				default:
