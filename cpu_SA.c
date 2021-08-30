@@ -53,6 +53,10 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			}
 			i = i + cpu->PM[i+4];
 		}
+		lp--;
+	/*	for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+			printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+		}*/
 		/*END: stack is filled*/
 
 		int ftfn = 0; //failed to find node count
@@ -60,12 +64,16 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 		int sp = sp_top;
 
+		printf("CPU %d entering loop\n",cpu_num);
+
 		while(1){
 
 			//com part
 			if(getFifoSize(buss)>0){
 				struct Message *m = peekMessage(buss);
-				if(getAddr(m)==OPR){
+				if(getCpuNum(m)==cpu_num){
+					//ignore messages from self
+				}else if(getAddr(m)==OPR){
 
 				}else{ //this would be just a write
 					//check if any entries in lp holds the receiving node
@@ -74,22 +82,24 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int offset;
 					int m_addr = getAddr(m);
 					while(lp_t>=0){
-						if(stack[lp_t]!=-1){
 							size = getSize(stack[lp_t]);
 							offset = getOffset(stack[lp_t]);
 							//if true the val is for it
 							if(m_addr > offset && m_addr < offset+size){
 								stack[stack[lp_t-1]+(m_addr-offset)] = getData(m);
 								stack[stack[lp_t-1]+1] -= 1; //reduce number of dependants by one
+								pthread_mutex_lock(&buss->fifo_lock);
+								removeMessage(buss);
+								pthread_mutex_unlock(&buss->fifo_lock);
 								break;
 							}
-						}
 						lp_t-=2;
 					}
 				}
 				free(m);
 			}
 
+			//printf("CPU %d pc %d\n",cpu_num, pc);
 			switch(pc){
 				case code_input:
 				{
@@ -191,6 +201,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					// - see if its failed to find a node too many times
 					//	- if no then pc = idle
 					//	- if yes then send node request on broadcast
+					//printf("%d\n",stack[sp_top]);
 					sp=sp_top;
 					int found = 0;
 					while(sp<ADDRASABLE_SPACE-2 && found == 0){
@@ -201,8 +212,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							sp = sp + stack[sp+3];
 						}
 					}
-
+					//printf("CPU %d looking for node\n",cpu_num);
 					if(found == 1){
+						printf("CPU %d found a node!!\n",cpu_num);
 						//yay we found a node and can begin
 						pc = stack[sp+4];
 						//reset ftfn
@@ -221,6 +233,59 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 					break;
 				}
+				case FND:
+				{
+					printf("CPU %d sending results %d\n",cpu_num,stack[sp+2]);
+					int num_dest = stack[sp+6+stack[sp+5]];
+					int doffset = sp+6+stack[sp+5]+1;
+					for(int i =0; i<num_dest;i++){
+						if(stack[doffset]== IGNORE){//may not be needed anymore
+						}else if(stack[doffset] == OUTPUT){
+							printf("CPU %d OUTPUT %d\n",cpu_num,stack[sp+2]);
+						}else{
+
+							//is it in this cpu or must it be sent output
+							int lp_t = lp;
+							int size;
+							int offset;
+							int m_addr;
+							int found = 0;
+							//now must find own offset from lp
+							while(lp_t>=0){
+								if(stack[lp_t-1] == sp){
+									break;
+								}
+								lp_t-=2;
+							}
+							m_addr = getOffset(stack[lp_t])+stack[doffset];
+							lp_t = lp;
+							//now lets see if its dest is in its own stack
+							while(lp_t>=0){
+									size = getSize(stack[lp_t]);
+									offset = getOffset(stack[lp_t]);
+									//if true the val is for it
+									if(m_addr > offset && m_addr < offset+size){
+										found = 1;
+										break;
+									}
+								lp_t-=2;
+							}
+							//send or write result
+							if(found){
+								stack[stack[lp_t-1]+(m_addr-offset)] = stack[sp+2];
+								stack[stack[lp_t-1]+1] -= 1;
+							}else{
+								pthread_mutex_lock(&buss->fifo_lock);
+								sendMessage(buss,Message_packing(cpu_num,1,m_addr,stack[sp+2]));
+								pthread_mutex_unlock(&buss->fifo_lock);
+							}
+
+						}
+						doffset++;
+					}
+					pc = SDOWN;
+					break;
+				}
 				case MAD: //mark as dead
 				{
 					//send out MAD op on bus for all dest
@@ -232,62 +297,59 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				case SDOWN: //shift down **cant be interupted**
 				{
 					//remove lp and sp entry of node
-					//shift down
-					//pc = LFN;
+          //shift down
+          //pc = LFN;
 
-					/*we enter SDOWN after LFN, so after we found a node to be executed, we want to delete it and shift down the stack.
-					in this regard, we should save the beggining and end of a node to be deleted and make the spacese between these two pointers -1.
-					then we shift all nodes from top of the stack down.
-					ASSUMPTION:
-					sp_top: always point to the top of the stack
-					sp: points to the current node
-					pc: points to the beggining of the next node to be executed as it's been set in LFN
+          int lp_tmp = lp;
+          while(stack[lp_tmp-1] != sp){
+              lp_tmp -= 2;
+          }
+          //lp_t now point to node_size and offset of a node and it's in a correct position
+          int lp_below = lp_tmp+2;
 
-					int tbd_start = sp; //the start of a node to be deleted
-					int tbd_end = sp+stack[sp+4]; //the end of a node to be deleted
-					int tn_start = sp_top; //the beggining of the toppest node in stack
-					int tn_end = tbd_start-1; //the end of the node before the tbd node
 
-					//replacing values with -100
-					int available_space = 0;
-					for(int i = tbd_start; i<tbd_end; i++){
-						stack[i] = STACK_UNDEFINED;
-						available_space++;
-					}
+          int tbd_start = sp; //the start of a node to be deleted
+          int tbd_end = sp+stack[sp+4]; //the end of a node to be deleted
+          int tn_start = sp_top; //the beggining of the toppest node in stack
+          int tn_end = tbd_start-1; //the end of the node before the tbd node
 
-					while(available_space > 0){
-						stack[tbd_end] = stack[tn_end];
-						tbd_end--;
-						tn_end--;
-						available_space--;
-					}
 
-					for(int i = tbd_end; i>= tn_start; i--){
-						if(tn_end < tn_start){
-							//end of shifting
-							//store current pointer to update sp later
-							int new_sp = i+1;
-							break; //break from the loop
-						}else{
-							stack[i] = stack[tn_end];
-							tn_end--;
-						}
-					}
+          while(tn_end >= sp_top){
+              stack[tbd_end] = stack[tn_end];
+							if(stack[tbd_end] == NODE_BEGIN_FLAG){
+								stack[lp_tmp] = stack[lp_below];
+	              stack[lp_tmp-1] = tbd_end; //set the pointer to the new position
+	              lp_below+=2;
+	              lp_tmp+=2;
+							}
+              tn_end--;
+              tbd_end--;
+          }
+          int new_sp = tbd_end+1;
+          while(tbd_end >= sp_top){
+              stack[tbd_end] = STACK_UNDEFINED;
+          }
+          //updating stack top
+          sp_top = new_sp;
 
-					//replacing the remaining parts with -100
-					for(int i=sp_top; i<new_sp; i++){
-						stack[i] = STACK_UNDEFINED;
-					}
-					//update sp_top
-					sp_top = new_sp;
-					*/
-					break;
+		     lp_tmp-=2; //refactor pointer
+          int new_lp = lp_tmp;
+          while(lp_tmp!=lp){
+              stack[lp_tmp+1] = STACK_UNDEFINED;
+              stack[lp_tmp+2] = STACK_UNDEFINED;
+              lp_tmp+=2;
+          }
+          //updating lp
+          lp = new_lp;
+
+        	break;
 				}
 				case IDLE:
 				{
 					if(idle_count == 150){
 						pc=LFN;
 					}else{
+						idle_count++;
 						sleep(0.05);
 					}
 					break;

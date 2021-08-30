@@ -1165,7 +1165,7 @@ int main(int argc, char **argv)
     for(int i = 0; i<NUM_CPU; i++){
 			cpus[i]->node_to_execute = schedule_me(cpus[i]->cpu_num);
     }*/
-	
+
 
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
@@ -1178,7 +1178,6 @@ int main(int argc, char **argv)
 
     for(int i = 0; i<NUM_CPU; i++){
 				pthread_create(&thread_id[i], NULL, &CPU_SA_start, cpus[i]);
-			  cpu_status[cpus[i]->cpu_num-1] = CPU_UNAVAILABLE;
     }//*/
 
     /***********************/
@@ -1258,6 +1257,7 @@ int main(int argc, char **argv)
 
 struct FIFO *create_FIFO(){
 	struct FIFO *fifo = (struct FIFO*)malloc(sizeof(struct FIFO));
+	pthread_mutex_init(&fifo->fifo_lock, NULL);
 	fifo->front = fifo->back = NULL;
 	fifo->size = 0;
 	return fifo;
@@ -1275,6 +1275,7 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 		fifo->size+=1;
 		fifo->message_counter+=1;
 	}
+	//printf("message added\n");
 }
 struct Message *peekMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
@@ -1282,6 +1283,7 @@ struct Message *peekMessage(struct FIFO *fifo){
 	}
 	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
 	*new = *fifo->front;
+	new->next = NULL;
 	return new;
 }
 void removeMessage(struct FIFO *fifo){
@@ -1304,18 +1306,20 @@ struct Message *popMessage(struct FIFO *fifo){
 	if(fifo->front == NULL){
 		return NULL;
 	}
-	struct Message *m = (struct Message*)malloc(sizeof(struct Message));
-	*m = *fifo->front;
+	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
+	*new = *fifo->front;
+	new->next = NULL;
+
 	struct Message *remove = fifo->front;
 	fifo->front = fifo->front->next;
+	remove->next = NULL;
 	free(remove);
-	m->next = NULL;
 
 	if(fifo->front == NULL)
 		fifo->back = NULL;
 
 	fifo->size-=1;
-	return m;
+	return new;
 }
 
 int getFifoSize(struct FIFO *fifo){

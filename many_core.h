@@ -28,6 +28,7 @@
 extern struct FIFO *buss;//buss master output
 
 struct FIFO{
+    pthread_mutex_t fifo_lock;
     int size;
     int message_counter;
     struct Message *front, *back;
