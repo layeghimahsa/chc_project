@@ -8,7 +8,7 @@
 #define STACK_UNDEFINED -100
 #define UNKNOWN 0
 #define IGNORE -2
-#define OUTPUT -99
+#define OUTPUT -1
 
 
 #define code_expansion 	0
@@ -141,14 +141,6 @@ struct Message_capsul{
 };
 
 
-struct Message{
-		unsigned int addr;
-		int data;
-
-		struct Message *next;
-};
-
-
 //Structure to hold a scope (subgraph) and its code representation
 struct code_scope
 {
@@ -164,6 +156,7 @@ struct code_scope
 void *CPU_start();
 void *CPU_H_start();
 void *CPU_SA_start();
+void *buffer_func();
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
 void Message_printing(struct Message *message);
 void bin_representation(int n);
@@ -171,5 +164,5 @@ int lp_entry(int size, int offset);
 void *message_listening();
 int getSize(int entry);
 int getOffset(int entry);
-
+int find_entry(int lp_t,int m_addr);
 #endif

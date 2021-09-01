@@ -25,7 +25,7 @@
 
 
 
-extern struct FIFO *buss;//buss master output
+extern struct FIFO **buss;//buss master output
 
 struct FIFO{
     pthread_mutex_t fifo_lock;
@@ -34,10 +34,17 @@ struct FIFO{
     struct Message *front, *back;
 };
 
+struct Message{
+		unsigned int addr;
+		int data;
 
+    int seen;//num cpus that have peeked the message
+		struct Message *next;
+};
 
 
 struct FIFO *create_FIFO();
+void sendMessageOnBuss(struct Message *m);
 void sendMessage(struct FIFO *fifo, struct Message *m);
 struct Message *popMessage(struct FIFO *fifo);
 struct Message *peekMessage(struct FIFO *fifo);

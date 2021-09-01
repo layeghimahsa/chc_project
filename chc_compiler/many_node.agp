@@ -3,6 +3,4 @@ SUBGRAPH(main)
 				CONST(y,2);
         DATUM(result);
         OUTPUT(result);
-        DATUM(x_y);
-        OPERATOR(x_y,op_PLUS,x,y);
-        OPERATOR(result,op_MERGE,y,x_y);
+        OPERATOR(result,op_PLUS,y,x);

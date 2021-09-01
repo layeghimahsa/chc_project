@@ -27,7 +27,8 @@ pthread_mutex_t mem_lock;
 struct FIFO *buss_Min;
 //buss master out
 struct FIFO *buss_Mout;
-struct FIFO *buss;
+
+struct FIFO **buss;
 
 int NUM_CPU;
 //FOR OUTPUT DISPLAY
@@ -47,26 +48,15 @@ const int code[] = {//End main:
 0xc,
 0x0,
 0x1,
-0xc,
-0x7fffffff,
-0x0,
-0x2,
-0x24,
-0xc,
-0x0,
-0x2,
-0x34,
 0x8,
 0x7fffffff,
-0x1,
-0xfffffffc,
-0x28,
-0xb,
+0x0,
 0x2,
-0x0,
+0x20,
+0xc,
 0x0,
 0x1,
-0xffffffff,
+0xc,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -76,13 +66,13 @@ const int code[] = {//End main:
 0x0,
 0x0,
 0x1,
-0x30
+0xffffffff
 //Start main @(0):
 };
-int code_size = 37;
+int code_size = 26;
 int main_addr = 0;
-int main_num_nodes = 4;
-int dictionary[][3] = {{0,37,4}
+int main_num_nodes = 3;
+int dictionary[][3] = {{0,26,3}
 };
 int num_dict_entries = 1;
 //CODE END//
@@ -1134,14 +1124,18 @@ int main(int argc, char **argv)
 		int j;
 		int rand_cpu;
 		int s,si;
+
+    int func_offset = dictionary[0][0];
+    int dict_ent = 0;
 		//num_nodes_to_make--;
 		while(num_nodes_to_make != 0){
 
 			rand_cpu = colouring_random[node_counter];
+      printf("CPU %d getting node %d\n",rand_cpu+1,node_counter);
 			node_size = size(i);
 			j = cpus[rand_cpu]->code_size;
-			cpus[rand_cpu]->code_size += node_size + 1;
-			s=j+4;si=node_size;
+			cpus[rand_cpu]->code_size += node_size + 2;
+			s=j+4;si=node_size+1;
 			cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
 			cpus[rand_cpu]->PM[j+1] = code_size - i; //this is the MM offset
 			j+=2;i++;
@@ -1150,7 +1144,12 @@ int main(int argc, char **argv)
 				cpus[rand_cpu]->PM[j] = code[i];
 				j++;
 			}
-			cpus[rand_cpu]->PM[s] = si;
+      cpus[rand_cpu]->PM[j] = func_offset; //this is the function offset this node is placed at node_size-1
+      if(i == (code_size-func_offset) && i>0){
+        dict_ent++;
+        func_offset = dictionary[dict_ent][0];
+      }
+			cpus[rand_cpu]->PM[s] = si; //this changes the orgiginal entry of next node to node size
 			node_counter++;
 			num_nodes_to_make--;
 		}
@@ -1172,7 +1171,11 @@ int main(int argc, char **argv)
 
 			//buss_Min = create_FIFO();
 			//buss_Mout = create_FIFO();
-			buss = create_FIFO();
+    buss = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
+    for(int i = 0; i<NUM_CPU;i++){
+      buss[i] = create_FIFO();
+    }
+
 
 		BEGIN = clock();
 
@@ -1238,19 +1241,7 @@ int main(int argc, char **argv)
 
 		printf("TIME ELAPSED: %f\n\n", elapsed);
 
-    printf("%d AGP nodes created\n",list_index-1);
-
-
-		if(KG==1){
-		}else if(GRAPH==1){
-			GNUPLOT(NUM_CPU);
-			for(int i = 0; i< NUM_CPU; i++){
-				int count = 0;
-				struct data_entry *d = data[i];
-				while(d != NULL){count++; d=d->n;}
-				printf("CPU %d Ran %d nodes\n",i+1,count);
-			}
-		}
+    //printf("%d AGP nodes created\n",list_index-1);
 
     return 0;
 }
@@ -1261,6 +1252,13 @@ struct FIFO *create_FIFO(){
 	fifo->front = fifo->back = NULL;
 	fifo->size = 0;
 	return fifo;
+}
+void sendMessageOnBuss(struct Message *m){
+  for(int i=0;i<NUM_CPU;i++){
+    pthread_mutex_lock(&buss[i]->fifo_lock);
+    sendMessage(buss[i],m);
+    pthread_mutex_unlock(&buss[i]->fifo_lock);
+  }
 }
 void sendMessage(struct FIFO *fifo, struct Message *m){
 	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
@@ -1284,6 +1282,13 @@ struct Message *peekMessage(struct FIFO *fifo){
 	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
 	*new = *fifo->front;
 	new->next = NULL;
+
+  fifo->front->seen+=1;
+  printf("M SEEN %d\n",fifo->front->seen);
+  if(fifo->front->seen == NUM_CPU){
+    printf("REMOVING MESSAGE FROM BUSS\n");
+    removeMessage(fifo);
+  }
 	return new;
 }
 void removeMessage(struct FIFO *fifo){
