@@ -7,7 +7,7 @@ SUBGRAPH(fact)
         DATUM(resultfalse);
         DATUM(xis0);
         DATUM(iter);
-	DATUM(nextiter);
+	      DATUM(nextiter);
         DATUM(xminus1);
         DATUM(xminus1cond);
         CONST(zero,0);

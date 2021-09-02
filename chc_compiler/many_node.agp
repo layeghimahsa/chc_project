@@ -1,6 +1,13 @@
 SUBGRAPH(main)
-				CONST(x,1);
-				CONST(y,2);
+				CONST(x,0);
         DATUM(result);
         OUTPUT(result);
-        OPERATOR(result,op_PLUS,y,x);
+        DATUM(resulttrue);
+        DATUM(resultfalse);
+        DATUM(xis0);
+        CONST(zero,0);
+        CONST(one,1);
+        OPERATOR(xis0,op_ISEQUAL,x,zero);
+        OPERATOR(resulttrue,op_IF,xis0,one);
+        OPERATOR(resultfalse,op_ELSE,xis0,zero);
+        OPERATOR(result,op_MERGE,resulttrue,resultfalse);

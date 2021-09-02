@@ -108,8 +108,14 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							//if true the val is for it
 							if(m_addr < offset && m_addr > offset-size){
 								sp_oper = stack[lp_t-1];
-								stack[ADDRASABLE_SPACE-1] = pc;
-								pc = next_op;
+								if(stack[sp_oper+4]==code_merge){
+									//printf("code merge cant be removed. dep %d\n",stack[sp_oper+1]);
+									//stack[sp_oper+1]-=1;
+									//if code merge is reached then we must reduce its dependents by 1 since the sending node is dead
+								}else{
+									stack[ADDRASABLE_SPACE-1] = pc;
+									pc = next_op;
+								}
 								break;
 							}
 						lp_t-=2;
@@ -177,9 +183,10 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			case code_if:
 			{
 				//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-				if((stack[6] != 0))
+				if((stack[sp+6] != 0))
 				{
-					(stack[2] = stack[7]);
+					(stack[sp+2] = stack[sp+7]);
+					pc = FND;
 				//	pthread_mutex_lock(&mem_lock);
 					//mark_as_dead(stack[sp]);
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
@@ -188,36 +195,71 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 				else
 				{
-					stack[2] = 0;
+					stack[sp+2] = 0;
 				//	pthread_mutex_lock(&mem_lock);
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 				//	pthread_mutex_unlock(&mem_lock);
+					int	num_dest = stack[sp+6+stack[sp+5]];
+					int	doffset = sp+6+stack[sp+5]+1;
+					int m_addr;
+					for(int i =0; i<num_dest;i++){
+						if(stack[doffset]== IGNORE){//may not be needed anymore
+						}else if(stack[doffset] == OUTPUT){
+						}else{
+								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
+								//pthread_mutex_lock(&buss->fifo_lock);
+								sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
+								sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+								//pthread_mutex_unlock(&buss->fifo_lock);
+						}
+						doffset++;
+					}
+					pc = SDOWN;
+					//pc = FND;
 				}
-				pc = FND;
+				//pc = FND;
 				//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
 			case code_else:
 			{
 				//pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-				if(stack[6] == 0)
+				if(stack[sp+6] == 0)
 				{
-					(stack[2] = stack[7]);
+					(stack[sp+2] = stack[sp+7]);
+					pc = FND;
 				//	pthread_mutex_lock(&mem_lock);
-					//sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
+					//mark_as_dead(stack[sp]);
+				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,MD));
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 				//	pthread_mutex_unlock(&mem_lock);
 				}
 				else
 				{
-					stack[2] = 0;
+					stack[sp+2] = 0;
 				//	pthread_mutex_lock(&mem_lock);
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,OPR,PD));
 				//	sendMessage(buss_Min,Message_packing(cpu->cpu_num,1,0,stack[sp]));
 				//	pthread_mutex_unlock(&mem_lock);
+					int	num_dest = stack[sp+6+stack[sp+5]];
+					int	doffset = sp+6+stack[sp+5]+1;
+					int m_addr;
+					for(int i =0; i<num_dest;i++){
+						if(stack[doffset]== IGNORE){//may not be needed anymore
+						}else if(stack[doffset] == OUTPUT){
+						}else{
+								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
+								//pthread_mutex_lock(&buss->fifo_lock);
+								sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
+								sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+								//pthread_mutex_unlock(&buss->fifo_lock);
+						}
+						doffset++;
+					}
+					pc = SDOWN;
+					//pc = FND;
 				}
-				pc = FND;
 				//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 				break;
 			}
@@ -230,7 +272,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			}
 			case code_identity:
 			{
-				if(stack[2] == NAV){stack[2] = stack[6];}
+				if(stack[sp+2] == NAV){stack[sp+2] = stack[sp+6];}
 				pc = FND;
 				break;
 			}
@@ -330,6 +372,70 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				//remove lp and sp enty of node
 				//shift down
 				//recover pc
+
+				//for destinations send operation MAD
+				int num_dest;
+				int doffset;
+				if(stack[sp_oper+4]==code_expansion){
+					num_dest = stack[sp_oper+6+(stack[sp_oper+5]*2)];
+					doffset = sp_oper+6+(stack[sp_oper+5]*2)+2;
+				}else{
+					num_dest = stack[sp_oper+6+stack[sp_oper+5]];
+					doffset = sp_oper+6+stack[sp_oper+5]+1;
+				}
+				int m_addr;
+				for(int i =0; i<num_dest;i++){
+					if(stack[doffset]== IGNORE){//may not be needed anymore
+					}else if(stack[doffset] == OUTPUT){
+					}else{
+							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
+							//pthread_mutex_lock(&buss->fifo_lock);
+							sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
+							sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+							//pthread_mutex_unlock(&buss->fifo_lock);
+					}
+					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
+					else{doffset++;}
+				}
+					//delete the node by removing it and shifting down the stack if needed
+				if(sp_oper == sp_top){
+					sp_top = sp_oper+stack[sp_oper+3];
+					int to = sp_top-1;
+					while(to+1 != sp_oper){
+						stack[to] = STACK_UNDEFINED;
+						to--;
+					}
+					stack[lp] = STACK_UNDEFINED;
+					stack[lp-1] = STACK_UNDEFINED;
+					lp-=2;
+
+				}else{
+					int lp_tmp = lp;
+          while(stack[lp_tmp-1] != sp_oper){
+              lp_tmp -= 2;
+          }
+					int to = sp_oper+stack[sp_oper+3]-1;
+					int from = sp_oper-1;
+					while(from != sp_top-1){
+						stack[to] = stack[from];
+						if(stack[to] == NODE_BEGIN_FLAG){//fix lp entry
+							stack[lp_tmp-1] = to;
+							stack[lp_tmp] = stack[lp_tmp+2];
+							lp_tmp += 2;
+						}
+						to--;from--;
+					}
+					sp_top = to+1;
+					stack[lp] = STACK_UNDEFINED;
+					stack[lp-1] = STACK_UNDEFINED;
+					lp-=2;
+					while(to!=from){
+						stack[to] = STACK_UNDEFINED;
+						to--;
+					}
+				}
+
+				pc = stack[ADDRASABLE_SPACE-1];
 				break;
 			}
 			case SDOWN: //shift down **cant be interupted**
