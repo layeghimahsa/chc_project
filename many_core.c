@@ -43,12 +43,45 @@ clock_t BEGIN;
 const int code[] = {//End main:
 0x7fffffff,
 0x0,
-0x0,
+0x3,
 0x20,
 0xc,
 0x0,
 0x1,
-0x54,
+0x14,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xffffffff,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0x38,
+0x1b4,
+//Start main @(120):
+//End fact:
+0x7fffffff,
+0x0,
+0xfffffffc,
+0x28,
+0x1,
+0x0,
+0x3,
+0xa8,
+0xf4,
+0x124,
 0x7fffffff,
 0x1,
 0xfffffffc,
@@ -68,7 +101,7 @@ const int code[] = {//End main:
 0x0,
 0x0,
 0x1,
-0xcc,
+0x19c,
 0x7fffffff,
 0x2,
 0xfffffffc,
@@ -78,43 +111,96 @@ const int code[] = {//End main:
 0x0,
 0x0,
 0x1,
-0xc8,
+0x198,
 0x7fffffff,
 0x2,
 0xfffffffc,
-0x2c,
+0x30,
 0x5,
 0x2,
 0x0,
 0x0,
-0x2,
-0x7c,
-0xa4,
+0x3,
+0x80,
+0x14c,
+0x174,
 0x7fffffff,
-0x0,
-0x0,
-0x24,
-0xc,
-0x0,
 0x2,
-0x78,
-0x50,
-0x7fffffff,
+0xfffffffc,
+0x28,
+0x4,
+0x2,
+0x0,
 0x0,
 0x1,
+0x148,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x24,
+0xc,
+0x1,
+0x0,
+0x1,
+0xf0,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0xa,
+0x2,
+0x0,
+0x0,
+0x1,
+0x7c,
+0x7fffffff,
+0x2,
+0xfffffffc,
+0x28,
+0x9,
+0x2,
+0x0,
+0x0,
+0x1,
+0x14,
+0x7fffffff,
+0x0,
+0x0,
 0x20,
 0xc,
 0x0,
 0x1,
-0xa0
-//Start main @(0):
+0x120,
+0x7fffffff,
+0x0,
+0x1,
+0x24,
+0xc,
+0x0,
+0x2,
+0xa4,
+0x170,
+0x7fffffff,
+0x1,
+0xfffffffc,
+0x30,
+0x0,
+0x1,
+0x0,
+0x1dc,
+0x1,
+0x0,
+0xcc,
+0x1b4
+//Start fact @(0):
 };
-int code_size = 66;
-int main_addr = 0;
-int main_num_nodes = 7;
-int dictionary[][3] = {{0,66,7}
+int code_size = 149;
+int main_addr = 120;
+int main_num_nodes = 3;
+int dictionary[][3] = {{120,29,3},
+{0,120,12}
 };
-int num_dict_entries = 1;
+int num_dict_entries = 2;
 //CODE END//
 //DO NOT REMOVE THE LINE ABOVE!!//
 
@@ -1171,13 +1257,14 @@ int main(int argc, char **argv)
 		while(num_nodes_to_make != 0){
 
 			rand_cpu = colouring_random[node_counter];
-      printf("CPU %d getting node %d\n",rand_cpu+1,node_counter);
+      printf("CPU %d assigned node %d ",rand_cpu+1,node_counter);
 			node_size = size(i);
 			j = cpus[rand_cpu]->code_size;
 			cpus[rand_cpu]->code_size += node_size + 2;
 			s=j+4;si=node_size+1;
 			cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
 			cpus[rand_cpu]->PM[j+1] = code_size - i; //this is the MM offset
+      printf(" MM offset %d\n",code_size-i);
 			j+=2;i++;
 			node_size += i;
 			for(i; i<node_size-1; i++){
@@ -1293,11 +1380,15 @@ struct FIFO *create_FIFO(){
 	fifo->size = 0;
 	return fifo;
 }
-void sendMessageOnBuss(struct Message *m){
+void sendMessageOnBuss(int cpu_num,struct Message *m){
+  struct Message *new = (struct Message*)malloc(sizeof(struct Message));
+	*new = *m;
   for(int i=0;i<NUM_CPU;i++){
-    pthread_mutex_lock(&buss[i]->fifo_lock);
-    sendMessage(buss[i],m);
-    pthread_mutex_unlock(&buss[i]->fifo_lock);
+    if(i!=cpu_num-1){
+      pthread_mutex_lock(&buss[i]->fifo_lock);
+      sendMessage(buss[i],new);
+      pthread_mutex_unlock(&buss[i]->fifo_lock);
+    }
   }
 }
 void sendMessage(struct FIFO *fifo, struct Message *m){

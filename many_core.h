@@ -44,7 +44,7 @@ struct Message{
 
 
 struct FIFO *create_FIFO();
-void sendMessageOnBuss(struct Message *m);
+void sendMessageOnBuss(int cpu_num,struct Message *m);
 void sendMessage(struct FIFO *fifo, struct Message *m);
 struct Message *popMessage(struct FIFO *fifo);
 struct Message *peekMessage(struct FIFO *fifo);

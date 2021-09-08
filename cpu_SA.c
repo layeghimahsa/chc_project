@@ -36,15 +36,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		}
 	}
 
-	int j;
-	for(int i=cpu->code_size-1; i>=0; i--){//traverse through all the nodes in a cpu
-		while(cpu->PM[i]!=NODE_BEGIN_FLAG){i--;}
-		//printf("CPU %d if(%d >= %d && %d <= %d)\n",cpu_num,cpu->PM[i+1],cpu->main_addr,cpu->PM[i+1],(cpu->main_addr+main_size));
-		//if (lp_offset<r_offset<lp_offset+lp_size)
-		if(cpu->PM[i+1] >= cpu->main_addr && cpu->PM[i+1] <= (cpu->main_addr+main_size)){ //check if the node is in main
+	int j =cpu->code_size-1;
+	while(j>=0){
+		if(cpu->PM[j] == cpu->main_addr){ //check if the node is in main
 			//add to stack
 			sp_top--;
-			j=i+cpu->PM[i+4]; // node size
 			while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
 				stack[sp_top]=cpu->PM[j];
 				sp_top--;j--;
@@ -53,8 +49,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			stack[lp+1] = lp_entry(cpu->PM[j+3],cpu->PM[j]); //needs to be changed to pack size and offset it same
 			lp+=2;j--;
 			stack[sp_top] = cpu->PM[j];
+			j--;
+		}else{
+			while(cpu->PM[j] != NODE_BEGIN_FLAG){j--;}
+			j--;
 		}
-		i-=6; //we can always garentee there is at least 6 entries in a node
 	}
 	lp--;
 //	printf("CPU %d code size %d\n",cpu_num,cpu->code_size);
@@ -67,15 +66,18 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 		printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
 	}//*/
+//exit(0);
 	/*END: stack is filled*/
 
-	int ftfn = 0; //failed to find node count
+	int largest_offset = cpu->dictionary[0][0]+cpu->dictionary[0][1]+1;
+ 	int ftfn = 0; //failed to find node count
 	int idle_count = 0;
 	int oper=0;
 	int next_op;
 	int sp = sp_top;
 	int sp_oper;
-
+	struct FIFO *expand_buffer = create_FIFO();
+	int eom_count = 0;
 	//printf("CPU %d entering loop\n",cpu_num);
 
 	while(1){
@@ -91,10 +93,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			pthread_mutex_lock(&buffer->fifo_lock);
 			struct Message *m = popMessage(buffer);
 			pthread_mutex_unlock(&buffer->fifo_lock);
-			if(m==NULL){exit(0);}
-			if(getCpuNum(m)==cpu_num){
-				//ignore messages from self
-			}else if(oper==1){
+			if(m==NULL){exit(0);}//should never happen
+			if(oper==1){
 				if(next_op==MAD){
 					//look if node is in stack
 					int found = 0;
@@ -102,16 +102,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int size;
 					int offset;
 					int m_addr = getAddr(m);
-					while(lp_t>0){
+					while(lp_t>=0){
 							size = getSize(stack[lp_t]);
 							offset = getOffset(stack[lp_t]);
 							//if true the val is for it
 							if(m_addr < offset && m_addr > offset-size){
 								sp_oper = stack[lp_t-1];
 								if(stack[sp_oper+4]==code_merge){
-									//printf("code merge cant be removed. dep %d\n",stack[sp_oper+1]);
-									//stack[sp_oper+1]-=1;
-									//if code merge is reached then we must reduce its dependents by 1 since the sending node is dead
 								}else{
 									stack[ADDRASABLE_SPACE-1] = pc;
 									pc = next_op;
@@ -121,6 +118,20 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						lp_t-=2;
 					}
 					oper=0;
+				}else if(next_op == EXP){
+					if(getAddr(m)==OPR && getData(m)==EOM){
+						sendMessage(expand_buffer,m);
+						eom_count++;
+						if(eom_count == 2){
+							eom_count = 0;
+							oper = 0;
+							stack[ADDRASABLE_SPACE-1] = pc;
+							pc = next_op;
+						}
+					}else{
+						sendMessage(expand_buffer,m);
+					}
+
 				}
 			}else if(getAddr(m)==OPR){    //there are
 				oper = 1;
@@ -131,7 +142,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int size;
 				int offset;
 				int m_addr = getAddr(m);
-				while(lp_t>0){
+				while(lp_t>=0){
 						size = getSize(stack[lp_t]);
 						offset = getOffset(stack[lp_t]);
 						//if true the val is for it
@@ -151,7 +162,10 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		switch(pc){
 			case code_input:
 			{
-				printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
+				if(stack[sp+2] == NAV){
+					printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
+				}
+				pc=FND;
 				break;
 			}
 			//op code add
@@ -209,8 +223,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						}else{
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								//pthread_mutex_lock(&buss->fifo_lock);
-								sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
-								sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
+								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
 								//pthread_mutex_unlock(&buss->fifo_lock);
 						}
 						doffset++;
@@ -251,8 +265,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						}else{
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								//pthread_mutex_lock(&buss->fifo_lock);
-								sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
-								sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
+								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
 								//pthread_mutex_unlock(&buss->fifo_lock);
 						}
 						doffset++;
@@ -274,6 +288,150 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			{
 				if(stack[sp+2] == NAV){stack[sp+2] = stack[sp+6];}
 				pc = FND;
+				break;
+			}
+			case code_expansion:
+			{
+
+				//add nodes to stack
+				//printf("entering expansion\n");
+
+				struct FIFO *broadcast = create_FIFO();
+				sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EXP));
+
+				int func_offset = stack[sp+6+(stack[sp+5]*2)+1];
+				int func_size;
+				for(int i=0;i<cpu->num_dict_entries;i++){
+					if(func_offset == cpu->dictionary[i][0]){
+						func_size = cpu->dictionary[i][1];
+						break;
+					}
+				}
+
+				sendMessage(broadcast,Message_packing(cpu_num,0,func_offset,func_size));
+
+				int j;
+				lp++;
+				int new_func_offset = largest_offset + 1;
+				//printf("CPU %d new_offset %d\n",cpu_num,new_func_offset);
+				j =cpu->code_size-1;
+				while(j>=0){
+					if(cpu->PM[j] == func_offset){ //check if the node is in main
+						//add to stack
+						sp_top--;
+						while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
+							stack[sp_top]=cpu->PM[j];
+							sp_top--;j--;
+						}
+						stack[lp] = sp_top; //pointer to node... maybe we can embedded this into the 32 bit if mem size can be more restricted
+						stack[lp+1] = lp_entry(cpu->PM[j+3],(new_func_offset+cpu->PM[j]-func_offset)); //needs to be changed to pack size and offset it same
+						//printf("MM offset %d\n",new_func_offset+cpu->PM[j]-func_offset);
+						lp+=2;j--;
+						stack[sp_top] = cpu->PM[j];
+						stack[sp_top+stack[sp_top+3]-1] = new_func_offset;
+						if(stack[sp_top+4]==code_input){stack[sp_top+1]+=1;}
+						j--;
+					}else{
+						while(cpu->PM[j] != NODE_BEGIN_FLAG){j--;}
+						j--;
+					}
+				}
+				lp--;
+				largest_offset += func_size+100;
+
+				int num_dest = stack[sp+6+(stack[sp+5]*2)];
+				int doffset = sp+6+(stack[sp+5]*2)+1;
+				int node_to_remap;
+				int remap_to_this;
+				for(int i=0; i<num_dest;i++){
+					doffset += (2*i);
+					node_to_remap = new_func_offset+stack[doffset+2]/4;
+					//must remove its scope offset and add the scope offset that it wants to send too.
+					//however when a result is sent, the dest offset is /4 so here we multiply by 4 to compensate
+					remap_to_this = (stack[sp+stack[sp+3]-1] + stack[doffset+1]/4 - new_func_offset)*4;
+
+					int lp_t = lp;
+					int size;
+					int offset;
+					int found = 0;
+					//now lets see if its dest is in its own stack
+					while(lp_t>=0){
+							size = getSize(stack[lp_t]);
+							offset = getOffset(stack[lp_t]);
+							//if true the val is for it
+							if(node_to_remap < offset && node_to_remap > offset-size){
+								found = 1;
+								break;
+							}
+						lp_t-=2;
+					}
+					//send or write result
+					if(found){
+						//printf("CPU %d found an output node\n",cpu_num);
+						int ntr_num_dest = stack[stack[lp_t-1]+6+stack[stack[lp_t-1]+5]];
+						for(int k=0;k<ntr_num_dest;k++){
+							int off = stack[lp_t-1]+7+stack[stack[lp_t-1]+5]+k;
+							if( stack[off] == OUTPUT){
+								 stack[off] = remap_to_this;
+								 break;
+							}
+						}
+					}else{
+						sendMessage(broadcast,Message_packing(cpu_num,1,node_to_remap,remap_to_this));
+					}
+				}
+				sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EOM));
+
+				int num_args = stack[sp+5];
+				int aoffset = sp+6;
+				int input_node_offset;
+				for(int i = 0; i<num_args; i++){
+					aoffset = aoffset + (2*i);
+					input_node_offset = new_func_offset+stack[aoffset+1]/4;
+					int lp_t = lp;
+					int size;
+					int offset;
+					int found = 0;
+					//now lets see if its dest is in its own stack
+					while(lp_t>=0){
+							size = getSize(stack[lp_t]);
+							offset = getOffset(stack[lp_t]);
+							//if true the val is for it
+							if(input_node_offset  < offset && input_node_offset  > offset-size){
+								found = 1;
+								break;
+							}
+						lp_t-=2;
+					}
+					//send or write result
+					if(found){
+						//printf("CPU %d found an input node\n",cpu_num);
+						//change output dest
+						stack[stack[lp_t-1]+2] = stack[aoffset];
+						stack[stack[lp_t-1]+1]-=1;
+					}else{
+						sendMessage(broadcast,Message_packing(cpu_num,1,input_node_offset,stack[aoffset]));
+					}
+				}
+				sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EOM));
+
+				struct Message *t = popMessage(broadcast);
+				while(t!=NULL){
+					sendMessageOnBuss(cpu_num,t);
+					t = popMessage(broadcast);
+				}
+				free(broadcast);
+				free(t);
+				/*
+				for(int i = 0; i<=lp;i++){
+						printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+					}
+					for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+						printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+					}
+
+				exit(0);//*/
+				pc = SDOWN;
 				break;
 			}
 			case LFN: //look for node to run
@@ -298,7 +456,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 				//printf("CPU %d looking for node\n",cpu_num);
 				if(found == 1){
-					//printf("CPU %d found a node!!\n",cpu_num);
+					//printf("CPU %d found a node of type %d!!\n",cpu_num,stack[sp+4]);
 					//yay we found a node and can begin
 					pc = stack[sp+4];
 					//reset ftfn
@@ -319,7 +477,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			}
 			case FND:
 			{
-				printf("CPU %d sending results %d\n",cpu_num,stack[sp+2]);
+				//printf("CPU %d sending results %d\n",cpu_num,stack[sp+2]);
 				int num_dest = stack[sp+6+stack[sp+5]];
 				int doffset = sp+6+stack[sp+5]+1;
 				for(int i =0; i<num_dest;i++){
@@ -353,11 +511,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						//send or write result
 						if(found){
 							//printf("CPU %d found dest in stack\n",cpu_num);
+							//printf("addr %d\n",m_addr);
 							stack[stack[lp_t-1]+(offset-m_addr-1)] = stack[sp+2];
 							stack[stack[lp_t-1]+1] -= 1;
 						}else{
+							//printf("addr %d\n",m_addr);
 							//pthread_mutex_lock(&buss->fifo_lock);
-							sendMessageOnBuss(Message_packing(cpu_num,1,m_addr,stack[sp+2]));
+							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,m_addr,stack[sp+2]));
 							//pthread_mutex_unlock(&buss->fifo_lock);
 						}
 					}
@@ -390,8 +550,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}else{
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
 							//pthread_mutex_lock(&buss->fifo_lock);
-							sendMessageOnBuss(Message_packing(cpu_num,1,OPR,MAD));
-							sendMessageOnBuss(Message_packing(cpu_num,0,m_addr,MAD));
+							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
+							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
 							//pthread_mutex_unlock(&buss->fifo_lock);
 					}
 					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
@@ -423,6 +583,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							stack[lp_tmp] = stack[lp_tmp+2];
 							lp_tmp += 2;
 						}
+						if(sp==from){sp=to;}
 						to--;from--;
 					}
 					sp_top = to+1;
@@ -480,7 +641,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						to--;
 					}
 				}
-				/*for(int i = 0; i<=lp;i++){
+				/*
+				for(int i = 0; i<=lp;i++){
 							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
 				}
 				for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
@@ -488,6 +650,112 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}//*/
 				pc = LFN;
       	break;
+			}
+			case EXP:
+			{
+
+
+				struct Message *m = popMessage(expand_buffer);
+
+				int func_offset = getAddr(m);
+				int func_size = getData(m);
+				int j;
+				lp++;
+				int new_func_offset = largest_offset + 1;
+				//printf("CPU %d new_offset %d\n",cpu_num,new_func_offset);
+				j =cpu->code_size-1;
+				while(j>=0){
+					if(cpu->PM[j] == func_offset){ //check if the node is in main
+						//add to stack
+						sp_top--;
+						while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
+							stack[sp_top]=cpu->PM[j];
+							sp_top--;j--;
+						}
+						stack[lp] = sp_top; //pointer to node... maybe we can embedded this into the 32 bit if mem size can be more restricted
+						stack[lp+1] = lp_entry(cpu->PM[j+3],(new_func_offset+cpu->PM[j]-func_offset)); //needs to be changed to pack size and offset it same
+						//printf("MM offset %d\n",new_func_offset+cpu->PM[j]-func_offset);
+						lp+=2;j--;
+						stack[sp_top] = cpu->PM[j];
+						stack[sp_top+stack[sp_top+3]-1] = new_func_offset;
+						if(stack[sp_top+4]==code_input){stack[sp_top+1]+=1;}
+						j--;
+					}else{
+						while(cpu->PM[j] != NODE_BEGIN_FLAG){j--;}
+						j--;
+					}
+				}
+				lp--;
+				largest_offset += func_size+100;
+
+				m = popMessage(expand_buffer);
+				int node_to_remap;
+				int remap_to_this;
+				while(getAddr(m) != OPR && getData(m) != EOM){
+					node_to_remap = getAddr(m);
+
+					int lp_t = lp;
+					int size;
+					int offset;
+					int found = 0;
+					//now lets see if its dest is in its own stack
+					while(lp_t>=0){
+							size = getSize(stack[lp_t]);
+							offset = getOffset(stack[lp_t]);
+							//if true the val is for it
+							if(node_to_remap < offset && node_to_remap > offset-size){
+								found = 1;
+								break;
+							}
+						lp_t-=2;
+					}
+					//send or write result
+					if(found){
+						//printf("CPU %d found an output node\n",cpu_num);
+						//printf("offset %d size %d\n",offset,size);
+						int ntr_num_dest = stack[stack[lp_t-1]+6+stack[stack[lp_t-1]+5]];
+						for(int k=0;k<ntr_num_dest;k++){
+							int off = stack[lp_t-1]+7+stack[stack[lp_t-1]+5]+k;
+							if( stack[off] == OUTPUT){
+								 stack[off] = getData(m);
+								 break;
+							}
+						}
+					}
+					m = popMessage(expand_buffer);
+				}
+
+
+				m = popMessage(expand_buffer);
+				int input_node_offset;
+				while(getAddr(m) != OPR && getData(m) != EOM){
+					input_node_offset = getAddr(m);
+
+					int lp_t = lp;
+					int size;
+					int offset;
+					int found = 0;
+					//now lets see if its dest is in its own stack
+					while(lp_t>=0){
+							size = getSize(stack[lp_t]);
+							offset = getOffset(stack[lp_t]);
+							//if true the val is for it
+							if(input_node_offset  < offset && input_node_offset  > offset-size){
+								found = 1;
+								break;
+							}
+						lp_t-=2;
+					}
+					//send or write result
+					if(found){
+						//printf("CPU %d found an input node\n",cpu_num);
+						stack[stack[lp_t-1]+2] = getData(m);
+						stack[stack[lp_t-1]+1]-=1;
+					}
+					m = popMessage(expand_buffer);
+				}
+				pc = stack[ADDRASABLE_SPACE-1];
+				break;
 			}
 			case IDLE:
 			{

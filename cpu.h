@@ -43,11 +43,12 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-#define ADDRASABLE_SPACE 256
+#define ADDRASABLE_SPACE 1024
 
 #define LFN 13
 #define MAD 14
 #define SDOWN 15
+#define EXP 16
 #define FTFN_MAX 5 //the number of time Looking for a node can fail before sending a node request broadcast
 
 struct Destination{

@@ -4,8 +4,8 @@ SUBGRAPH(test)
         INPUT(x);
         INPUT(y);
         DATUM(z);
-	OPERATOR(z,op_PLUS,x,y);
-	OUTPUT(z);
+	      OPERATOR(z,op_PLUS,x,y);
+	      OUTPUT(z);
 
 SUBGRAPH(main)
         CONST(a,7);
