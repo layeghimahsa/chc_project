@@ -265,7 +265,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						}else{
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								//pthread_mutex_lock(&buss->fifo_lock);
-								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
+								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,OPR,MAD));
 								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
 								//pthread_mutex_unlock(&buss->fifo_lock);
 						}
@@ -550,8 +550,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}else{
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
 							//pthread_mutex_lock(&buss->fifo_lock);
-							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
-							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
+							sendMessageOnBuss(0,Message_packing(cpu_num,1,OPR,MAD));
+							sendMessageOnBuss(0,Message_packing(cpu_num,0,m_addr,MAD));
 							//pthread_mutex_unlock(&buss->fifo_lock);
 					}
 					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
