@@ -1380,6 +1380,7 @@ struct FIFO *create_FIFO(){
 	fifo->size = 0;
 	return fifo;
 }
+
 void sendMessageOnBuss(int cpu_num,struct Message *m){
   struct Message *new = (struct Message*)malloc(sizeof(struct Message));
 	*new = *m;
