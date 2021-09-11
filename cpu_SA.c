@@ -543,7 +543,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					doffset = sp_oper+6+stack[sp_oper+5]+1;
 				}
 				int m_addr;
-				for(int i =0; i<num_dest;i++){
+				/*for(int i =0; i<num_dest;i++){
 					if(stack[doffset]== IGNORE){//may not be needed anymore
 					}else if(stack[doffset] == OUTPUT){
 					}else{
@@ -555,7 +555,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
 					else{doffset++;}
-				}
+				}*/
 					//delete the node by removing it and shifting down the stack if needed
 				if(sp_oper == sp_top){
 					sp_top = sp_oper+stack[sp_oper+3];
