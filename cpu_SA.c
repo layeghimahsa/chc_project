@@ -83,7 +83,6 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	while(1){
 
 		//com part
-
 		//check own buffer
 		pthread_mutex_lock(&buffer->fifo_lock);
 		int buff_size = getFifoSize(buffer);
