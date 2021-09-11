@@ -572,14 +572,8 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					doffset = sp_oper+6+stack[sp_oper+5]+1;
 				}
 				int m_addr;
-<<<<<<< Updated upstream
-				/*for(int i =0; i<num_dest;i++){
-					if(stack[doffset]== IGNORE){//may not be needed anymore
-					}else if(stack[doffset] == OUTPUT){
-=======
 				for(int i =0; i<num_dest;i++){
 					if(stack[doffset] == OUTPUT){
->>>>>>> Stashed changes
 					}else{
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
 							pthread_mutex_lock(&buss_lock);
@@ -589,11 +583,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}
 					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
 					else{doffset++;}
-<<<<<<< Updated upstream
-				}*/
-=======
-				}//*/
-
+				}
 				if(sp_oper == sp){
 					printf("NODE TO REMOVE IS POINTED BY SP\n");
 					pc = LFN;
@@ -601,8 +591,6 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					pc = stack[ADDRASABLE_SPACE-1];
 				}
 
-
->>>>>>> Stashed changes
 					//delete the node by removing it and shifting down the stack if needed
 				if(sp_oper == sp_top){
 					sp_top = sp_oper+stack[sp_oper+3];
