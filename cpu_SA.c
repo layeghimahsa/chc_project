@@ -60,16 +60,17 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 /*	for(int i = 0; i<cpu->code_size; i++){
 		printf("CPU %d PM [%d][%d]\n",cpu_num, i, cpu->PM[i]);
 	}//*/
-/*		for(int i = 0; i<=lp;i++){
-		printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-	}
-	for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
-		printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-	}//*/
+/*		for(int i = 0; i<=lp;i+=2){
+	printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+	printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+}
+for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+	printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+}//*/
 //exit(0);
 	/*END: stack is filled*/
 
-	int largest_offset = cpu->dictionary[0][0]+cpu->dictionary[0][1]+1;
+	int largest_offset = cpu->dictionary[0][0]+cpu->dictionary[0][1]+100;
  	int ftfn = 0; //failed to find node count
 	int idle_count = 0;
 	int oper=0;
@@ -84,14 +85,14 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 		//com part
 		//check own buffer
-		pthread_mutex_lock(&buffer->fifo_lock);
-		int buff_size = getFifoSize(buffer);
-		pthread_mutex_unlock(&buffer->fifo_lock);
+		pthread_mutex_lock(&buss[cpu_num-1]->fifo_lock);
+		int buff_size = getFifoSize(buss[cpu_num-1]);
+		pthread_mutex_unlock(&buss[cpu_num-1]->fifo_lock);
 		//printf("cpu %d buff size %d\n",cpu_num,buff_size);
 		if(buff_size>0){
-			pthread_mutex_lock(&buffer->fifo_lock);
-			struct Message *m = popMessage(buffer);
-			pthread_mutex_unlock(&buffer->fifo_lock);
+			pthread_mutex_lock(&buss[cpu_num-1]->fifo_lock);
+			struct Message *m = popMessage(buss[cpu_num-1]);
+			pthread_mutex_unlock(&buss[cpu_num-1]->fifo_lock);
 			if(m==NULL){exit(0);}//should never happen
 			if(oper==1){
 				if(next_op==MAD){
@@ -146,7 +147,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						offset = getOffset(stack[lp_t]);
 						//if true the val is for it
 						if(m_addr < offset && m_addr > offset-size){
-							printf("CPU %d writing result %d to pos %d\n",cpu_num, getData(m),(offset-m_addr-1));
+							printf("CPU %d writing result %d to pos %d of node type %d\n",cpu_num, getData(m),(offset-m_addr-1),stack[stack[lp_t-1]+4]);
 							stack[stack[lp_t-1]+(offset-m_addr-1)] = getData(m);
 							stack[stack[lp_t-1]+1] -= 1; //reduce number of dependants by one
 							break;
@@ -217,14 +218,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int	doffset = sp+6+stack[sp+5]+1;
 					int m_addr;
 					for(int i =0; i<num_dest;i++){
-						if(stack[doffset]== IGNORE){//may not be needed anymore
-						}else if(stack[doffset] == OUTPUT){
+						if(stack[doffset] == OUTPUT){
 						}else{
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
-								//pthread_mutex_lock(&buss->fifo_lock);
-								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,OPR,MAD));
-								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
-								//pthread_mutex_unlock(&buss->fifo_lock);
+								pthread_mutex_lock(&buss_lock);
+								sendMessageOnBuss(0,Message_packing(cpu_num,0,OPR,MAD));
+								sendMessageOnBuss(0,Message_packing(cpu_num,0,m_addr,MAD));
+								pthread_mutex_unlock(&buss_lock);
 						}
 						doffset++;
 					}
@@ -259,14 +259,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int	doffset = sp+6+stack[sp+5]+1;
 					int m_addr;
 					for(int i =0; i<num_dest;i++){
-						if(stack[doffset]== IGNORE){//may not be needed anymore
-						}else if(stack[doffset] == OUTPUT){
+						if(stack[doffset] == OUTPUT){
 						}else{
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
-								//pthread_mutex_lock(&buss->fifo_lock);
-								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,OPR,MAD));
-								sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,m_addr,MAD));
-								//pthread_mutex_unlock(&buss->fifo_lock);
+								pthread_mutex_lock(&buss_lock);
+								sendMessageOnBuss(0,Message_packing(cpu_num,0,OPR,MAD));
+								sendMessageOnBuss(0,Message_packing(cpu_num,0,m_addr,MAD));
+								pthread_mutex_unlock(&buss_lock);
 						}
 						doffset++;
 					}
@@ -409,16 +408,18 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						stack[stack[lp_t-1]+2] = stack[aoffset];
 						stack[stack[lp_t-1]+1]-=1;
 					}else{
-						sendMessage(broadcast,Message_packing(cpu_num,1,input_node_offset,stack[aoffset]));
+						sendMessage(broadcast,Message_packing(cpu_num,1,input_node_offset-2,stack[aoffset]));
 					}
 				}
 				sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EOM));
 
 				struct Message *t = popMessage(broadcast);
+				pthread_mutex_lock(&buss_lock);
 				while(t!=NULL){
 					sendMessageOnBuss(cpu_num,t);
 					t = popMessage(broadcast);
 				}
+				pthread_mutex_unlock(&buss_lock);
 				free(broadcast);
 				free(t);
 				/*
@@ -445,10 +446,19 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				//printf("%d\n",stack[sp_top]);
 				sp=sp_top;
 				int found = 0;
-				while(sp<ADDRASABLE_SPACE-2 && found == 0){
+				while(sp<ADDRASABLE_SPACE-1){
 					if(stack[sp+1]==0){
 						found = 1;
 						break;
+					}else if(stack[sp+1]<0){
+						for(int i = 0; i<=lp;i+=2){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+						}
+						for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+						}
+						exit(0);
 					}else{
 						sp = sp + stack[sp+3];
 					}
@@ -466,6 +476,16 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					if(ftfn == FTFN_MAX){
 						//send node request broadcast
 						pc = IDLE;
+						ftfn = 0;
+					//	printf("\n\nCPU %d FTFN\n",cpu_num);
+				/*		for(int i = 0; i<=lp;i+=2){
+								printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+								printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+							}
+							for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+								printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+							}
+							return NULL;*/
 					}else{
 						pc = IDLE;
 					}
@@ -483,6 +503,15 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					if(stack[doffset]== IGNORE){//may not be needed anymore
 					}else if(stack[doffset] == OUTPUT){
 						printf("CPU %d OUTPUT %d\n",cpu_num,stack[sp+2]);
+
+						for(int i = 0; i<=lp;i+=2){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+						}
+						for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+						}//*/
+							//exit(0);
 					}else{
 
 						//is it in this cpu or must it be sent output
@@ -515,9 +544,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							stack[stack[lp_t-1]+1] -= 1;
 						}else{
 							//printf("addr %d\n",m_addr);
-							//pthread_mutex_lock(&buss->fifo_lock);
+							pthread_mutex_lock(&buss_lock);
 							sendMessageOnBuss(cpu_num,Message_packing(cpu_num,1,m_addr,stack[sp+2]));
-							//pthread_mutex_unlock(&buss->fifo_lock);
+							pthread_mutex_unlock(&buss_lock);
 						}
 					}
 					doffset++;
@@ -543,19 +572,37 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					doffset = sp_oper+6+stack[sp_oper+5]+1;
 				}
 				int m_addr;
+<<<<<<< Updated upstream
 				/*for(int i =0; i<num_dest;i++){
 					if(stack[doffset]== IGNORE){//may not be needed anymore
 					}else if(stack[doffset] == OUTPUT){
+=======
+				for(int i =0; i<num_dest;i++){
+					if(stack[doffset] == OUTPUT){
+>>>>>>> Stashed changes
 					}else{
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
-							//pthread_mutex_lock(&buss->fifo_lock);
-							sendMessageOnBuss(0,Message_packing(cpu_num,1,OPR,MAD));
+							pthread_mutex_lock(&buss_lock);
+							sendMessageOnBuss(0,Message_packing(cpu_num,0,OPR,MAD));
 							sendMessageOnBuss(0,Message_packing(cpu_num,0,m_addr,MAD));
-							//pthread_mutex_unlock(&buss->fifo_lock);
+							pthread_mutex_unlock(&buss_lock);
 					}
 					if(stack[sp_oper+4]==code_expansion){doffset+=3;}
 					else{doffset++;}
+<<<<<<< Updated upstream
 				}*/
+=======
+				}//*/
+
+				if(sp_oper == sp){
+					printf("NODE TO REMOVE IS POINTED BY SP\n");
+					pc = LFN;
+				}else{
+					pc = stack[ADDRASABLE_SPACE-1];
+				}
+
+
+>>>>>>> Stashed changes
 					//delete the node by removing it and shifting down the stack if needed
 				if(sp_oper == sp_top){
 					sp_top = sp_oper+stack[sp_oper+3];
@@ -594,8 +641,6 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						to--;
 					}
 				}
-
-				pc = stack[ADDRASABLE_SPACE-1];
 				break;
 			}
 			case SDOWN: //shift down **cant be interupted**
@@ -640,13 +685,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						to--;
 					}
 				}
-				/*
-				for(int i = 0; i<=lp;i++){
-							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-				}
-				for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
-					printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-				}//*/
+
 				pc = LFN;
       	break;
 			}

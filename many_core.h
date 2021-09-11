@@ -26,6 +26,7 @@
 
 
 extern struct FIFO **buss;//buss master output
+extern pthread_mutex_t buss_lock;
 
 struct FIFO{
     pthread_mutex_t fifo_lock;
