@@ -70,7 +70,13 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 //exit(0);
 	/*END: stack is filled*/
 
-	int largest_offset = cpu->dictionary[0][0]+cpu->dictionary[0][1]+100;
+	int code_size = cpu->dictionary[0][0]+cpu->dictionary[0][1];
+	//printf("CODE SIZE %d\n",code_size);
+	int offset_jump = (code_size)*cpu->num_cpu;
+	//printf("offset jump %d\n",offset_jump);
+	int largest_offset = (code_size)+(code_size*(cpu_num-1));
+	//printf("cpu %d largest_offset %d\n",cpu_num,largest_offset);
+
  	int ftfn = 0; //failed to find node count
 	int idle_count = 0;
 	int oper=0;
@@ -93,7 +99,6 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 			pthread_mutex_lock(&buss[cpu_num-1]->fifo_lock);
 			struct Message *m = popMessage(buss[cpu_num-1]);
 			pthread_mutex_unlock(&buss[cpu_num-1]->fifo_lock);
-			if(m==NULL){exit(0);}//should never happen
 			if(oper==1){
 				if(next_op==MAD){
 					//look if node is in stack
@@ -131,7 +136,6 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}else{
 						sendMessage(expand_buffer,m);
 					}
-
 				}
 			}else if(getAddr(m)==OPR){    //there are
 				oper = 1;
@@ -147,9 +151,10 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						offset = getOffset(stack[lp_t]);
 						//if true the val is for it
 						if(m_addr < offset && m_addr > offset-size){
-							printf("CPU %d writing result %d to pos %d of node type %d\n",cpu_num, getData(m),(offset-m_addr-1),stack[stack[lp_t-1]+4]);
+							//printf("CPU %d writing result %d to pos %d of node type %d\n",cpu_num, getData(m),(offset-m_addr-1),stack[stack[lp_t-1]+4]);
 							stack[stack[lp_t-1]+(offset-m_addr-1)] = getData(m);
 							stack[stack[lp_t-1]+1] -= 1; //reduce number of dependants by one
+							//printf("CPU %d stack pose %d. Dep left [%d][%d]\n",cpu_num,stack[lp_t-1]+(offset-m_addr-1),stack[lp_t-1]+1,stack[stack[lp_t-1]+1]);
 							break;
 						}
 					lp_t-=2;
@@ -162,9 +167,9 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 		switch(pc){
 			case code_input:
 			{
-				if(stack[sp+2] == NAV){
-					printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
-				}
+				//if(stack[sp+2] == NAV){
+				//	printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
+				//}
 				pc=FND;
 				break;
 			}
@@ -310,7 +315,9 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 
 				int j;
 				lp++;
-				int new_func_offset = largest_offset + 1;
+				int new_func_offset = largest_offset;
+				sendMessage(broadcast,Message_packing(cpu_num,0,0,new_func_offset));
+				//printf("cpu %d expand %d\n",cpu_num,new_func_offset);
 				//printf("CPU %d new_offset %d\n",cpu_num,new_func_offset);
 				j =cpu->code_size-1;
 				while(j>=0){
@@ -327,7 +334,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						lp+=2;j--;
 						stack[sp_top] = cpu->PM[j];
 						stack[sp_top+stack[sp_top+3]-1] = new_func_offset;
-						if(stack[sp_top+4]==code_input){stack[sp_top+1]+=1;}
+						if(stack[sp_top+4]==code_input){stack[sp_top+1]=1;}
 						j--;
 					}else{
 						while(cpu->PM[j] != NODE_BEGIN_FLAG){j--;}
@@ -335,7 +342,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}
 				}
 				lp--;
-				largest_offset += func_size+100;
+				largest_offset += offset_jump;
 
 				int num_dest = stack[sp+6+(stack[sp+5]*2)];
 				int doffset = sp+6+(stack[sp+5]*2)+1;
@@ -431,6 +438,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}
 
 				exit(0);//*/
+
 				pc = SDOWN;
 				break;
 			}
@@ -451,6 +459,8 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						found = 1;
 						break;
 					}else if(stack[sp+1]<0){
+						printf("\n\nLFN ERROR\n");
+
 						for(int i = 0; i<=lp;i+=2){
 							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
 							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
@@ -458,6 +468,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
 						}
+						printf("\n\n");
 						exit(0);
 					}else{
 						sp = sp + stack[sp+3];
@@ -504,7 +515,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}else if(stack[doffset] == OUTPUT){
 						printf("CPU %d OUTPUT %d\n",cpu_num,stack[sp+2]);
 
-						for(int i = 0; i<=lp;i+=2){
+				/*		for(int i = 0; i<=lp;i+=2){
 							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
 							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
 						}
@@ -585,7 +596,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					else{doffset++;}
 				}
 				if(sp_oper == sp){
-					printf("NODE TO REMOVE IS POINTED BY SP\n");
+					//printf("NODE TO REMOVE IS POINTED BY SP\n");
 					pc = LFN;
 				}else{
 					pc = stack[ADDRASABLE_SPACE-1];
@@ -629,6 +640,14 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						to--;
 					}
 				}
+				//printf("cpu %d MAD\n",cpu_num);
+			/*	for(int i = 0; i<=lp;i+=2){
+					printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+					printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+				}
+				for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+					printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+				}*/
 				break;
 			}
 			case SDOWN: //shift down **cant be interupted**
@@ -649,6 +668,15 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					lp-=2;
 
 				}else{
+				/*	printf("cpu %d SDOWN mid before [%d][%d]\n",cpu_num,sp,stack[sp]);
+					for(int i = 0; i<=lp;i+=2){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+						}
+						for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+						}*/
+
 					int lp_tmp = lp;
           while(stack[lp_tmp-1] != sp){
               lp_tmp -= 2;
@@ -672,7 +700,18 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						stack[to] = STACK_UNDEFINED;
 						to--;
 					}
+
+
+		/*			printf("cpu %d SDOWN mid after [%d][%d]\n",cpu_num,sp,stack[sp]);
+					for(int i = 0; i<=lp;i+=2){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+							printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+						}
+						for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+							printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+						}*/
 				}
+
 
 				pc = LFN;
       	break;
@@ -687,7 +726,9 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 				int func_size = getData(m);
 				int j;
 				lp++;
-				int new_func_offset = largest_offset + 1;
+				m=popMessage(expand_buffer);
+				int new_func_offset = getData(m);
+				//printf("cpu %d EXP %d\n",cpu_num,new_func_offset);
 				//printf("CPU %d new_offset %d\n",cpu_num,new_func_offset);
 				j =cpu->code_size-1;
 				while(j>=0){
@@ -704,7 +745,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 						lp+=2;j--;
 						stack[sp_top] = cpu->PM[j];
 						stack[sp_top+stack[sp_top+3]-1] = new_func_offset;
-						if(stack[sp_top+4]==code_input){stack[sp_top+1]+=1;}
+						if(stack[sp_top+4]==code_input){stack[sp_top+1]=1;}
 						j--;
 					}else{
 						while(cpu->PM[j] != NODE_BEGIN_FLAG){j--;}
@@ -712,7 +753,7 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 					}
 				}
 				lp--;
-				largest_offset += func_size+100;
+				//largest_offset += func_size+100;
 
 				m = popMessage(expand_buffer);
 				int node_to_remap;
@@ -795,7 +836,14 @@ for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
 			}
 			default:
 			{
-				printf("CPU %d unrecognized operation %d\n",cpu_num,pc);
+				printf("CPU %d unrecognized operation [%d][%d]\n",cpu_num,sp,pc);
+				for(int i = 0; i<=lp;i+=2){
+						printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+						printf("CPU %d [%d][%d][%d]\n",cpu_num,i,getSize(stack[i+1]),getOffset(stack[i+1]));
+					}
+					for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
+						printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
+					}
 				exit(0);
 			}
 		}

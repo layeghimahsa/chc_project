@@ -43,7 +43,7 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-#define ADDRASABLE_SPACE 1024
+#define ADDRASABLE_SPACE 64000
 
 #define LFN 13
 #define MAD 14
@@ -98,6 +98,7 @@ struct CPU_SA{
     int num_dict_entries;
 		int main_addr;
 		int code_size;
+		int num_cpu;
 		//int *sb;
 		//int *sp;
 };
