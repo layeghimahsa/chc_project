@@ -1,9 +1,6 @@
 #ifndef CPU_HW
 #define CPU_HW
 
-#define MAX_MEM 1024*64
-//#include <stdbool.h>
-
 #define UNDEFINED -1
 #define STACK_UNDEFINED -100
 #define UNKNOWN 0
@@ -27,69 +24,23 @@
 
 //#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
-//Dead operator: remove it
-#define ALIVE		1
-#define DEAD 		0xFFFFFFFF
-#define DONE    2
-#define REFACTOR	-3
-#define DONT_REFACTOR   -2
+#define NODE_BEGIN_FLAG 0x7fffffff
 //Can process corresponding operation and send result to destinations (all arguments resolved)
 #define READY 		0
 
-#define LS_SIZE 1024 //local storage size
-
-#define RESULT 0
-#define REQUEST 1
-#define INPUT_REQUEST 2
-#define ALIVE 1
-
 #define ADDRASABLE_SPACE 640000
 
+#define IDLE 18
 #define LFN 13
 #define MAD 14
 #define SDOWN 15
 #define EXP 16
 #define FTFN_MAX 5 //the number of time Looking for a node can fail before sending a node request broadcast
+#define FND 17
 
-struct Destination{
-	int cpu_dest;
-	int node_dest;
-	int state;
-	int offset;
-	struct AGP_node *destination;
-	struct Destination *next;
-};
 
-struct Dependables{ //this is a list of all variable a cpu must call upon to get their variable
-	int node_needed; //this is technically the variable name
-	int cpu_num;  //cpu the request must be sent to
-	int key; //needed if its a node requesting for a node that isnt technically ment for it (used for inputs of expansions)
-	struct AGP_node *dependencie; //direct link to depentent
-	struct Dependables *next;
-};
-
-struct CPU{
-	int cpu_num; //the actual cpu number
-
-	int local_mem[5][LS_SIZE]; //local variable storage
-
-	struct Queue **look_up; //lookup queue table.
-
-	struct AGP_node *node_to_execute; //the node that needs to be executed
-
-};
-
-struct CPU_H{
-	int cpu_num; //the actual cpu number
-	int local_mem[5][LS_SIZE]; //local variable storage
-	int stack[ADDRASABLE_SPACE];
-	int bp; //base pointer
-	int sp; //stack pointer
-	int pc; //program counter
-	struct FIFO **look_up; //lookup FIFO table.
-	struct Message *buffer;
-};
-
+#define EOM -6  //end of message
+#define OPR 131071
 
 struct CPU_SA{
     int cpu_num;
@@ -103,68 +54,8 @@ struct CPU_SA{
 		//int *sp;
 };
 
-/*struct tcb{
-		int *sb;
-		int *sp;
-		int nodes_to_evaluate;
-		int nodes_evaluated;
-		int nodes_visited;
-		int nodes_GCed;
-		FILE *fp;
-};*/
-//struct tcb tcb[NUM_CPU];
-
-struct AGP_node{
-	int assigned_cpu; //the cpu the node was or is run on. This is important for scheduling, destination refactoring, and keeping track of who has what node results
-
-	int code[64]; //chunk of code
-	int node_size; //actual the size of stack/code
-	int code_address; //original code address
-	int node_num; //current node number
-
-	int num_dest; //number of node's destinations
-	int state; //alive or dead if else statements
-	int node_func; //sub graph its from
-
-	struct Destination *dest; 	//destination cpu
-	struct Dependables *depend; //list of all cpu that contain your dependables and need var request
-	struct AGP_node *next;
-
-};
-
-struct Message_capsul{
-	int value;
-	int dest; // cpu destination
-	int addr;
-	int node_num; //variable name!
-	int message_type; //result, request...
-
-	struct Message_capsul *next;
-};
-
-
-//Structure to hold a scope (subgraph) and its code representation
-struct code_scope
-{
-	char *scope_name;
-	int address;
-	int length; //in sizeof(int)
-	int *code_ptr;
-	int num_nodes; //number of nodes in scope
-
-	struct code_scope *next;
-};
-
-void *CPU_start();
-void *CPU_H_start();
 void *CPU_SA_start();
-void *buffer_func();
 struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
-void Message_printing(struct Message *message);
-void bin_representation(int n);
-int lp_entry(int size, int offset);
-void *message_listening();
 int getSize(int entry);
 int getOffset(int entry);
-int find_entry(int lp_t,int m_addr);
 #endif
