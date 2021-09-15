@@ -43,7 +43,7 @@
 #define INPUT_REQUEST 2
 #define ALIVE 1
 
-#define ADDRASABLE_SPACE 64000
+#define ADDRASABLE_SPACE 640000
 
 #define LFN 13
 #define MAD 14
@@ -93,7 +93,7 @@ struct CPU_H{
 
 struct CPU_SA{
     int cpu_num;
-    int PM[ADDRASABLE_SPACE]; //hold cpu portion of program
+    int *PM; //hold cpu portion of program
     int (*dictionary)[3];
     int num_dict_entries;
 		int main_addr;

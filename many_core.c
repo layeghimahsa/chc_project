@@ -1801,7 +1801,7 @@ int main(int argc, char **argv)
 
     int row_col = UNDEFINED;
 
-    for (int i = 1; i * i <= NUM_CPU; i++){
+  /*  for (int i = 1; i * i <= NUM_CPU; i++){
         // if (i * i = n)
         if ((NUM_CPU % i == 0) && (NUM_CPU / i == i)) {
             row_col = i;
@@ -1811,7 +1811,7 @@ int main(int argc, char **argv)
     if(row_col == UNDEFINED){
     	printf("Only N*N cpu structure is supported! \n");
 			return 1;
-    }
+    }*/
 
     if(MESSAGE == 1){
     	printf("CREATING A %dx%d SIMULATION\n",row_col,row_col);
@@ -1850,7 +1850,7 @@ int main(int argc, char **argv)
         cpu_t->cpu_num = i+1;
 				cpu_t->main_addr = main_addr;
 				cpu_t->num_dict_entries = num_dict_entries;
-
+        cpu_t->PM = (int *) malloc(ADDRASABLE_SPACE*sizeof(int));
 				cpu_t->dictionary = dictionary;
         cpu_t->num_cpu = NUM_CPU;
 				cpu_t->code_size = 0;
