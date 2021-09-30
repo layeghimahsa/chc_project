@@ -24,21 +24,11 @@ void generate_output()
 	FILE *source_fp = fopen("startup/startup.c","r");
 
 	/////////////////////////////////////////////
-	FILE *code_F_fp = fopen("../2by2sim.c","r");
 	FILE *code_H_fp = fopen("../many_core.c","r");
 
-	FILE *temp_F_fp = fopen("../temp_F.c","w");
   FILE *temp_H_fp = fopen("../temp_H.c","w");
 
 	char buffer[256];
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-	//printf("%s\n", buffer);
-    		fprintf(temp_F_fp,"%s",buffer);
-		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
-			break;
-		}
-  }
-
 	while(fgets(buffer, 256, code_H_fp) != NULL ) {
 	//printf("%s\n", buffer);
     		fprintf(temp_H_fp,"%s",buffer);
@@ -62,7 +52,6 @@ void generate_output()
 	fprintf(fp,"#include<stdio.h>\n #include<stdlib.h>\n#include<time.h>\n");
 
 	fprintf(fp,"int code[] = {");
-	fprintf(temp_F_fp,"const int code[] = {");
 	fprintf(temp_H_fp,"const int code[] = {");
 
 	int total_code_size = 0;
@@ -83,18 +72,15 @@ void generate_output()
 		int ctr = 0;
 
 		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
-		fprintf(temp_F_fp,"//End %s:\n",code_ptr->scope_name);
 		fprintf(temp_H_fp,"//End %s:\n",code_ptr->scope_name);
 
 		while(length > 0)
 		{
 			if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
 				fprintf(fp,"0x%x\n",*ip);
-				fprintf(temp_F_fp,"0x%x\n",*ip);
 				fprintf(temp_H_fp,"0x%x\n",*ip);
 			}else{
 				fprintf(fp,"0x%x,\n",*ip);
-				fprintf(temp_F_fp,"0x%x,\n",*ip);
 				fprintf(temp_H_fp,"0x%x,\n",*ip);
 			}
 			ip++;
@@ -102,28 +88,24 @@ void generate_output()
 			total_code_size++;
 		}
 		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
-		fprintf(temp_F_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
+
 		fprintf(temp_H_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 
 		code_ptr = code_ptr->next;
 	}
 
 	fprintf(fp,"};\n");
-	fprintf(temp_F_fp,"};\n");
+
 	fprintf(temp_H_fp,"};\n");
 	fprintf(fp,"int code_size = %d;\n",total_code_size);
-	fprintf(temp_F_fp,"int code_size = %d;\n",total_code_size);
 	fprintf(temp_H_fp,"int code_size = %d;\n",total_code_size);
 
 	//for 2by2sim
-	fprintf(temp_F_fp,"int main_addr = %d;\n",main_addr);
 	fprintf(temp_H_fp,"int main_addr = %d;\n",main_addr);
-	fprintf(temp_F_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 	fprintf(temp_H_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 
 	//create subgraph dictionary
 	fprintf(fp,"int dictionary[][3] = {");
-	fprintf(temp_F_fp,"int dictionary[][3] = {");
 	fprintf(temp_H_fp,"int dictionary[][3] = {");
 
 	code_ptr = program_code;
@@ -132,11 +114,9 @@ void generate_output()
 	{
 		if((code_ptr->next == (struct code_scope *)0)){
 			fprintf(fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 			fprintf(temp_H_fp,"{%d,%d,%d}\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}else{
 			fprintf(fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 			fprintf(temp_H_fp,"{%d,%d,%d},\n",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		code_ptr = code_ptr->next;
@@ -144,36 +124,13 @@ void generate_output()
 	}
 
 	fprintf(fp,"};\n");
-	fprintf(temp_F_fp,"};\n");
 	fprintf(temp_H_fp,"};\n");
 
-	fprintf(temp_F_fp,"int num_dict_entries = %d;\n",count);
 	fprintf(temp_H_fp,"int num_dict_entries = %d;\n",count);
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-		if(strcmp(buffer,"//CODE END//\n") == 0){
-			fprintf(temp_F_fp,"%s",buffer);
-			break;
-		}
-	}
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-	//printf("%s\n", buffer);
-    		fprintf(temp_F_fp,"%s",buffer);
-    	}
-	fclose(code_F_fp);
-	fclose(temp_F_fp);
-	code_F_fp = fopen("../2by2sim.c","w");
-	temp_F_fp = fopen("../temp_F.c","r");
-	while(fgets(buffer, 256, temp_F_fp) != NULL ) {
-	//printf("%s\n", buffer);
-    		fprintf(code_F_fp,"%s",buffer);
-    	}
-	fclose(code_F_fp);
-	fclose(temp_F_fp);
-	remove("../temp_F.c");
 
 	while(fgets(buffer, 256, code_H_fp) != NULL ) {
 		if(strcmp(buffer,"//CODE END//\n") == 0){
@@ -255,22 +212,12 @@ void generate_output_mt(int n_threads)
 {
 	FILE *fp = fopen("chc_output.c","w");
 	FILE *source_fp;
-	
+
 	/////////////////////////////////////////////
-	FILE *code_F_fp = fopen("../2by2sim.c","r");
 	FILE *code_H_fp = fopen("../many_core.c","r");
 
-	FILE *temp_F_fp = fopen("../temp_F.c","w");
   	FILE *temp_H_fp = fopen("../temp_H.c","w");
-
-	char buffer[256];
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-    		fprintf(temp_F_fp,"%s",buffer);
-		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
-			break;
-		}
- 	 }
-
+		char buffer[256];
 	while(fgets(buffer, 256, code_H_fp) != NULL ) {
     		fprintf(temp_H_fp,"%s",buffer);
 		if(strcmp(buffer,"//CODE BEGINE//\n") == 0){
@@ -318,7 +265,6 @@ void generate_output_mt(int n_threads)
 	}
 
 	fprintf(fp,"int code[] = {");
-	fprintf(temp_F_fp,"const int code[] = {");
 	fprintf(temp_H_fp,"const int code[] = {");
 
 	int total_code_size = 0;
@@ -339,7 +285,6 @@ void generate_output_mt(int n_threads)
 		int ctr = 0;
 
 		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
-		fprintf(temp_F_fp,"//End %s:\n",code_ptr->scope_name);
 		fprintf(temp_H_fp,"//End %s:\n",code_ptr->scope_name);
 
 		if(strcmp(code_ptr->scope_name,"main")==0)
@@ -358,12 +303,10 @@ void generate_output_mt(int n_threads)
 			{
 				if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
 					fprintf(fp,"0x%x\n",*main_ip);
-					fprintf(temp_F_fp,"0x%x\n",*main_ip);
 					fprintf(temp_H_fp,"0x%x\n",*main_ip);
 				}
 				else{
 					fprintf(fp,"0x%x,\n",*main_ip);
-					fprintf(temp_F_fp,"0x%x,\n",*main_ip);
 					fprintf(temp_H_fp,"0x%x,\n",*main_ip);
 				}
 				main_ip++;
@@ -379,12 +322,10 @@ void generate_output_mt(int n_threads)
 			{
 				if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
 					fprintf(fp,"0x%x\n",*ip);
-					fprintf(temp_F_fp,"0x%x\n",*ip);
 					fprintf(temp_H_fp,"0x%x\n",*ip);
 				}
 				else{
 					fprintf(fp,"0x%x,\n",*ip);
-					fprintf(temp_F_fp,"0x%x,\n",*ip);
 					fprintf(temp_H_fp,"0x%x,\n",*ip);
 				}
 				ip++;
@@ -393,7 +334,6 @@ void generate_output_mt(int n_threads)
 			}
 		}
 		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
-		fprintf(temp_F_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 		fprintf(temp_H_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 
 
@@ -401,21 +341,16 @@ void generate_output_mt(int n_threads)
 	}
 
 	fprintf(fp,"};\n");
-	fprintf(temp_F_fp,"};\n");
 	fprintf(temp_H_fp,"};\n");
 	fprintf(fp,"int code_size = %d;\n",total_code_size);
-	fprintf(temp_F_fp,"int code_size = %d;\n",total_code_size);
 	fprintf(temp_H_fp,"int code_size = %d;\n",total_code_size);
-	
-	fprintf(temp_F_fp,"int main_addr = %d;\n",main_addr);
+
 	fprintf(temp_H_fp,"int main_addr = %d;\n",main_addr);
-	fprintf(temp_F_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 	fprintf(temp_H_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
 
 
 	//create subgraph dictionary
 	fprintf(fp,"int dictionary[][3] = {");
-	fprintf(temp_F_fp,"int dictionary[][3] = {");
 	fprintf(temp_H_fp,"int dictionary[][3] = {");
 
 	code_ptr = program_code;
@@ -424,12 +359,10 @@ void generate_output_mt(int n_threads)
 	{
 		if((code_ptr->next == (struct code_scope *)0)){
 			fprintf(fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 			fprintf(temp_H_fp,"{%d,%d,%d}",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		else{
 			fprintf(fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
-			fprintf(temp_F_fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 			fprintf(temp_H_fp,"{%d,%d,%d},",code_ptr->address,code_ptr->length,code_ptr->num_nodes);
 		}
 		code_ptr = code_ptr->next;
@@ -437,17 +370,14 @@ void generate_output_mt(int n_threads)
 	}
 
 	fprintf(fp,"};\n");
-	fprintf(temp_F_fp,"};\n");
 	fprintf(temp_H_fp,"};\n");
-	
-	fprintf(temp_F_fp,"int num_dict_entries = %d;\n",count);
+
 	fprintf(temp_H_fp,"int num_dict_entries = %d;\n",count);
 
 	if(n_threads > 1)
 	{
 		//create thread info (offsets, first node)
 		fprintf(fp,"int thread_info[%d][2];\n",n_threads);
-		fprintf(temp_F_fp,"int thread_info[%d][2];\n",n_threads);
 		fprintf(temp_H_fp,"int thread_info[%d][2];\n",n_threads);
 		/*struct thread_sp *t_ptr = thread_stack_offsets;
 
@@ -463,31 +393,27 @@ void generate_output_mt(int n_threads)
 		//fprintf(fp,"};\n");
 
 		fprintf(fp,"struct tcb{\n\tint *sb;\n\tint *sp;\n\tint nodes_to_evaluate;\n\tint nodes_evaluated;\n\tint nodes_visited;\n\tint nodes_GCed;\n\tFILE *fp;\n\t};\n");
-		fprintf(temp_F_fp,"struct tcb{\n\tint *sb;\n\tint *sp;\n\tint nodes_to_evaluate;\n\tint nodes_evaluated;\n\tint nodes_visited;\n\tint nodes_GCed;\n\tFILE *fp;\n\t};\n");
 		fprintf(temp_H_fp,"struct tcb{\n\tint *sb;\n\tint *sp;\n\tint nodes_to_evaluate;\n\tint nodes_evaluated;\n\tint nodes_visited;\n\tint nodes_GCed;\n\tFILE *fp;\n\t};\n");
 
 		fprintf(fp,"struct tcb tcb[%d];\n",n_threads);
-		fprintf(temp_F_fp,"struct tcb tcb[%d];\n",n_threads);
 		fprintf(temp_H_fp,"struct tcb tcb[%d];\n",n_threads);
 
 		fprintf(fp,"int **sb_tracker[%d];\n",n_threads);
-		fprintf(temp_F_fp,"int **sb_tracker[%d];\n",n_threads);
 		fprintf(temp_H_fp,"int **sb_tracker[%d];\n",n_threads);
 
 		fprintf(fp,"int colouring[] = {");
-		fprintf(temp_F_fp,"int colouring[] = {");
 		fprintf(temp_H_fp,"int colouring[] = {");
 
 		while(colour_length > 0)
 		{
 			if(colour_length == 1){
 				fprintf(fp,"%d",*colouring);
-				fprintf(temp_F_fp,"%d",*colouring);
+
 				fprintf(temp_H_fp,"%d",*colouring);
 			}
 			else{
 				fprintf(fp,"%d,",*colouring);
-				fprintf(temp_F_fp,"%d,",*colouring);
+
 				fprintf(temp_H_fp,"%d,",*colouring);
 			}
 			colour_length--;
@@ -495,37 +421,15 @@ void generate_output_mt(int n_threads)
 		}
 
 		fprintf(fp,"};\n");
-		fprintf(temp_F_fp,"};\n");
 		fprintf(temp_H_fp,"};\n");
 
 
 	}
-	
-	
+
+
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-		if(strcmp(buffer,"//CODE END//\n") == 0){
-			fprintf(temp_F_fp,"%s",buffer);
-			break;
-		}
-	}
-	while(fgets(buffer, 256, code_F_fp) != NULL ) {
-	//printf("%s\n", buffer);
-    		fprintf(temp_F_fp,"%s",buffer);
-    	}
-	fclose(code_F_fp);
-	fclose(temp_F_fp);
-	code_F_fp = fopen("../2by2sim.c","w");
-	temp_F_fp = fopen("../temp_F.c","r");
-	while(fgets(buffer, 256, temp_F_fp) != NULL ) {
-	//printf("%s\n", buffer);
-    		fprintf(code_F_fp,"%s",buffer);
-    	}
-	fclose(code_F_fp);
-	fclose(temp_F_fp);
-	remove("../temp_F.c");
 
 	while(fgets(buffer, 256, code_H_fp) != NULL ) {
 		if(strcmp(buffer,"//CODE END//\n") == 0){

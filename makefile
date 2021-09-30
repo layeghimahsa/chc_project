@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -I. -lpthread -lrt
+CFLAGS=-g -I. -lpthread -lrt -lm
 
 DEPS = chc_compiler/parser.tab.h chc_compiler/ast.h chc_compiler/display.h chc_compiler/semantics.h chc_compiler/ir_generator.h chc_compiler/hr_interpreter.h chc_compiler/code_generator.h chc_compiler/code_interpreter.h chc_compiler/code_output.h cpu.h
 

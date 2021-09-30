@@ -50,8 +50,7 @@ struct CPU_SA{
 		int main_addr;
 		int code_size;
 		int num_cpu;
-		//int *sb;
-		//int *sp;
+    struct FIFO **routing_table;
 };
 
 void *CPU_SA_start();

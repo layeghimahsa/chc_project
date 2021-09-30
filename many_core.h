@@ -15,7 +15,7 @@ struct FIFO{
 struct Message{
 		unsigned int addr;
 		int data;
-    int seen;//num cpus that have peeked the message
+    int dest;//num cpus that have peeked the message
 		struct Message *next;
 };
 
@@ -30,5 +30,6 @@ int getCpuNum(struct Message *message);
 int getRW(struct Message *message);
 int getAddr(struct Message *message);
 int getData(struct Message *message);
-
+int find_cpu_num(int func_offset, int dest_offset);
+struct FIFO ** set_up_routing_table(int cpu_num, struct FIFO **rt);
 #endif

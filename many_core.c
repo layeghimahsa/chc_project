@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,7 +37,6 @@ int MESSAGE;
 int GRAPH;
 struct data_entry **data;
 clock_t BEGIN;
-
 
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
@@ -901,9 +901,19 @@ int main(int argc, char **argv)
 			printf("YOU MUST HAVE AT LEAST 1 CPU\n");
 			return 1;
     }
+    double sq = sqrt(NUM_CPU);
+    if(sq != (int)sq){
+      printf("There must be NxN cores defined.\nex: 1,4,9,16\n");
+      return 0;
+    }
 
     //create array of thread id
     pthread_t thread_id[NUM_CPU];
+
+    buss = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
+    for(int i = 0; i<NUM_CPU;i++){
+      buss[i] = create_FIFO();
+    }
 
 		//create cpu struct
     struct CPU_SA *cpus[NUM_CPU];
@@ -916,6 +926,7 @@ int main(int argc, char **argv)
 				cpu_t->dictionary = dictionary;
         cpu_t->num_cpu = NUM_CPU;
 				cpu_t->code_size = 0;
+        cpu_t->routing_table = set_up_routing_table(i+1,buss);
         cpus[i] = cpu_t;
     }
 
@@ -932,14 +943,17 @@ int main(int argc, char **argv)
 		int counter = 0;
 		for(int i = 0; i< num_nodes_to_make; i++){
 				colouring_random[i] = rand() % NUM_CPU; //random allocation
-				//printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
+				printf("cpu rand[%d]: %d\n", i, colouring_random[i]+1);
 				counter++;
 		}
+
+
+
 		//printf("counter: %d\n", counter);
 
 		int i = 0;
 		int node_counter = 0;
-		int node_size;
+		int add;
 		int j;
 		int rand_cpu;
 		int s,si;
@@ -947,32 +961,62 @@ int main(int argc, char **argv)
     int func_offset = dictionary[0][0];
     int dict_ent = 0;
 		//num_nodes_to_make--;
-		while(num_nodes_to_make != 0){
-
-			rand_cpu = colouring_random[node_counter];
-      printf("CPU %d assigned node %d ",rand_cpu+1,node_counter);
-			node_size = size(i);
-			j = cpus[rand_cpu]->code_size;
-			cpus[rand_cpu]->code_size += node_size + 2;
-			s=j+4;si=node_size+1;
-			cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
+    while(num_nodes_to_make != 0){
+      rand_cpu = colouring_random[node_counter];
+      j = cpus[rand_cpu]->code_size;
+      s = j+4;
+      cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
 			cpus[rand_cpu]->PM[j+1] = code_size - i; //this is the MM offset
-      printf(" MM offset %d\n",code_size-i);
 			j+=2;i++;
-			node_size += i;
-			for(i; i<node_size-1; i++){
-				cpus[rand_cpu]->PM[j] = code[i];
+      add = i+5;
+      for(i; i<add; i++){
+        cpus[rand_cpu]->PM[j] = code[i];
 				j++;
-			}
+      }
+      if(code[i-2]==code_expansion){
+        add = i + (code[i-1]*2);
+        int suggraph_offset = code[i+(code[i-1]*2)+1];
+        for(i; i<add; i+=2){
+          cpus[rand_cpu]->PM[j] = code[i];
+          cpus[rand_cpu]->PM[j+1] = code[i+1];
+          cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(suggraph_offset,code[i+1])]+1;
+  				j+=3;
+        }
+        add = i + (code[i]*3);
+        cpus[rand_cpu]->PM[j] = code[i];
+        i++;j++;
+        for(i; i<add; i+=3){
+          cpus[rand_cpu]->PM[j] = code[i];
+          cpus[rand_cpu]->PM[j+1] = code[i+1];
+          cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(func_offset,code[i+1])]+1;
+          cpus[rand_cpu]->PM[j+3] = code[i+2];
+          cpus[rand_cpu]->PM[j+4] = colouring_random[find_cpu_num(suggraph_offset,code[i+2])]+1;
+  				j+=5;
+        }
+      }else{
+        add = i + code[i-1] + 1;
+        for(i; i<add; i++){
+          cpus[rand_cpu]->PM[j] = code[i];
+  				j++;
+        }
+        add = i + code[i-1];
+        for(i; i<add; i++){
+          cpus[rand_cpu]->PM[j] = code[i];
+          cpus[rand_cpu]->PM[j+1] = colouring_random[find_cpu_num(func_offset,code[i])]+1;
+  				j+=2;
+        }
+      }
+      cpus[rand_cpu]->PM[s] = j - cpus[rand_cpu]->code_size;
+      cpus[rand_cpu]->code_size += cpus[rand_cpu]->PM[s]+1; //+1 for 1 extra entry and +1 to be one cell past
       cpus[rand_cpu]->PM[j] = func_offset; //this is the function offset this node is placed at node_size-1
       if(i == (code_size-func_offset) && i>0){
         dict_ent++;
         func_offset = dictionary[dict_ent][0];
       }
-			cpus[rand_cpu]->PM[s] = si; //this changes the orgiginal entry of next node to node size
-			node_counter++;
+      node_counter++;
 			num_nodes_to_make--;
-		}
+    }
+
 		/**********************************************************************************************************/
 
     pthread_mutex_init(&buss_lock, NULL);
@@ -980,12 +1024,6 @@ int main(int argc, char **argv)
 		if(MESSAGE == 1)
     	printf("\n\nLAUNCHING THREADS!!!\n\n");
 
-			//buss_Min = create_FIFO();
-			//buss_Mout = create_FIFO();
-    buss = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
-    for(int i = 0; i<NUM_CPU;i++){
-      buss[i] = create_FIFO();
-    }
 
 		BEGIN = clock();
 
@@ -1015,6 +1053,69 @@ int main(int argc, char **argv)
     //printf("%d AGP nodes created\n",list_index-1);
 
     return 0;
+}
+
+struct FIFO **set_up_routing_table(int cpu_num, struct FIFO **rt){
+  struct FIFO **r_table = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
+  int N = sqrt(NUM_CPU);
+  //printf("NxN: %d\n",N);
+  int table[N][N];
+  int num = 1;
+  int x,y;
+  int up,down,left,right;
+  for(int i=0; i<N; i++){
+    for(int j=0; j<N; j++){
+      table[i][j] = num;
+      if(num == cpu_num){
+        x=i;y=j;
+      }
+      num++;
+    }
+  }
+  if(x-1>-1){up = table[x-1][y];}
+  if(x+1<N){down = table[x+1][y];}
+  if(y-1>-1){left = table[x][y-1];}
+  if(y+1<N){right = table[x][y+1];}
+  num = 0;
+  for(int i=0; i<N; i++){
+    for(int j=0; j<N; j++){
+      if(i<x){
+        r_table[num] = rt[up-1];
+        //printf("Num: %d -> %d\n",num,up-1);
+      }
+      else if(i>x){
+        r_table[num] = rt[down-1];
+        //printf("Num: %d -> %d\n",num,down-1);
+      }
+      else if(j<y){
+        r_table[num] = rt[left-1];
+        //printf("Num: %d -> %d\n",num,left-1);
+      }
+      else if(j>y){
+        r_table[num] = rt[right-1];
+        //printf("Num: %d -> %d\n",num,right-1);
+      }
+      else{
+        r_table[num] = rt[cpu_num-1];
+        //printf("Num: %d -> %d\n",num,cpu_num-1);
+      }
+      num++;
+    }
+  }
+  return r_table;
+}
+
+int find_cpu_num(int func_offset, int dest_offset){
+
+  if(dest_offset == -1){return 0;}
+  int end = code_size - func_offset - dest_offset/4;
+  int count=0;
+  int i=1;
+  while(i!=end){
+    if(code[i]==NODE_BEGIN_FLAG){count++;}
+    i++;
+  }
+  return count;
 }
 
 struct FIFO *create_FIFO(){
@@ -1058,13 +1159,6 @@ struct Message *peekMessage(struct FIFO *fifo){
 	struct Message *new = (struct Message*)malloc(sizeof(struct Message));
 	*new = *fifo->front;
 	new->next = NULL;
-
-  fifo->front->seen+=1;
-  printf("M SEEN %d\n",fifo->front->seen);
-  if(fifo->front->seen == NUM_CPU){
-    printf("REMOVING MESSAGE FROM BUSS\n");
-    removeMessage(fifo);
-  }
 	return new;
 }
 void removeMessage(struct FIFO *fifo){
