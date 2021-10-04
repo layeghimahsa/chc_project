@@ -14,7 +14,7 @@ enum node_type {PROGRAM, SCOPE, CONSTANT, DATUM, OPERATOR, EXPANSION, INPUT, OUT
 
 
 //operator specific types
-enum operator {PLUS, TIMES, ISEQUAL, ISLESS, ISGREATER, IF, ELSE, MINUS, MERGE};
+enum operator {PLUS, TIMES, ISEQUAL, ISLESS, ISGREATER, IF, ELSE, MINUS, MERGE, END};
 
 
 //helper function for scanner: converts operator strings to internal types

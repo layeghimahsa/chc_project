@@ -21,7 +21,7 @@
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
-
+#define code_end 13
 //#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
 #define NODE_BEGIN_FLAG 0x7fffffff
@@ -31,7 +31,7 @@
 #define ADDRASABLE_SPACE 640000
 
 #define IDLE 18
-#define LFN 13
+#define LFN 19
 #define MAD 14
 #define SDOWN 15
 #define EXP 16

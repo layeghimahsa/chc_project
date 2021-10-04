@@ -49,8 +49,8 @@ SUBGRAPH(plus1)
 
 
       SUBGRAPH(main)
-        CONST(x,2);
-        CONST(y,2);
+        CONST(x,7);
+        CONST(y,7);
         DATUM(z);
         DATUM(x2);
         DATUM(y2);
@@ -62,3 +62,6 @@ SUBGRAPH(plus1)
         EXPAND(test,MAP_IN(x,x2);MAP_IN(y,y2);MAP_OUT(z,z2););
         OUTPUT(z);
         OUTPUT(z2);
+
+        DATUM(end);
+        OPERATOR(end,op_END,z,z2);

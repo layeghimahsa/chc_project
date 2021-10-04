@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-char *op_strings[] = {"PLUS", "TIMES", "ISEQUAL", "ISLESS", "ISGREATER", "IF", "ELSE", "MINUS", "MERGE"};
+char *op_strings[] = {"PLUS", "TIMES", "ISEQUAL", "ISLESS", "ISGREATER", "IF", "ELSE", "MINUS", "MERGE", "END"};
 
 void print_single_node(struct ast_node *ast, int tabs)
 {

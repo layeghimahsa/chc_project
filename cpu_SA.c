@@ -140,6 +140,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 				}
 			}else if(getAddr(m)==OPR){    //there are
+				if(getData(m)==code_end){
+					pthread_exit(&thread_id[cpu_num-1]);
+				}
 				oper = 1;
 				next_op = getData(m);
 			}else{ //this would be just a write
@@ -407,6 +410,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				free(t);
 				pc = SDOWN;
 				break;
+			}
+			case code_end:
+			{
+				pthread_mutex_lock(&buss_lock);
+				sendMessageOnBuss(cpu_num,Message_packing(cpu_num,0,OPR,code_end));
+				pthread_mutex_unlock(&buss_lock);
+				pthread_exit(&thread_id[cpu_num-1]);
 			}
 			case LFN: //look for node to run
 			{

@@ -8,7 +8,7 @@ extern int linenum;
 
 alpha       [a-zA-Z_][a-zA-Z0-9_]*
 value       ([0-9])+  
-operators   "op_PLUS"|"op_TIMES"|"op_ISEQUAL"|"op_ISLESS"|"op_ISGREATER"|"op_IF"|"op_ELSE"|"op_MINUS"|"op_MERGE"
+operators   "op_PLUS"|"op_TIMES"|"op_ISEQUAL"|"op_ISLESS"|"op_ISGREATER"|"op_IF"|"op_ELSE"|"op_MINUS"|"op_MERGE"|"op_END"
 comment		"//".*
 %%
 

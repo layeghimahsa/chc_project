@@ -309,6 +309,8 @@ int get_code_operation(char *operation)
 		return code_merge;
 	if(strcmp(operation,"identity")==0)
 		return code_identity;
+	if(strcmp(operation,"END")==0)
+		return code_end;
 	return 0;
 }
 

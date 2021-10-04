@@ -147,6 +147,7 @@ struct code_scope *get_code_scope(char *n);
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
+#define code_end        13
 
 #define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 

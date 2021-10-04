@@ -1,4 +1,0 @@
-
-SUBGRAPH(main)
-	CONST(a,7);
-  OUTPUT(a);

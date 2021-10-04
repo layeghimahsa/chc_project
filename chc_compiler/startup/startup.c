@@ -15,6 +15,7 @@
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
+#define code_end        13
 
 #define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 
@@ -641,6 +642,7 @@ void interpret_ready()
 			//TODO: Fix merge so it has a single argument
 			case code_merge:		*(sp + 2) = (*(sp + 6) | *(sp + 7)); break;
 			case code_identity:		*(sp + 2) = *(sp + 6); break;
+			case code_end:			exit(0); break;
 			default: printf("Error: unknown code found during interpretation\n");
 		}
 	}

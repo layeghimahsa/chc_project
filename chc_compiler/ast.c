@@ -189,6 +189,8 @@ enum operator convert_operators(char *n)
 		return MINUS;
 	if(strcmp("op_MERGE",n)==0)
 		return MERGE;
+	if(strcmp("op_END",n)==0)
+		return END;
 //	if(strcmp("",n)==0)
 //		return 
 }
