@@ -4,6 +4,7 @@
 
 extern struct FIFO **buss;//buss master output
 extern pthread_mutex_t buss_lock;
+extern pthread_t *thread_id;
 
 struct FIFO{
     pthread_mutex_t fifo_lock;

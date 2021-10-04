@@ -21,6 +21,13 @@
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
+#define code_end 13
+#define MAD 14
+#define SDOWN 15
+#define EXP 16
+#define FND 17
+#define IDLE 18
+#define LFN 19
 
 //#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
@@ -29,14 +36,10 @@
 #define READY 		0
 
 #define ADDRASABLE_SPACE 640000
-
-#define IDLE 18
-#define LFN 13
-#define MAD 14
-#define SDOWN 15
-#define EXP 16
 #define FTFN_MAX 5 //the number of time Looking for a node can fail before sending a node request broadcast
-#define FND 17
+
+
+
 
 
 #define EOM -6  //end of message

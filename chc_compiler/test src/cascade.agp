@@ -131,6 +131,10 @@ SUBGRAPH(main)
 	OUTPUT(o3);
 	OUTPUT(o4);
 
+	DATUM(end);
+	OPERATOR(end,op_END,o3,o4);
+
+	
 
 
 

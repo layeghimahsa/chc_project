@@ -25,6 +25,7 @@ int nodes_to_evaluate = 0;
 #define code_minus		10
 #define code_merge		11
 #define code_identity	12
+#define code_end        13
 
 #define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 
@@ -632,6 +633,7 @@ void *interpret_ready(void *tcb_void)
 			//TODO: Fix merge so it has a single argument
 			case code_merge:		*((tcb->sp) + 2) = (*((tcb->sp) + 6) | *((tcb->sp) + 7)); break;
 			case code_identity:		*((tcb->sp) + 2) = *((tcb->sp) + 6); break;
+			case code_end:			exit(0); break;
 			default: printf("Error: unknown code found during interpretation\n");
 		}
 	}

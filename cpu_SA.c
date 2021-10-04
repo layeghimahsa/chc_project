@@ -12,6 +12,20 @@
 void *CPU_SA_start(struct CPU_SA *cpu){
 
 	int cpu_num = cpu->cpu_num;
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	char time_data[32];
+	char com_data[32];
+	sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
+	sprintf(com_data,"Data/com_data_%d.txt",cpu_num);
+
+	FILE *timing_d = fopen(time_data,"w");
+	FILE *com_d = fopen(com_data,"w");
+
+	fprintf(timing_d,"TEST\n");
+	fprintf(com_d,"TEST\n");
+
+	fclose(timing_d);
+	fclose(com_d);
 
 	//if(MESSAGE == 1)
 		printf("CPU %d 	START!!\n",cpu_num);
@@ -185,8 +199,12 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 
 				}else{
-					oper = 1;
-					next_op = getData(m);
+						if(getData(m)==code_end){
+							pc=code_end;
+						}
+						oper = 1;
+						next_op = getData(m);
+
 				}
 
 			}else if(m->dest != cpu_num){
@@ -482,6 +500,18 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				free(broadcast);
 				free(t);
 				pc = SDOWN;
+				break;
+			}
+			case code_end:
+			{
+				for(int i=1;i<=cpu->num_cpu; i++){
+					if(i!=cpu_num){
+						pthread_mutex_lock(&cpu->routing_table[i-1]->fifo_lock);
+						sendMessage(cpu->routing_table[i-1],Message_packing(i,0,OPR,code_end));
+						pthread_mutex_unlock(&cpu->routing_table[i-1]->fifo_lock);
+					}
+				}
+				pthread_exit(&thread_id[cpu_num-1]);
 				break;
 			}
 			case LFN: //look for node to run
