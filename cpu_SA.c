@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "cpu.h"
 //#include "2by2sim.h"
 #include "many_core.h"
@@ -15,6 +16,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 	char time_data[32];
 	char com_data[32];
+	struct stat st = {0};
+
+	if (stat("Data", &st) == -1) {
+	    mkdir("Data", 0700);
+	}
 	sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
 	sprintf(com_data,"Data/com_data_%d.txt",cpu_num);
 
