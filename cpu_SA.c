@@ -12,7 +12,7 @@
 void *CPU_SA_start(struct CPU_SA *cpu){
 
 	int cpu_num = cpu->cpu_num;
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
 	char time_data[32];
 	char com_data[32];
 	sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
@@ -21,11 +21,20 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	FILE *timing_d = fopen(time_data,"w");
 	FILE *com_d = fopen(com_data,"w");
 
-	fprintf(timing_d,"TEST\n");
-	fprintf(com_d,"TEST\n");
+	fprintf(timing_d,"LOOP		TOTAL		COM		SEARCH		PROSESS		TYPE\n");
+	fprintf(com_d,"LOOP		Q SIZE\n");
 
-	fclose(timing_d);
-	fclose(com_d);
+
+	int Com_sim_TIME=0;
+	int Process_sim_TIME=0;
+	int node_search_time=0;
+	int total_time=0;
+	int pc_data;
+	int loop_count=0;
+
+
+
+	clock_t start = clock();
 
 	//if(MESSAGE == 1)
 		printf("CPU %d 	START!!\n",cpu_num);
@@ -53,6 +62,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	int j =cpu->code_size-1;
 	while(j>=0){
 		if(cpu->PM[j] == cpu->main_addr){ //check if the node is in main
+			Process_sim_TIME++; //for data gathering only
 			//add to stack
 			sp_top--;
 			while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
@@ -93,6 +103,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
    //exit(0);//*/
 	/*END: stack is filled*/
 
+	//for data gathering only
+	fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),Com_sim_TIME,node_search_time,Process_sim_TIME,-1);
+
 	int code_size = cpu->dictionary[0][0]+cpu->dictionary[0][1];
 	//printf("CODE SIZE %d\n",code_size);
 	int offset_jump = (code_size)*cpu->num_cpu;
@@ -110,14 +123,22 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	struct FIFO *expand_buffer = create_FIFO();
 	int eom_count = 0;
 
+
+
 	while(1){
+		//for data gathering only
+		loop_count++;
 		//com part
 		//check own buffer
 		pthread_mutex_lock(&buffer->fifo_lock);
 		int buff_size = getFifoSize(buffer);
 		pthread_mutex_unlock(&buffer->fifo_lock);
+
+		fprintf(com_d," %d		 %d\n",loop_count,buff_size);
 		//printf("cpu %d buff size %d\n",cpu_num,buff_size);
 		if(buff_size>0){
+			//for data gathering only
+			Com_sim_TIME++;
 			pthread_mutex_lock(&buffer->fifo_lock);
 			struct Message *m = popMessage(buffer);
 			pthread_mutex_unlock(&buffer->fifo_lock);
@@ -130,6 +151,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int offset;
 					int m_addr = getAddr(m);
 					while(lp_t>=0){
+						//for data gathering only
+						node_search_time++;
 							size = stack[lp_t-1];
 							offset = stack[lp_t];
 							//if true the val is for it
@@ -181,6 +204,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						while(m!=NULL){
 							sendMessage(cpu->routing_table[m_dest-1],m);
 							m=popMessage(expand_buffer);
+								//for data gathering only
+							Com_sim_TIME++;
 						}
 						pthread_mutex_unlock(&cpu->routing_table[m_dest-1]->fifo_lock);
 					}
@@ -196,6 +221,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						m = popMessage(expand_buffer);
 						sendMessage(cpu->routing_table[m_dest-1],m);
 						pthread_mutex_unlock(&cpu->routing_table[m_dest-1]->fifo_lock);
+							//for data gathering only
+							Com_sim_TIME+=2;
 					}
 
 				}else{
@@ -208,6 +235,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 
 			}else if(m->dest != cpu_num){
+				//for data gathering only
+				Com_sim_TIME++;
 				pthread_mutex_lock(&cpu->routing_table[m->dest-1]->fifo_lock);
 				sendMessage(cpu->routing_table[m->dest-1],m);
 				pthread_mutex_unlock(&cpu->routing_table[m->dest-1]->fifo_lock);
@@ -219,6 +248,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int offset;
 				int m_addr = getAddr(m);
 				while(lp_t>=0){
+					//for data gathering only
+				node_search_time++;
 						size = stack[lp_t-1];
 						offset = stack[lp_t];
 						//if true the val is for it
@@ -229,6 +260,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					lp_t-=3;
 				}
 				if(found==1){
+					//for data gathering only
+					Process_sim_TIME++;
 					//printf("CPU %d writing result %d to pos %d of node type %d\n",cpu_num, getData(m),(offset-m_addr-1),stack[stack[lp_t-1]+4]);
 					if((offset-m_addr-1)>= 8){
 						stack[stack[lp_t-2]+(offset-m_addr-1)+((offset-m_addr-1)/2-3)] = getData(m);
@@ -246,6 +279,11 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			free(m);
 		}
 
+		//for data gathering only
+		pc_data = pc;
+		if(pc!=IDLE){
+			Process_sim_TIME++;
+		}
 		//printf("CPU %d pc %d\n",cpu_num, pc);
 		switch(pc){
 			case code_input:
@@ -296,8 +334,12 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int	doffset = sp+6+stack[sp+5]+1;
 					int m_addr;
 					for(int i =0; i<num_dest;i++){
+						//for data gathering only
+						Process_sim_TIME++;
 						if(stack[doffset] == OUTPUT){
 						}else{
+									//for data gathering only
+									Com_sim_TIME++;
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 								sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -324,8 +366,12 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int	doffset = sp+6+stack[sp+5]+1;
 					int m_addr;
 					for(int i =0; i<num_dest;i++){
+						//for data gathering only
+						Process_sim_TIME++;
 						if(stack[doffset] == OUTPUT){
 						}else{
+							//for data gathering only
+							Com_sim_TIME++;
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 								sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -377,6 +423,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				j =cpu->code_size-1;
 				while(j>=0){
 					if(cpu->PM[j] == func_offset){ //check if the node is in main
+						//for data gathering only
+						Process_sim_TIME++;
 						//add to stack
 						sp_top--;
 						while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
@@ -410,6 +458,10 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int node_to_remap;
 				int remap_to_this;
 				for(int i=0; i<num_dest;i++){
+
+					//for data gathering only
+					Process_sim_TIME++;
+
 					doffset += (5*i);
 					node_to_remap = new_func_offset+stack[doffset+3]/4;
 					//printf("node to remap %d\n",node_to_remap);
@@ -424,6 +476,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						int found = 0;
 						//now lets see if its dest is in its own stack
 						while(lp_t>=0){
+							//for data gathering only
+							node_search_time++;
 								size = stack[lp_t-1];
 								offset = stack[lp_t];
 								//if true the val is for it
@@ -432,6 +486,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 									for(int k=0;k<ntr_num_dest;k+=2){
 										int off = stack[lp_t-2]+7+stack[stack[lp_t-2]+5]+k;
 										if( stack[off] == OUTPUT){
+											//for data gathering only
+											Process_sim_TIME++;
 											 stack[off] = remap_to_this;
 											 stack[off+1] = stack[doffset+2];
 											 break;
@@ -452,6 +508,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int aoffset = sp+6;
 				int input_node_offset;
 				for(int i = 0; i<num_args; i++){
+					//for data gathering only
+					Process_sim_TIME++;
+
 					aoffset = aoffset + (3*i);
 					input_node_offset = new_func_offset+stack[aoffset+1]/4;
 
@@ -462,11 +521,15 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						int found = 0;
 						//now lets see if its dest is in its own stack
 						while(lp_t>=0){
+							//for data gathering only
+							node_search_time++;
 								size = stack[lp_t-1];
 								offset = stack[lp_t];
 								//if true the val is for it
 								if(input_node_offset  < offset && input_node_offset  > offset-size){
 									//change output dest
+									//for data gathering only
+									Process_sim_TIME++;
 									stack[stack[lp_t-2]+2] = stack[aoffset];
 									stack[stack[lp_t-2]+1]-=1;
 									break;
@@ -492,6 +555,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							//printf("CPU %d exp %d,%d,%d\n",cpu_num,i,getAddr(t),getData(t));
 							sendMessage(cpu->routing_table[i-1],Message_packing(i,0,getAddr(t),getData(t)));
 							sendMessage(broadcast,t);
+							//for data gathering only
+							Com_sim_TIME++;
 						}
 						pthread_mutex_unlock(&cpu->routing_table[i-1]->fifo_lock);
 					}
@@ -511,6 +576,15 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						pthread_mutex_unlock(&cpu->routing_table[i-1]->fifo_lock);
 					}
 				}
+
+				fclose(timing_d);
+				fclose(com_d);
+				clock_t finish = clock();
+				double elapsed = (double)(finish - start)/CLOCKS_PER_SEC;
+				//printf("CPU %d TIME ELAPSED: %f\n",cpu_num,elapsed);
+				total_time+=Com_sim_TIME+Process_sim_TIME+node_search_time;
+				printf("CPU %d LOOPS: %d tu: %d\n",cpu_num,loop_count,total_time);
+
 				pthread_exit(&thread_id[cpu_num-1]);
 				break;
 			}
@@ -527,6 +601,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				sp=sp_top;
 				int found = 0;
 				while(sp<ADDRASABLE_SPACE-1){
+					//for data gathering only
+					Process_sim_TIME++;
 					if(stack[sp+1]==0){
 						found = 1;
 						break;
@@ -573,6 +649,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int num_dest = stack[sp+6+stack[sp+5]];
 				int doffset = sp+6+stack[sp+5]+1;
 				for(int i =0; i<num_dest;i++){
+					//for data gathering only
+					Process_sim_TIME++;
 					if(stack[doffset]== IGNORE){//may not be needed anymore
 					}else if(stack[doffset] == OUTPUT){
 						printf("CPU %d OUTPUT %d\n",cpu_num,stack[sp+2]);
@@ -588,10 +666,16 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							lp_t = lp;
 							//now lets see if its dest is in its own stack
 							while(lp_t>=0){
+								//for data gathering only
+								node_search_time++;
 									size = stack[lp_t-1];
 									offset = stack[lp_t];
 									//if true the val is for it
 									if(m_addr < offset && m_addr > offset-size){
+
+										//for data gathering only
+										Process_sim_TIME++;
+
 										if((offset-m_addr-1)>= 8){
 											stack[stack[lp_t-2]+(offset-m_addr-1)+((offset-m_addr-1)/2-3)] = stack[sp+2];
 										}else{
@@ -603,6 +687,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 								lp_t-=3;
 							}
 						}else{
+							//for data gathering only
+							Com_sim_TIME++;
 							//printf("CPU %d %d %d\n",cpu_num,stack[doffset],stack[doffset+1]);
 							pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 							sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],1,m_addr,stack[sp+2]));
@@ -633,8 +719,12 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 				int m_addr;
 				for(int i =0; i<num_dest;i++){
+					//for data gathering only
+					Process_sim_TIME++;
 					if(stack[doffset] == OUTPUT){
 					}else{
+						//for data gathering only
+						Com_sim_TIME++;
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
 							pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 							sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -756,6 +846,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				j =cpu->code_size-1;
 				while(j>=0){
 					if(cpu->PM[j] == func_offset){ //check if the node is in main
+						//for data gathering only
+						Process_sim_TIME++;
 						//add to stack
 						sp_top--;
 						while(cpu->PM[j-1] != NODE_BEGIN_FLAG){
@@ -805,6 +897,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						int found = 0;
 						//now lets see if its dest is in its own stack
 						while(lp_t>=0){
+							//for data gathering only
+							node_search_time++;
 								size = stack[lp_t-1];
 								offset = stack[lp_t];
 								//if true the val is for it
@@ -816,6 +910,9 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						}
 						//send or write result
 						if(found){
+							//for data gathering only
+							Process_sim_TIME++;
+
 							int ntr_num_dest = stack[stack[lp_t-2]+6+stack[stack[lp_t-2]+5]];
 							for(int k=0;k<ntr_num_dest;k++){
 								int off = stack[lp_t-2]+7+stack[stack[lp_t-2]+5]+k;
@@ -844,6 +941,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int found = 0;
 					//now lets see if its dest is in its own stack
 					while(lp_t>=0){
+						//for data gathering only
+						node_search_time++;
 							size = stack[lp_t-1];
 							offset = stack[lp_t];
 							//if true the val is for it
@@ -855,6 +954,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 					//send or write result
 					if(found){
+						//for data gathering only
+						Process_sim_TIME++;
 						//printf("CPU %d found an input node\n",cpu_num);
 						stack[stack[lp_t-2]+2] = getData(m);
 						stack[stack[lp_t-2]+1]-=1;
@@ -888,6 +989,14 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				exit(0);
 			}
 		}
+
+		//for data gathering only
+		fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),Com_sim_TIME,node_search_time,Process_sim_TIME,pc_data);
+		total_time+=Com_sim_TIME+Process_sim_TIME+node_search_time;
+		Com_sim_TIME=0;
+		Process_sim_TIME=0;
+		node_search_time=0;
+
 	}
 }
 
