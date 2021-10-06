@@ -12,7 +12,7 @@ how to compile and run:
 how to change agp program:
 
  1. Open a teminal in the root directory
- 2. Type: cp chc_compiler
+ 2. Type: cd chc_compiler
  3. Type: make chc
  4. Type: ./chc (agp program) 1
  5. Recompile sim and run
