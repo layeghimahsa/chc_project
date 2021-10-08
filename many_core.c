@@ -715,6 +715,7 @@ void sendMessage(struct FIFO *fifo, struct Message *m){
 		fifo->size+=1;
 		fifo->message_counter+=1;
 	}
+  fifo->bytes_in+=8;
 	//printf("message added\n");
 }
 struct Message *peekMessage(struct FIFO *fifo){

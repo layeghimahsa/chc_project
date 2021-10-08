@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "cpu.h"
 //#include "2by2sim.h"
 #include "many_core.h"
@@ -15,22 +16,29 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 	char time_data[32];
 	char com_data[32];
+	char break_down[32];
 	sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
 	sprintf(com_data,"Data/com_data_%d.txt",cpu_num);
+	sprintf(break_down,"Data/breakdown_%d.txt",cpu_num);
 
 	FILE *timing_d = fopen(time_data,"w");
 	FILE *com_d = fopen(com_data,"w");
+	FILE *breakdown = fopen(break_down,"w");
 
-	fprintf(timing_d,"LOOP		TOTAL		COM		SEARCH		PROSESS		TYPE\n");
+	fprintf(timing_d,"LOOP		TOTAL TIME		SEARCH TIME			PROSESS TIME		TYPE		BYTES OUT\n");
 	fprintf(com_d,"LOOP		Q SIZE\n");
 
 
 	int Com_sim_TIME=0;
 	int Process_sim_TIME=0;
 	int node_search_time=0;
+
+	int p_time_type[20];
 	int total_time=0;
 	int pc_data;
 	int loop_count=0;
+
+	int Com_t, Com_t_total, Com_t_z = 0;
 
 
 
@@ -104,7 +112,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	/*END: stack is filled*/
 
 	//for data gathering only
-	fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),Com_sim_TIME,node_search_time,Process_sim_TIME,-1);
+	fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,-1,Com_sim_TIME*8);
 
 	int code_size = cpu->dictionary[0][0]+cpu->dictionary[0][1];
 	//printf("CODE SIZE %d\n",code_size);
@@ -134,9 +142,13 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		int buff_size = getFifoSize(buffer);
 		pthread_mutex_unlock(&buffer->fifo_lock);
 
-		fprintf(com_d," %d		 %d\n",loop_count,buff_size);
+		fprintf(com_d," %d		 %d\n",loop_count,buff_size*8);
+
 		//printf("cpu %d buff size %d\n",cpu_num,buff_size);
 		if(buff_size>0){
+
+			Com_t_z = (Com_t_z + (buff_size*8))/2;
+
 			//for data gathering only
 			Com_sim_TIME++;
 			pthread_mutex_lock(&buffer->fifo_lock);
@@ -157,6 +169,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							offset = stack[lp_t];
 							//if true the val is for it
 							if(m_addr < offset && m_addr > offset-size){
+								Process_sim_TIME++;
 								sp_oper = stack[lp_t-2];
 								if(stack[sp_oper+4]==code_merge){
 								}else{
@@ -169,6 +182,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 					oper=0;
 				}else if(next_op == EXP){
+					Process_sim_TIME++;
 					if(getAddr(m)==OPR && getData(m)==EOM){
 						sendMessage(expand_buffer,m);
 						eom_count++;
@@ -271,6 +285,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					stack[stack[lp_t-2]+1] -= 1; //reduce number of dependants by one
 					//printf("CPU %d stack pose %d. Dep left [%d][%d]\n",cpu_num,stack[lp_t-1]+(offset-m_addr-1),stack[lp_t-1]+1,stack[stack[lp_t-1]+1]);
 				}else{
+					Com_sim_TIME++;
 					pthread_mutex_lock(&buffer->fifo_lock);
 					sendMessage(buffer,m);
 					pthread_mutex_unlock(&buffer->fifo_lock);
@@ -281,9 +296,6 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 		//for data gathering only
 		pc_data = pc;
-		if(pc!=IDLE){
-			Process_sim_TIME++;
-		}
 		//printf("CPU %d pc %d\n",cpu_num, pc);
 		switch(pc){
 			case code_input:
@@ -292,6 +304,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					printf("\t<< "); scanf("%d",stack[sp+2]);//stack[2] or stack[sp_top+2]
 				}
 				pc=FND;
+				Process_sim_TIME++;
 				break;
 			}
 			//op code add
@@ -299,31 +312,38 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			  //add
 				stack[sp+2] = stack[sp+6]+stack[sp+7];
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_minus:
 				stack[sp+2] = stack[sp+6]-stack[sp+7];
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_times:
 				stack[sp+2] = stack[sp+6]*stack[sp+7];
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_is_equal:
 				stack[sp+2] = (stack[sp+6] == stack[sp+7]) ? 1 : 0;
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_is_less:
 				stack[sp+2] = (stack[sp+6] < stack[sp+7]) ? 1 : 0;
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_is_greater:
 				stack[sp+2] = (stack[sp+6] > stack[sp+7]) ? 1 : 0;
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			case code_if:
 			{
 				if((stack[sp+6] != 0))
 				{
+					Process_sim_TIME++;
 					(stack[sp+2] = stack[sp+7]);
 					pc = FND;
 				}
@@ -339,7 +359,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						if(stack[doffset] == OUTPUT){
 						}else{
 									//for data gathering only
-									Com_sim_TIME++;
+									Com_sim_TIME+=2;
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 								sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -356,6 +376,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			{
 				if(stack[sp+6] == 0)
 				{
+					Process_sim_TIME++;
 					(stack[sp+2] = stack[sp+7]);
 					pc = FND;
 				}
@@ -371,7 +392,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						if(stack[doffset] == OUTPUT){
 						}else{
 							//for data gathering only
-							Com_sim_TIME++;
+							Com_sim_TIME+=2;
 								m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
 								pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 								sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -389,12 +410,14 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				stack[sp+2] = (stack[sp+ 6] | stack[sp+7]);
 				//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,stack[6],stack[7],stack[2]);
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			}
 			case code_identity:
 			{
 				if(stack[sp+2] == NAV){stack[sp+2] = stack[sp+6];}
 				pc = FND;
+				Process_sim_TIME++;
 				break;
 			}
 			case code_expansion:
@@ -482,6 +505,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 								offset = stack[lp_t];
 								//if true the val is for it
 								if(node_to_remap < offset && node_to_remap > offset-size){
+									Process_sim_TIME++;
 									int ntr_num_dest = stack[stack[lp_t-2]+6+stack[stack[lp_t-2]+5]];
 									for(int k=0;k<ntr_num_dest;k+=2){
 										int off = stack[lp_t-2]+7+stack[stack[lp_t-2]+5]+k;
@@ -576,6 +600,34 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						pthread_mutex_unlock(&cpu->routing_table[i-1]->fifo_lock);
 					}
 				}
+
+
+				fprintf(breakdown,"COM DATA\nTOTAL BYTES IN: %d\nAVG BYTES: %d\nAVG NON ZERO: %d\nTOTAL BYTES OUT: %d\nAVG BYTES: %d\n",buffer->bytes_in,buffer->bytes_in/loop_count,Com_t_z,Com_t_total,Com_t_total/loop_count);
+				fprintf(breakdown,"\nPOCESSOR DATA\nTOTAL TIME: %d\n"
+				 									"- code_expansion: %d\n"
+													"- code_input:		 %d\n"
+													"- code_output:		 %d\n"
+													"- code_plus:			 %d\n"
+													"- code_times:		 %d\n"
+													"- code_is_equal:	 %d\n"
+													"- code_is_less:	 %d\n"
+													"- code_is_greater:%d\n"
+													"- code_if:				 %d\n"
+													"- code_else:			 %d\n"
+													"- code_minus:		 %d\n"
+													"- code_merge:		 %d\n"
+													"- code_identity:	 %d\n"
+													"- code_end:			 %d\n"
+													"- mark as dead:	 %d\n"
+													"- shift down:		 %d\n"
+													"- expansion call: %d\n"
+													"- for num dest:	 %d\n"
+													"- look for node:	 %d\n"
+													"- idle:					 %d\n",total_time,p_time_type[0],p_time_type[1],p_time_type[2],p_time_type[3],p_time_type[4],p_time_type[5],
+													p_time_type[6],p_time_type[7],p_time_type[8],p_time_type[9],p_time_type[10],p_time_type[11],p_time_type[12],
+													p_time_type[13],p_time_type[14],p_time_type[15],p_time_type[16],p_time_type[17],p_time_type[18],p_time_type[19]);
+
+
 
 				fclose(timing_d);
 				fclose(com_d);
@@ -706,7 +758,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				//remove lp and sp enty of node
 				//shift down
 				//recover pc
-
+				Process_sim_TIME++;
 				//for destinations send operation MAD
 				int num_dest;
 				int doffset;
@@ -724,7 +776,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					if(stack[doffset] == OUTPUT){
 					}else{
 						//for data gathering only
-						Com_sim_TIME++;
+						Com_sim_TIME+=2;
 							m_addr = stack[sp_oper+stack[sp_oper+3]-1] + stack[doffset]/4;
 							pthread_mutex_lock(&cpu->routing_table[stack[doffset+1]-1]->fifo_lock);
 							sendMessage(cpu->routing_table[stack[doffset+1]-1],Message_packing(stack[doffset+1],0,OPR,MAD));
@@ -789,7 +841,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				//remove lp and sp entry of node
         //shift down
         //pc = LFN;
-
+				Process_sim_TIME++;
 				if(sp == sp_top){
 					sp_top = sp+stack[sp+3];
 					int to = sp_top-1;
@@ -883,6 +935,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int ntr_num;
 				int rtt_num;
 				while(getAddr(m) != OPR && getData(m) != EOM){
+					Process_sim_TIME++;
+
 					temp = popMessage(expand_buffer);
 					//printf("CPU %d exp %d,%d\n",cpu_num,getAddr(temp),getData(temp));
 					ntr_num = getAddr(temp);
@@ -934,7 +988,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int input_node_offset;
 				while(getAddr(m) != OPR && getData(m) != EOM){
 					input_node_offset = getAddr(m);
-
+					Process_sim_TIME++;
 					int lp_t = lp;
 					int size;
 					int offset;
@@ -991,8 +1045,12 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		}
 
 		//for data gathering only
-		fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),Com_sim_TIME,node_search_time,Process_sim_TIME,pc_data);
-		total_time+=Com_sim_TIME+Process_sim_TIME+node_search_time;
+		fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,pc_data, Com_sim_TIME*8);
+
+		p_time_type[pc_data] += (Com_sim_TIME+Process_sim_TIME+node_search_time);
+		total_time+=Process_sim_TIME+node_search_time+Com_sim_TIME;
+
+		Com_t_total += (Com_sim_TIME*8);
 		Com_sim_TIME=0;
 		Process_sim_TIME=0;
 		node_search_time=0;

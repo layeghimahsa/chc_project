@@ -10,6 +10,7 @@ struct FIFO{
     pthread_mutex_t fifo_lock;
     int size;
     int message_counter;
+    int bytes_in;
     struct Message *front, *back;
 };
 
@@ -17,6 +18,7 @@ struct Message{
 		unsigned int addr;
 		int data;
     int dest;//num cpus that have peeked the message
+
 		struct Message *next;
 };
 
