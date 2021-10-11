@@ -604,33 +604,38 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 				fprintf(breakdown,"COM DATA\nTOTAL BYTES IN: %d\nAVG BYTES: %d\nAVG NON ZERO: %d\nTOTAL BYTES OUT: %d\nAVG BYTES: %d\n",buffer->bytes_in,buffer->bytes_in/loop_count,Com_t_z,Com_t_total,Com_t_total/loop_count);
 				fprintf(breakdown,"\nPOCESSOR DATA\nTOTAL TIME: %d\n"
-				 									"- code_expansion: %d\n"
-													"- code_input:		 %d\n"
-													"- code_output:		 %d\n"
-													"- code_plus:			 %d\n"
-													"- code_times:		 %d\n"
-													"- code_is_equal:	 %d\n"
-													"- code_is_less:	 %d\n"
-													"- code_is_greater:%d\n"
-													"- code_if:				 %d\n"
-													"- code_else:			 %d\n"
-													"- code_minus:		 %d\n"
-													"- code_merge:		 %d\n"
-													"- code_identity:	 %d\n"
-													"- code_end:			 %d\n"
-													"- mark as dead:	 %d\n"
-													"- shift down:		 %d\n"
-													"- expansion call: %d\n"
-													"- for num dest:	 %d\n"
-													"- look for node:	 %d\n"
-													"- idle:					 %d\n",total_time,p_time_type[0],p_time_type[1],p_time_type[2],p_time_type[3],p_time_type[4],p_time_type[5],
-													p_time_type[6],p_time_type[7],p_time_type[8],p_time_type[9],p_time_type[10],p_time_type[11],p_time_type[12],
-													p_time_type[13],p_time_type[14],p_time_type[15],p_time_type[16],p_time_type[17],p_time_type[18],p_time_type[19]);
+				 									"- code_expansion:	%d  %f%%\n"
+													"- code_input:			%d  %f%%\n"
+													"- code_output:		%d  %f%%\n"
+													"- code_plus:			%d  %f%%\n"
+													"- code_times:			%d  %f%%\n"
+													"- code_is_equal:	%d  %f%%\n"
+													"- code_is_less:		%d  %f%%\n"
+													"- code_is_greater:%d  %f%%\n"
+													"- code_if:				%d  %f%%\n"
+													"- code_else:			%d  %f%%\n"
+													"- code_minus:			%d  %f%%\n"
+													"- code_merge:			%d  %f%%\n"
+													"- code_identity:	%d  %f%%\n"
+													"- code_end:				%d  %f%%\n"
+													"- mark as dead:		%d  %f%%\n"
+													"- shift down:			%d  %f%%\n"
+													"- expansion call:	%d  %f%%\n"
+													"- for num dest:		%d  %f%%\n"
+													"- look for node:	%d  %f%%\n"
+													"- idle:						%d  %f%%\n",total_time,p_time_type[0],(((double)p_time_type[0]/(double)total_time)*100.0),p_time_type[1],(((double)p_time_type[1]/(double)total_time)*100.0),
+													p_time_type[2],(((double)p_time_type[2]/(double)total_time)*100.0),p_time_type[3],(((double)p_time_type[3]/(double)total_time)*100.0),p_time_type[4],(((double)p_time_type[4]/(double)total_time)*100.0),
+													p_time_type[5],(((double)p_time_type[5]/(double)total_time)*100.0),p_time_type[6],(((double)p_time_type[6]/(double)total_time)*100.0),p_time_type[7],(((double)p_time_type[7]/(double)total_time)*100.0),
+													p_time_type[8],(((double)p_time_type[8]/(double)total_time)*100.0),p_time_type[9],(((double)p_time_type[9]/(double)total_time)*100.0),p_time_type[10],(((double)p_time_type[10]/(double)total_time)*100.0),
+													p_time_type[11],(((double)p_time_type[11]/(double)total_time)*100.0),p_time_type[12],(((double)p_time_type[13]/(double)total_time)*100.0),p_time_type[13],(((double)p_time_type[13]/(double)total_time)*100.0),
+													p_time_type[14],(((double)p_time_type[14]/(double)total_time)*100.0),p_time_type[15],(((double)p_time_type[15]/(double)total_time)*100.0),p_time_type[16],(((double)p_time_type[16]/(double)total_time)*100.0),
+													p_time_type[17],(((double)p_time_type[17]/(double)total_time)*100.0),p_time_type[18],(((double)p_time_type[18]/(double)total_time)*100.0),p_time_type[19],(((double)p_time_type[19]/(double)total_time)*100.0));
 
 
 
 				fclose(timing_d);
 				fclose(com_d);
+				fclose(breakdown);
 				clock_t finish = clock();
 				double elapsed = (double)(finish - start)/CLOCKS_PER_SEC;
 				//printf("CPU %d TIME ELAPSED: %f\n",cpu_num,elapsed);
