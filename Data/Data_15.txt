@@ -1,2 +1,0 @@
-Bytes_in 1528
- Bytes_out 880

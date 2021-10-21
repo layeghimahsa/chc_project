@@ -1,7 +1,0 @@
-Total_time	12743318	100
-Idle_time	6371580	49.999380
-Shift_down	0	0.000000
-Expansion_call	31	0.000243
-Propagate_result	0	0.000000
-Communication_block	276	0.002166
-Other	6371431	49.998211
