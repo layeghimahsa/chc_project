@@ -14,26 +14,28 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 	int cpu_num = cpu->cpu_num;
 
-	char time_data[32];
-	char com_data[32];
-	char break_down[32];
-	sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
-	sprintf(com_data,"Data/com_data_%d.txt",cpu_num);
-	sprintf(break_down,"Data/breakdown_%d.txt",cpu_num);
+	//char time_data[32];
+	//char com_data[32];
+	//char break_down[32];
+	//sprintf(time_data,"Data/timing_data_%d.txt",cpu_num);
+	//sprintf(com_data,"Data/com_data_%d.txt",cpu_num);
+	//sprintf(break_down,"Data/breakdown_%d.txt",cpu_num);
 
-	FILE *timing_d = fopen(time_data,"w");
-	FILE *com_d = fopen(com_data,"w");
-	FILE *breakdown = fopen(break_down,"w");
+	//FILE *timing_d = fopen(time_data,"w");
+	//FILE *com_d = fopen(com_data,"w");
+	//FILE *breakdown = fopen(break_down,"w");
 
-	fprintf(timing_d,"LOOP		TOTAL TIME		SEARCH TIME			PROSESS TIME		TYPE		BYTES OUT\n");
-	fprintf(com_d,"LOOP		Q SIZE\n");
+	//fprintf(timing_d,"LOOP		TOTAL TIME		SEARCH TIME			PROSESS TIME		TYPE		BYTES OUT\n");
+	//fprintf(com_d,"LOOP		Q_SIZE\n");
 
 
+	int com_time =0;
 	int Com_sim_TIME=0;
+	int bytes_out=0;
 	int Process_sim_TIME=0;
 	int node_search_time=0;
 
-	int p_time_type[20];
+	int p_time_type[21];
 	int total_time=0;
 	int pc_data;
 	int loop_count=0;
@@ -112,7 +114,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 	/*END: stack is filled*/
 
 	//for data gathering only
-	fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,-1,Com_sim_TIME*8);
+	//fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,-1,Com_sim_TIME*8);
+	Process_sim_TIME=0;
 
 	int code_size = cpu->dictionary[0][0]+cpu->dictionary[0][1];
 	//printf("CODE SIZE %d\n",code_size);
@@ -142,7 +145,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		int buff_size = getFifoSize(buffer);
 		pthread_mutex_unlock(&buffer->fifo_lock);
 
-		fprintf(com_d," %d		 %d\n",loop_count,buff_size*8);
+		//fprintf(com_d," %d		 %d\n",loop_count,buff_size*8);
 
 		//printf("cpu %d buff size %d\n",cpu_num,buff_size);
 		if(buff_size>0){
@@ -150,7 +153,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			Com_t_z = (Com_t_z + (buff_size*8))/2;
 
 			//for data gathering only
-			Com_sim_TIME++;
+			com_time++;//Com_sim_TIME++
 			pthread_mutex_lock(&buffer->fifo_lock);
 			struct Message *m = popMessage(buffer);
 			pthread_mutex_unlock(&buffer->fifo_lock);
@@ -164,7 +167,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					int m_addr = getAddr(m);
 					while(lp_t>=0){
 						//for data gathering only
-						node_search_time++;
+						com_time++;//node_search_time++;
 							size = stack[lp_t-1];
 							offset = stack[lp_t];
 							//if true the val is for it
@@ -182,7 +185,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					}
 					oper=0;
 				}else if(next_op == EXP){
-					Process_sim_TIME++;
+					com_time++;//Process_sim_TIME++;
 					if(getAddr(m)==OPR && getData(m)==EOM){
 						sendMessage(expand_buffer,m);
 						eom_count++;
@@ -219,7 +222,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 							sendMessage(cpu->routing_table[m_dest-1],m);
 							m=popMessage(expand_buffer);
 								//for data gathering only
-							Com_sim_TIME++;
+							com_time++;//Com_sim_TIME++;
+							bytes_out++;
 						}
 						pthread_mutex_unlock(&cpu->routing_table[m_dest-1]->fifo_lock);
 					}
@@ -236,7 +240,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 						sendMessage(cpu->routing_table[m_dest-1],m);
 						pthread_mutex_unlock(&cpu->routing_table[m_dest-1]->fifo_lock);
 							//for data gathering only
-							Com_sim_TIME+=2;
+							com_time+=2;//Com_sim_TIME+=2;
+							bytes_out+=2;
 					}
 
 				}else{
@@ -250,7 +255,8 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 
 			}else if(m->dest != cpu_num){
 				//for data gathering only
-				Com_sim_TIME++;
+				com_time++;//Com_sim_TIME++;
+				bytes_out++;
 				pthread_mutex_lock(&cpu->routing_table[m->dest-1]->fifo_lock);
 				sendMessage(cpu->routing_table[m->dest-1],m);
 				pthread_mutex_unlock(&cpu->routing_table[m->dest-1]->fifo_lock);
@@ -263,7 +269,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				int m_addr = getAddr(m);
 				while(lp_t>=0){
 					//for data gathering only
-				node_search_time++;
+				com_time++;//node_search_time++;
 						size = stack[lp_t-1];
 						offset = stack[lp_t];
 						//if true the val is for it
@@ -275,7 +281,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 				if(found==1){
 					//for data gathering only
-					Process_sim_TIME++;
+					com_time++;//Process_sim_TIME++;
 					//printf("CPU %d writing result %d to pos %d of node type %d\n",cpu_num, getData(m),(offset-m_addr-1),stack[stack[lp_t-1]+4]);
 					if((offset-m_addr-1)>= 8){
 						stack[stack[lp_t-2]+(offset-m_addr-1)+((offset-m_addr-1)/2-3)] = getData(m);
@@ -285,7 +291,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 					stack[stack[lp_t-2]+1] -= 1; //reduce number of dependants by one
 					//printf("CPU %d stack pose %d. Dep left [%d][%d]\n",cpu_num,stack[lp_t-1]+(offset-m_addr-1),stack[lp_t-1]+1,stack[stack[lp_t-1]+1]);
 				}else{
-					Com_sim_TIME++;
+					com_time++;//Com_sim_TIME++;
 					pthread_mutex_lock(&buffer->fifo_lock);
 					sendMessage(buffer,m);
 					pthread_mutex_unlock(&buffer->fifo_lock);
@@ -602,45 +608,77 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				}
 
 
-				fprintf(breakdown,"COM DATA\nTOTAL BYTES IN: %d\nAVG BYTES: %d\nAVG NON ZERO: %d\nTOTAL BYTES OUT: %d\nAVG BYTES: %d\n",buffer->bytes_in,buffer->bytes_in/loop_count,Com_t_z,Com_t_total,Com_t_total/loop_count);
-				fprintf(breakdown,"\nPOCESSOR DATA\nTOTAL TIME: %d\n"
-				 									"- code_expansion:	%d  %f%%\n"
-													"- code_input:			%d  %f%%\n"
-													"- code_output:		%d  %f%%\n"
-													"- code_plus:			%d  %f%%\n"
-													"- code_times:			%d  %f%%\n"
-													"- code_is_equal:	%d  %f%%\n"
-													"- code_is_less:		%d  %f%%\n"
-													"- code_is_greater:%d  %f%%\n"
-													"- code_if:				%d  %f%%\n"
-													"- code_else:			%d  %f%%\n"
-													"- code_minus:			%d  %f%%\n"
-													"- code_merge:			%d  %f%%\n"
-													"- code_identity:	%d  %f%%\n"
-													"- code_end:				%d  %f%%\n"
-													"- mark as dead:		%d  %f%%\n"
-													"- shift down:			%d  %f%%\n"
-													"- expansion call:	%d  %f%%\n"
-													"- for num dest:		%d  %f%%\n"
-													"- look for node:	%d  %f%%\n"
-													"- idle:						%d  %f%%\n",total_time,p_time_type[0],(((double)p_time_type[0]/(double)total_time)*100.0),p_time_type[1],(((double)p_time_type[1]/(double)total_time)*100.0),
+				//fprintf(breakdown,"COM DATA\nTOTAL BYTES IN: %d\nAVG BYTES: %d\nAVG NON ZERO: %d\nTOTAL BYTES OUT: %d\nAVG BYTES: %d\n",buffer->bytes_in,buffer->bytes_in/loop_count,Com_t_z,Com_t_total,Com_t_total/loop_count);
+				/*fprintf(breakdown,"\nPOCESSOR DATA\n"
+													"TOTAL TIME %d\n"
+				 									"code_expansion	%d  %f%%\n"
+													"code_input	%d  %f%%\n"
+													"code_output	%d  %f%%\n"
+													"code_plus	%d  %f%%\n"
+													"code_times	%d  %f%%\n"
+													"code_is_equal	%d  %f%%\n"
+													"code_is_less	%d  %f%%\n"
+													"code_is_greater	%d  %f%%\n"
+													"code_if	%d  %f%%\n"
+													"code_else	%d  %f%%\n"
+													"code_minus	%d  %f%%\n"
+													"code_merge	%d  %f%%\n"
+													"code_identity	%d  %f%%\n"
+													"code_end	%d  %f%%\n"
+													"mark as dead	%d  %f%%\n"
+													"shift down	%d  %f%%\n"
+													"expansion call	%d  %f%%\n"
+													"for num dest	%d  %f%%\n"
+													"look for node	%d  %f%%\n"
+													"idle	%d  %f%%\n"
+													"com block %d %f%%\n",total_time,p_time_type[0],(((double)p_time_type[0]/(double)total_time)*100.0),p_time_type[1],(((double)p_time_type[1]/(double)total_time)*100.0),
 													p_time_type[2],(((double)p_time_type[2]/(double)total_time)*100.0),p_time_type[3],(((double)p_time_type[3]/(double)total_time)*100.0),p_time_type[4],(((double)p_time_type[4]/(double)total_time)*100.0),
 													p_time_type[5],(((double)p_time_type[5]/(double)total_time)*100.0),p_time_type[6],(((double)p_time_type[6]/(double)total_time)*100.0),p_time_type[7],(((double)p_time_type[7]/(double)total_time)*100.0),
 													p_time_type[8],(((double)p_time_type[8]/(double)total_time)*100.0),p_time_type[9],(((double)p_time_type[9]/(double)total_time)*100.0),p_time_type[10],(((double)p_time_type[10]/(double)total_time)*100.0),
 													p_time_type[11],(((double)p_time_type[11]/(double)total_time)*100.0),p_time_type[12],(((double)p_time_type[13]/(double)total_time)*100.0),p_time_type[13],(((double)p_time_type[13]/(double)total_time)*100.0),
 													p_time_type[14],(((double)p_time_type[14]/(double)total_time)*100.0),p_time_type[15],(((double)p_time_type[15]/(double)total_time)*100.0),p_time_type[16],(((double)p_time_type[16]/(double)total_time)*100.0),
-													p_time_type[17],(((double)p_time_type[17]/(double)total_time)*100.0),p_time_type[18],(((double)p_time_type[18]/(double)total_time)*100.0),p_time_type[19],(((double)p_time_type[19]/(double)total_time)*100.0));
+													p_time_type[17],(((double)p_time_type[17]/(double)total_time)*100.0),p_time_type[19],(((double)p_time_type[19]/(double)total_time)*100.0),p_time_type[18],(((double)p_time_type[18]/(double)total_time)*100.0),
+													p_time_type[20],(((double)p_time_type[20]/(double)total_time)*100.0));
+													*/
+
+				char time_data[32];
+				char data[32];
+
+				sprintf(time_data,"Data/Time_%d.txt",cpu_num);
+				sprintf(data,"Data/Data_%d.txt",cpu_num);
+
+				FILE *Time = fopen(time_data,"w");
 
 
+				int other;
+				for(int i=0;i<15;i++){
+					other += p_time_type[i];
+				}
+				other += p_time_type[19];
 
-				fclose(timing_d);
-				fclose(com_d);
-				fclose(breakdown);
-				clock_t finish = clock();
-				double elapsed = (double)(finish - start)/CLOCKS_PER_SEC;
+				fprintf(Time, "Total_time	%d	100\n"
+											"Idle_time	%d	%f\n"
+											"Shift_down	%d	%f\n"
+											"Expansion_call	%d	%f\n"
+											"Propagate_result	%d	%f\n"
+										  "Communication_block	%d	%f\n"
+											"Other	%d	%f\n",total_time,
+											p_time_type[18],(((double)p_time_type[18]/(double)total_time)*100.0),
+											p_time_type[15],(((double)p_time_type[15]/(double)total_time)*100.0),
+											p_time_type[16],(((double)p_time_type[16]/(double)total_time)*100.0),
+											p_time_type[17],(((double)p_time_type[17]/(double)total_time)*100.0),
+											p_time_type[20],(((double)p_time_type[20]/(double)total_time)*100.0),
+											other,(((double)other/(double)total_time)*100.0));
+			 fclose(Time);
+			 FILE *Data = fopen(data,"w");
+			 fprintf(Data,"Bytes_in %d\n Bytes_out %d\n",buffer->bytes_in,Com_t_total);
+			 fclose(Data);
+
+			//	clock_t finish = clock();
+				//double elapsed = (double)(finish - start)/CLOCKS_PER_SEC;
 				//printf("CPU %d TIME ELAPSED: %f\n",cpu_num,elapsed);
-				total_time+=Com_sim_TIME+Process_sim_TIME+node_search_time;
-				printf("CPU %d LOOPS: %d tu: %d\n",cpu_num,loop_count,total_time);
+			//	total_time+=Com_sim_TIME+Process_sim_TIME+node_search_time;
+				//printf("CPU %d LOOPS: %d tu: %d\n",cpu_num,loop_count,total_time);
 
 				pthread_exit(&thread_id[cpu_num-1]);
 				break;
@@ -657,9 +695,10 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 				//printf("%d\n",stack[sp_top]);
 				sp=sp_top;
 				int found = 0;
+				Process_sim_TIME++;
 				while(sp<ADDRASABLE_SPACE-1){
 					//for data gathering only
-					Process_sim_TIME++;
+					//Process_sim_TIME++;
 					if(stack[sp+1]==0){
 						found = 1;
 						break;
@@ -1027,6 +1066,7 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 			}
 			case IDLE:
 			{
+				Process_sim_TIME++;
 				if(idle_count == 150){
 					pc=LFN;
 				}else{
@@ -1050,12 +1090,15 @@ void *CPU_SA_start(struct CPU_SA *cpu){
 		}
 
 		//for data gathering only
-		fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,pc_data, Com_sim_TIME*8);
+		//fprintf(timing_d," %d %7d %6d %6d %9d %9d\n",loop_count,(Com_sim_TIME+Process_sim_TIME+node_search_time),node_search_time,Process_sim_TIME,pc_data, Com_sim_TIME*8);
 
 		p_time_type[pc_data] += (Com_sim_TIME+Process_sim_TIME+node_search_time);
-		total_time+=Process_sim_TIME+node_search_time+Com_sim_TIME;
+		total_time+=Process_sim_TIME+node_search_time+Com_sim_TIME+com_time;
+		p_time_type[20] += com_time;
+		com_time=0;
 
-		Com_t_total += (Com_sim_TIME*8);
+		Com_t_total += ((Com_sim_TIME+bytes_out)*8);
+		bytes_out=0;
 		Com_sim_TIME=0;
 		Process_sim_TIME=0;
 		node_search_time=0;
