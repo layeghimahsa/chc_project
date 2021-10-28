@@ -17,9 +17,29 @@ struct FIFO{
 struct Message{
 		unsigned int addr;
 		int data;
-    int dest;//num cpus that have peeked the message
+    int dest;
 
 		struct Message *next;
+};
+
+struct CPU{
+  int *PM; //program mem read only
+  int *stack; //active program
+  int pc; //program counter
+  int lp; //node list pointer
+  int sp; //points to the node being executed
+  int sp_top; //pointes to top of node list in stack
+  int code_size; //size of PM
+
+  int oper; //if next mesage is part of operation message
+  int next_op; //next op to be executed once all the info is saved in the expand_buffer
+  int eom_count; //count num end of message for expansion messages
+  int largest_offset;
+
+  struct FIFO *expand_buffer;
+  struct FIFO *broadcast;
+
+  struct FIFO **routing_table;
 };
 
 struct FIFO *create_FIFO();
