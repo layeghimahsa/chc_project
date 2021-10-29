@@ -40,6 +40,11 @@ int GRAPH;
 struct data_entry **data;
 clock_t BEGIN;
 
+FILE *tick_count;
+FILE *tick_types;
+FILE *buffer_size;
+FILE *bytes_inout;
+
 //DO NOT REMOVE THE LINE BELLOW!! File may become corrupt if it is (used to write code array in)
 //CODE BEGINE//
 const int code[] = {//End main:
@@ -908,7 +913,14 @@ int num_dict_entries = 3;
 int run(struct CPU **cores, int number_of_cores){
 
   int ticks=0;//number of loops accross all cores
-  int tick_type[NUM_CPU][5];
+  int tick_type[number_of_cores][5]; //0:processing 1:garbage collection 2:result propogation 3:expansion call 4:com block
+  for(int i=0;i<number_of_cores;i++){
+    for(int j=0;j<5;j++){
+      tick_type[i][j]=0;
+    }
+  }
+  int bytes_in_out[number_of_cores][2];
+  for(int i=0;i<number_of_cores;i++){bytes_in_out[i][0]=0;bytes_in_out[i][1]=0;} //0:in 1:out
   int cpu_num=0;
   struct CPU *core;
   int pc,sp,lp,sp_top,oper,next_op,eom_count,largest_offset;
@@ -917,7 +929,9 @@ int run(struct CPU **cores, int number_of_cores){
   struct FIFO *broadcast;
   struct FIFO *buffer;
 
-  while(1){
+  int done=0;
+
+  while(done==0){
     core = cores[cpu_num];
     pc = core->pc;
     lp = core->lp;
@@ -945,6 +959,7 @@ int run(struct CPU **cores, int number_of_cores){
 					printf("\t<< "); scanf("%d",&stack[sp+2]);//stack[2] or stack[sp_top+2]
 				}
 				pc=FND;
+        tick_type[cpu_num][0]++;
 				break;
 			}
 			//op code add
@@ -952,32 +967,39 @@ int run(struct CPU **cores, int number_of_cores){
 			  //add
 				stack[sp+2] = stack[sp+6]+stack[sp+7];
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			case code_minus:
 				stack[sp+2] = stack[sp+6]-stack[sp+7];
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			case code_times:
 				stack[sp+2] = stack[sp+6]*stack[sp+7];
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			case code_is_equal:
 				stack[sp+2] = (stack[sp+6] == stack[sp+7]) ? 1 : 0;
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			case code_is_less:
 				stack[sp+2] = (stack[sp+6] < stack[sp+7]) ? 1 : 0;
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			case code_is_greater:
 				stack[sp+2] = (stack[sp+6] > stack[sp+7]) ? 1 : 0;
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
       case code_merge:
   			{
   				stack[sp+2] = (stack[sp+ 6] | stack[sp+7]);
   				//printf("CPU %d MERGE %d & %d = %d\n",cpu_num,stack[6],stack[7],stack[2]);
   				pc = FND;
+          tick_type[cpu_num][0]++;
   				break;
   			}
       case code_if:
@@ -991,6 +1013,7 @@ int run(struct CPU **cores, int number_of_cores){
           {
             pc = code_if_else_fail;
   				}
+          tick_type[cpu_num][0]++;
   				break;
   			}
   	  case code_else:
@@ -1004,6 +1027,7 @@ int run(struct CPU **cores, int number_of_cores){
 				{
           pc = code_if_else_fail;
 				}
+        tick_type[cpu_num][0]++;
 				break;
 			}
       case code_if_else_fail:
@@ -1015,9 +1039,12 @@ int run(struct CPU **cores, int number_of_cores){
             int  m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
               sendMessage(core->routing_table[stack[doffset+1]],Message_packing(stack[doffset+1],0,OPR,MAD));
               sendMessage(core->routing_table[stack[doffset+1]],Message_packing(stack[doffset+1],0,m_addr,MAD));
+              bytes_in_out[cpu_num][1]+=2;
           }
           stack[sp+6+stack[sp+5]]--;
+          tick_type[cpu_num][4]++;//added to com time
         }else{
+          tick_type[cpu_num][0]++;
           pc=SDOWN;
         }
         break;
@@ -1026,11 +1053,14 @@ int run(struct CPU **cores, int number_of_cores){
 			{
 				if(stack[sp+2] == NAV){stack[sp+2] = stack[sp+6];}
 				pc = FND;
+        tick_type[cpu_num][0]++;
 				break;
 			}
       case code_end:
-      printf("NUM TICKS: %d\n",ticks);
-        return 1;
+
+        //return 1;
+        tick_type[cpu_num][0]++;
+        done++;
         break;
       case code_expansion:
       {
@@ -1046,6 +1076,7 @@ int run(struct CPU **cores, int number_of_cores){
         sp = core->code_size-1;
         pc = code_expansion_add;
 
+        tick_type[cpu_num][0]++;
         break;
       }
       case code_expansion_add:
@@ -1084,6 +1115,7 @@ int run(struct CPU **cores, int number_of_cores){
           pc = code_expansion_remap;
           sp = stack[ADDRASABLE_SPACE-2];
         }//*/
+        tick_type[cpu_num][0]++;
         break;
       }
       case code_expansion_remap:
@@ -1132,6 +1164,7 @@ int run(struct CPU **cores, int number_of_cores){
           sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EOM));
           pc = code_expansion_input;
         }
+        tick_type[cpu_num][0]++;
         break;
       }
       case code_expansion_input:
@@ -1164,6 +1197,7 @@ int run(struct CPU **cores, int number_of_cores){
 						sendMessage(broadcast,Message_packing(cpu_num,1,input_node_offset-2,stack[aoffset]));
 					}
           stack[sp+5]--;
+          tick_type[cpu_num][0]++;
 				}else{
           sendMessage(broadcast,Message_packing(cpu_num,1,OPR,EOM));
           largest_offset += (code_size*(number_of_cores));
@@ -1177,12 +1211,14 @@ int run(struct CPU **cores, int number_of_cores){
   							if(getAddr(t) == OPR && getData(t)==EOM){eom_c++;}
   							sendMessage(core->routing_table[i],Message_packing(i,0,getAddr(t),getData(t)));
   							sendMessage(broadcast,t);
+                bytes_in_out[cpu_num][1]++;
   						}
   					}
   					eom_c=0;
   				}
           while(t!=NULL){t=popMessage(broadcast);}//empty q
           pc = SDOWN;
+          tick_type[cpu_num][4]++;//added to com time
         }
         break;
       }
@@ -1208,6 +1244,7 @@ int run(struct CPU **cores, int number_of_cores){
 
         sp = core->code_size-1;
         pc = EXP_add;
+        tick_type[cpu_num][3]++;
         break;
       }
       case EXP_add:
@@ -1246,6 +1283,7 @@ int run(struct CPU **cores, int number_of_cores){
         }else{ //done traversing pm
           pc = EXP_remap;
         }//*/
+        tick_type[cpu_num][3]++;
         break;
       }
       case EXP_remap:
@@ -1291,6 +1329,7 @@ int run(struct CPU **cores, int number_of_cores){
         }else{
           pc=EXP_input;
         }
+        tick_type[cpu_num][3]++;
         break;
       }
       case EXP_input:
@@ -1320,6 +1359,7 @@ int run(struct CPU **cores, int number_of_cores){
           sp = stack[ADDRASABLE_SPACE-2];
           pc = stack[ADDRASABLE_SPACE-1];
         }
+        tick_type[cpu_num][0]++;
         break;
       }
       case MAD:
@@ -1341,10 +1381,13 @@ int run(struct CPU **cores, int number_of_cores){
             int  m_addr = stack[sp+stack[sp+3]-1] + stack[doffset]/4;
               sendMessage(core->routing_table[stack[doffset+1]],Message_packing(stack[doffset+1],0,OPR,MAD));
               sendMessage(core->routing_table[stack[doffset+1]],Message_packing(stack[doffset+1],0,m_addr,MAD));
+              bytes_in_out[cpu_num][1]+=2;
           }
 
           if(stack[sp+4]==code_expansion){stack[sp+6+(stack[sp+5]*3)]--;}
           else{stack[sp+6+stack[sp+5]]--;}
+
+          tick_type[cpu_num][4]++;//added to com time
 
         }else{
 
@@ -1404,6 +1447,8 @@ int run(struct CPU **cores, int number_of_cores){
             sp=stack[ADDRASABLE_SPACE-2];
           }
 
+          tick_type[cpu_num][0]++;
+
         }
         break;
       }
@@ -1454,6 +1499,7 @@ int run(struct CPU **cores, int number_of_cores){
 				}
         sp=sp_top;
 				pc = LFN;
+        tick_type[cpu_num][1]++;
       	break;
 			}
       case FND:
@@ -1493,11 +1539,14 @@ int run(struct CPU **cores, int number_of_cores){
               //printf("core %d sending %d to %d\n",cpu_num,stack[sp+2],stack[doffset+1]);
               //printf("raw offset %d : offset: %d\n",stack[sp+stack[sp+3]-1],m_addr);
               sendMessage(core->routing_table[stack[doffset+1]],Message_packing(stack[doffset+1],1,m_addr,stack[sp+2]));
+              bytes_in_out[cpu_num][1]++;
             }
          }
          stack[sp+6+stack[sp+5]]--;
+         tick_type[cpu_num][2]++; //propogate result
         }else{
           pc = SDOWN;
+          tick_type[cpu_num][0]++;
         }
         break;
       }
@@ -1508,7 +1557,9 @@ int run(struct CPU **cores, int number_of_cores){
           int buff_size = getFifoSize(buffer);
   //        printf("core %d BUFF size %d\n",cpu_num,buff_size);
       		if(buff_size>0){
+            tick_type[cpu_num][4]++;
       			struct Message *m = popMessage(buffer);
+            bytes_in_out[cpu_num][0]++;
       			if(oper==1){
       				if(next_op==MAD){
       					//look if node is in stack
@@ -1555,8 +1606,11 @@ int run(struct CPU **cores, int number_of_cores){
       					int m_dest = m->dest;
       					if(getData(m) == EXP){
                   sendMessage(core->routing_table[m_dest],m);
+                  bytes_in_out[cpu_num][1]++;
       						while(eom_c!=2){
       							m = popMessage(buffer);
+                    bytes_in_out[cpu_num][0]++;
+                    bytes_in_out[cpu_num][1]++;
       							sendMessage(core->routing_table[m_dest],m);
       							if(getAddr(m)==OPR && getData(m)==EOM){eom_c++;}
       						}
@@ -1565,6 +1619,8 @@ int run(struct CPU **cores, int number_of_cores){
       						sendMessage(core->routing_table[m_dest],m);
       						m = popMessage(buffer);
       						sendMessage(core->routing_table[m_dest],m);
+                  bytes_in_out[cpu_num][1]+=2;
+                  bytes_in_out[cpu_num][0]++;
       					}
 
       				}else{
@@ -1579,6 +1635,7 @@ int run(struct CPU **cores, int number_of_cores){
       			}else if(m->dest != cpu_num){
   //            printf("routing message\n");
       				sendMessage(core->routing_table[m->dest],m);
+              bytes_in_out[cpu_num][1]++;
       			}else{ //this would be just a write
       				//check if any entries in lp holds the receiving node
       				int lp_t = lp;
@@ -1622,17 +1679,21 @@ int run(struct CPU **cores, int number_of_cores){
             		}*/
                 //return 0;
       					sendMessage(buffer,m);
+                bytes_in_out[cpu_num][1]++;
       				}
       			}
       			free(m);
       		}else if(sp >= (ADDRASABLE_SPACE-6)){
+            tick_type[cpu_num][0]++;
             sp = sp_top;
           }else if(stack[sp+1]==0){
+            tick_type[cpu_num][0]++;
             pc = stack[sp+4];
           }else if(stack[sp+1]<0){
             printf("ERROR: negative num dependant at sp: %d\n",sp);
             return 0;
           }else{
+            tick_type[cpu_num][0]++;
             sp = sp + stack[sp+3];
             //printf("sp vs ADDRASABLE_SPACE - 5 -> %d vs %d\n",sp,ADDRASABLE_SPACE-5);
             //if(sp >= (ADDRASABLE_SPACE-6)){sp = sp_top;pc=COM;}
@@ -1671,134 +1732,9 @@ int run(struct CPU **cores, int number_of_cores){
             sp = sp_top;
             lp--;
           }//*/
+          tick_type[cpu_num][0]++;
           break;
         }
-    /*  case COM:
-      {
-    		int buff_size = getFifoSize(buffer);
-//        printf("core %d BUFF size %d\n",cpu_num,buff_size);
-    		if(buff_size>0){
-    			struct Message *m = popMessage(buffer);
-    			if(oper==1){
-    				if(next_op==MAD){
-    					//look if node is in stack
-    					int found = 0;
-    					int lp_t = lp;
-    					int size;
-    					int offset;
-    					int m_addr = getAddr(m);
-    					while(lp_t>=0){
-    							size = stack[lp_t-1];
-    							offset = stack[lp_t];
-    							//if true the val is for it
-    							if(m_addr < offset && m_addr > offset-size){
-    								if(stack[stack[lp_t-2]+4]==code_merge){
-    								}else{
-                      stack[ADDRASABLE_SPACE-2] = sp;
-    									stack[ADDRASABLE_SPACE-1] = pc;
-                      sp = stack[lp_t-2];
-    									pc = next_op;
-    								}
-    								break;
-    							}
-    						lp_t-=3;
-    					}
-    					oper=0;
-    				}else if(next_op == EXP){
-    					if(getAddr(m)==OPR && getData(m)==EOM){
-    						sendMessage(expand_buffer,m);
-    						eom_count++;
-    						if(eom_count == 2){
-    							eom_count = 0;
-    							oper = 0;
-    							stack[ADDRASABLE_SPACE-1] = pc;
-    							pc = next_op;
-    						}
-    					}else{
-    						sendMessage(expand_buffer,m);
-    					}
-    				}
-    			}else if(getAddr(m)==OPR){    //there are
-    				if(m->dest != cpu_num){
-    					int eom_c = 0;
-    					int c;
-    					int m_dest = m->dest;
-    					if(getData(m) == EXP){
-                sendMessage(core->routing_table[m_dest],m);
-    						while(eom_c!=2){
-    							m = popMessage(buffer);
-    							sendMessage(core->routing_table[m_dest],m);
-    							if(getAddr(m)==OPR && getData(m)==EOM){eom_c++;}
-    						}
-    					}
-    					else{ //MAD
-    						sendMessage(core->routing_table[m_dest],m);
-    						m = popMessage(buffer);
-    						sendMessage(core->routing_table[m_dest],m);
-    					}
-
-    				}else{
-    						if(getData(m)==code_end){
-    							pc=code_end;
-    						}else{
-                  oper = 1;
-      						next_op = getData(m);
-                }
-    				}
-
-    			}else if(m->dest != cpu_num){
-//            printf("routing message\n");
-    				sendMessage(core->routing_table[m->dest],m);
-    			}else{ //this would be just a write
-    				//check if any entries in lp holds the receiving node
-    				int lp_t = lp;
-    				int size;
-    				int found=0;
-    				int offset;
-    				int m_addr = getAddr(m);
-    				while(lp_t>=0){
-    						size = stack[lp_t-1];
-    						offset = stack[lp_t];
-    						//if true the val is for it
-    						if(m_addr < offset && m_addr > offset-size){
-    							found=1;
-    							break;
-    						}
-    					lp_t-=3;
-    				}
-    				if(found==1){
-              int doffset;
-    					if((offset-m_addr-1)>= 8){
-    						doffset = stack[lp_t-2]+(offset-m_addr-1)+((offset-m_addr-1)/2-3);
-    					}else{
-    						doffset = stack[lp_t-2]+(offset-m_addr-1);
-    					}
-              stack[doffset] = getData(m);
-              if(doffset == stack[lp_t-2]+4){
-                printf("\n\nALARMS\n\n");
-              }
-    					stack[stack[lp_t-2]+1] -= 1; //reduce number of dependants by one
-//    					printf("CPU %d stack pose %d. Dep left [%d][%d]\n",cpu_num,stack[lp_t-1]+(offset-m_addr-1),stack[lp_t-1]+1,stack[stack[lp_t-1]+1]);
-    				}else{
-            printf("not found\n");
-              printf("message: %d %d %d\n",m->dest,getAddr(m),getData(m));
-              for(int i = 0; i<=lp;i+=3){
-              			printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-              			printf("CPU %d [%d][%d]\n",cpu_num,i+1,stack[i+1]);
-              			printf("CPU %d [%d][%d]\n",cpu_num,i+2,stack[i+2]);
-          		}
-          		for(int i = sp_top; i<ADDRASABLE_SPACE; i++){
-          			printf("CPU %d [%d][%d]\n",cpu_num,i,stack[i]);
-          		}
-              //return 0;
-    					sendMessage(buffer,m);
-    				}
-    			}
-    			free(m);
-    		}
-        if(pc==COM){pc=LFN;sp=sp_top;} //if pc was not set
-        break;
-      }*/
       default:
   			{
   				printf("CPU %d unrecognized operation [%d][%d]\n",cpu_num,sp,pc);
@@ -1826,12 +1762,27 @@ int run(struct CPU **cores, int number_of_cores){
 
     //core->stack = stack;
     //core->expand_buffer = expand_buffer;
-
+    fprintf(buffer_size,"%d ",getFifoSize(buffer));
     cpu_num++;
-    if(cpu_num==number_of_cores){cpu_num=0;ticks++;}
+    if(cpu_num==number_of_cores){cpu_num=0;ticks++;fprintf(buffer_size,"\n");}
   }
 
 
+  //printf("NUM TICKS: %d\n",ticks);
+  fprintf(tick_count,"%d\n",ticks);
+  int c=0;
+  for(int i=0;i<number_of_cores;i++){
+  /*  c=0;
+    fprintf(tick_types,"%d ",i);
+    for(int j=0;j<5;j++){
+      c+=tick_type[i][j];
+      fprintf(tick_types,"%d ",tick_type[i][j]);
+    }
+    fprintf(tick_types,"\n");
+    printf("core %d total %d\n",i,c);*/
+    fprintf(tick_types,"%d %d %d %d %d %d\n",i,tick_type[i][0],tick_type[i][1],tick_type[i][2],tick_type[i][3],tick_type[i][4]);
+    fprintf(bytes_inout,"%d %d %d\n",i,(bytes_in_out[i][0]*8),(bytes_in_out[i][1]*8));
+  }
 
   return 1;
 }
@@ -1849,12 +1800,12 @@ int main(int argc, char **argv)
 		int h=0;
 		int n = 0;
 		int NODE_NUM_MAX = 2;
-
+    int many=0;
 		int opt;
 		while ((opt = getopt(argc, argv, "mhngK:")) != -1) {
              switch (opt) {
              case 'm':
-                 MESSAGE = 1;
+                 many = 1;
                  break;
 						 case 'h':
  								 h=1;
@@ -1893,132 +1844,144 @@ int main(int argc, char **argv)
     }
 
 
-    buss = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
-    for(int i = 0; i<NUM_CPU;i++){
-      buss[i] = create_FIFO();
-    }
+    //open files
+    tick_count = fopen("Data/tick_count.txt","w");
+    tick_types = fopen("Data/tick_by_type.txt","w");
+    buffer_size = fopen("Data/buffer_size.txt","w");
+    bytes_inout = fopen("Data/bytes_in_out.txt","w");
 
-		//create cpu struct
-    struct CPU *cpus[NUM_CPU];
-    for(int i = 0; i<NUM_CPU; i++){
-        struct CPU *cpu_t = (struct CPU*) malloc(sizeof(struct CPU));
-        cpu_t->PM = (int *) malloc(ADDRASABLE_SPACE*sizeof(int));
-        cpu_t->stack = (int *) malloc(ADDRASABLE_SPACE*sizeof(int));
-				cpu_t->code_size = 0;
-        cpu_t->pc = SSU;
-        cpu_t->lp = 0;
-        cpu_t->sp = -100;
-        cpu_t->sp_top = ADDRASABLE_SPACE-5; //minuse 4 since the 3 p=latter are reserved for saving -1:pc -2:lp -3:sp
-        cpu_t->routing_table = set_up_routing_table(i+1,buss);
-        cpu_t->expand_buffer = create_FIFO();
-        cpu_t->broadcast = create_FIFO();
-        cpu_t->oper=0;
-        cpu_t->next_op=-1;
-        cpu_t->eom_count = 0;
-        cpu_t->largest_offset = (code_size)+(code_size*(i));
-        cpus[i] = cpu_t;
-    }
+    int iter=1;
+    if(many==1){iter=100;}
 
-		/**********************************************************************************************************/
-		int num_nodes_to_make = 0;
-		for(int i = 0; i<num_dict_entries; i++){
-				num_nodes_to_make += dictionary[i][2];
-		}
-
-		//using random coloruing for all nodes (including those in subgraph)
-		srand(time(NULL)); //resetting the seed to avoid same result.
-		printf("total number of nodes: %d\n", num_nodes_to_make);
-		int colouring_random[num_nodes_to_make];//holds node allocations to cpus.
-		int counter = 0;
-		for(int i = 0; i< num_nodes_to_make; i++){
-				colouring_random[i] = rand() % NUM_CPU; //random allocation
-				printf("cpu rand[%d]: %d\n", i, colouring_random[i]);
-				counter++;
-		}
-
-
-
-		//printf("counter: %d\n", counter);
-
-		int i = 0;
-		int node_counter = 0;
-		int add;
-		int j;
-		int rand_cpu;
-		int s,si;
-
-    int func_offset = dictionary[0][0];
-    int dict_ent = 0;
-		//num_nodes_to_make--;
-    while(num_nodes_to_make != 0){
-      rand_cpu = colouring_random[node_counter];
-      j = cpus[rand_cpu]->code_size;
-      s = j+4;
-      cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
-			cpus[rand_cpu]->PM[j+1] = code_size - i; //this is the MM offset
-			j+=2;i++;
-      add = i+5;
-      for(i; i<add; i++){
-        cpus[rand_cpu]->PM[j] = code[i];
-				j++;
+    for(iter;iter>0;iter--){
+      buss = (struct FIFO**) malloc(NUM_CPU*sizeof(struct FIFO*));
+      for(int i = 0; i<NUM_CPU;i++){
+        buss[i] = create_FIFO();
       }
-      if(code[i-2]==code_expansion){
-        add = i + (code[i-1]*2);
-        int suggraph_offset = code[i+(code[i-1]*2)+1];
-        for(i; i<add; i+=2){
-          cpus[rand_cpu]->PM[j] = code[i];
-          cpus[rand_cpu]->PM[j+1] = code[i+1];
-          cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(suggraph_offset,code[i+1])];
-  				j+=3;
-        }
-        add = i + (code[i]*3);
-        cpus[rand_cpu]->PM[j] = code[i];
-        i++;j++;
-        for(i; i<add; i+=3){
-          cpus[rand_cpu]->PM[j] = code[i];
-          cpus[rand_cpu]->PM[j+1] = code[i+1];
-          cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(func_offset,code[i+1])];
-          cpus[rand_cpu]->PM[j+3] = code[i+2];
-          cpus[rand_cpu]->PM[j+4] = colouring_random[find_cpu_num(suggraph_offset,code[i+2])];
-  				j+=5;
-        }
-      }else{
-        add = i + code[i-1] + 1;
+
+      //create cpu struct
+      struct CPU *cpus[NUM_CPU];
+      for(int i = 0; i<NUM_CPU; i++){
+          struct CPU *cpu_t = (struct CPU*) malloc(sizeof(struct CPU));
+          cpu_t->PM = (int *) malloc(ADDRASABLE_SPACE*sizeof(int));
+          cpu_t->stack = (int *) malloc(ADDRASABLE_SPACE*sizeof(int));
+          cpu_t->code_size = 0;
+          cpu_t->pc = SSU;
+          cpu_t->lp = 0;
+          cpu_t->sp = -100;
+          cpu_t->sp_top = ADDRASABLE_SPACE-5; //minuse 4 since the 3 p=latter are reserved for saving -1:pc -2:lp -3:sp
+          cpu_t->routing_table = set_up_routing_table(i+1,buss);
+          cpu_t->expand_buffer = create_FIFO();
+          cpu_t->broadcast = create_FIFO();
+          cpu_t->oper=0;
+          cpu_t->next_op=-1;
+          cpu_t->eom_count = 0;
+          cpu_t->largest_offset = (code_size)+(code_size*(i));
+          cpus[i] = cpu_t;
+      }
+
+      /**********************************************************************************************************/
+      int num_nodes_to_make = 0;
+      for(int i = 0; i<num_dict_entries; i++){
+          num_nodes_to_make += dictionary[i][2];
+      }
+
+
+      //using random coloruing for all nodes (including those in subgraph)
+      srand(iter); //resetting the seed to avoid same result.
+    //  printf("total number of nodes: %d\n", num_nodes_to_make);
+      int colouring_random[num_nodes_to_make];//holds node allocations to cpus.
+      int counter = 0;
+      for(int i = 0; i< num_nodes_to_make; i++){
+          colouring_random[i] = rand() % NUM_CPU; //random allocation
+        //  printf("cpu rand[%d]: %d\n", i, colouring_random[i]);
+          counter++;
+      }
+
+
+
+      //printf("counter: %d\n", counter);
+
+      int i = 0;
+      int node_counter = 0;
+      int add;
+      int j;
+      int rand_cpu;
+      int s,si;
+
+      int func_offset = dictionary[0][0];
+      int dict_ent = 0;
+      //num_nodes_to_make--;
+      while(num_nodes_to_make != 0){
+        rand_cpu = colouring_random[node_counter];
+        j = cpus[rand_cpu]->code_size;
+        s = j+4;
+        cpus[rand_cpu]->PM[j] = code[i]; //this is the new node flag
+        cpus[rand_cpu]->PM[j+1] = code_size - i; //this is the MM offset
+        j+=2;i++;
+        add = i+5;
         for(i; i<add; i++){
           cpus[rand_cpu]->PM[j] = code[i];
-  				j++;
+          j++;
         }
-        add = i + code[i-1];
-        for(i; i<add; i++){
+        if(code[i-2]==code_expansion){
+          add = i + (code[i-1]*2);
+          int suggraph_offset = code[i+(code[i-1]*2)+1];
+          for(i; i<add; i+=2){
+            cpus[rand_cpu]->PM[j] = code[i];
+            cpus[rand_cpu]->PM[j+1] = code[i+1];
+            cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(suggraph_offset,code[i+1])];
+            j+=3;
+          }
+          add = i + (code[i]*3);
           cpus[rand_cpu]->PM[j] = code[i];
-          cpus[rand_cpu]->PM[j+1] = colouring_random[find_cpu_num(func_offset,code[i])];
-  				j+=2;
+          i++;j++;
+          for(i; i<add; i+=3){
+            cpus[rand_cpu]->PM[j] = code[i];
+            cpus[rand_cpu]->PM[j+1] = code[i+1];
+            cpus[rand_cpu]->PM[j+2] = colouring_random[find_cpu_num(func_offset,code[i+1])];
+            cpus[rand_cpu]->PM[j+3] = code[i+2];
+            cpus[rand_cpu]->PM[j+4] = colouring_random[find_cpu_num(suggraph_offset,code[i+2])];
+            j+=5;
+          }
+        }else{
+          add = i + code[i-1] + 1;
+          for(i; i<add; i++){
+            cpus[rand_cpu]->PM[j] = code[i];
+            j++;
+          }
+          add = i + code[i-1];
+          for(i; i<add; i++){
+            cpus[rand_cpu]->PM[j] = code[i];
+            cpus[rand_cpu]->PM[j+1] = colouring_random[find_cpu_num(func_offset,code[i])];
+            j+=2;
+          }
         }
+        cpus[rand_cpu]->PM[s] = j - cpus[rand_cpu]->code_size;
+        cpus[rand_cpu]->code_size += cpus[rand_cpu]->PM[s]+1; //+1 for 1 extra entry and +1 to be one cell past
+        cpus[rand_cpu]->PM[j] = func_offset; //this is the function offset this node is placed at node_size-1
+        if(i == (code_size-func_offset) && i>0){
+          dict_ent++;
+          func_offset = dictionary[dict_ent][0];
+        }
+        node_counter++;
+        num_nodes_to_make--;
       }
-      cpus[rand_cpu]->PM[s] = j - cpus[rand_cpu]->code_size;
-      cpus[rand_cpu]->code_size += cpus[rand_cpu]->PM[s]+1; //+1 for 1 extra entry and +1 to be one cell past
-      cpus[rand_cpu]->PM[j] = func_offset; //this is the function offset this node is placed at node_size-1
-      if(i == (code_size-func_offset) && i>0){
-        dict_ent++;
-        func_offset = dictionary[dict_ent][0];
+
+      /**********************************************************************************************************/
+
+      int program = run(cpus,NUM_CPU);
+      if(program != 1){
+        printf("PROGRAM FAILED\n");
+        exit(0);
       }
-      node_counter++;
-			num_nodes_to_make--;
     }
 
-		/**********************************************************************************************************/
-
-
-		if(MESSAGE == 1)
-    	printf("\n\nLAUNCHING THREADS!!!\n\n");
-
-
-		BEGIN = clock();
-
-    int program = run(cpus,NUM_CPU);
-    if(program != 1){
-      printf("PROGRAM FAILED\n");
-    }
+    //close files
+    fclose(tick_count);
+    fclose(tick_types);
+    fclose(buffer_size);
+    fclose(bytes_inout);
 
     /***********************/
     /**** Simulation end ***/
