@@ -7,10 +7,7 @@ extern pthread_mutex_t buss_lock;
 extern pthread_t *thread_id;
 
 struct FIFO{
-    pthread_mutex_t fifo_lock;
     int size;
-    int message_counter;
-    int bytes_in;
     struct Message *front, *back;
 };
 
@@ -18,7 +15,6 @@ struct Message{
 		unsigned int addr;
 		int data;
     int dest;
-
 		struct Message *next;
 };
 

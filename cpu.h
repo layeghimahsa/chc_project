@@ -67,7 +67,8 @@ struct CPU_SA{
 };
 
 void *CPU_SA_start();
-struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
+struct Message*  Message_packing(int cpu_num, int addr, int data );
+void pack_and_sendMessage(struct FIFO *fifo,int cpu_num, int addr, int data );
 int getSize(int entry);
 int getOffset(int entry);
 #endif

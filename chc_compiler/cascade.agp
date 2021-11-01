@@ -106,7 +106,7 @@ SUBGRAPH(single)
 	OUTPUT(result);
 
 
-	
+
 
 
 SUBGRAPH(main)
@@ -132,15 +132,8 @@ SUBGRAPH(main)
 	OUTPUT(o4);
 
 	DATUM(end);
-	OPERATOR(end,op_END,o3,o4);
-
-	
-
-
-
-
-
-
-	
-
-	
+  DATUM(rand1);
+  DATUM(rand2);
+  OPERATOR(rand1,op_PLUS,o1,o2);
+  OPERATOR(rand2,op_PLUS,o3,o4);
+	OPERATOR(end,op_END,rand1,rand2);
