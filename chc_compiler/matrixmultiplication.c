@@ -5,14 +5,14 @@
 
 int main(){
 
-	int* recursive_array_operation(int *mtrx, int i);
-	void array_operation(int *mtrx);
+	int find_sum(int *mtrx);
+	int recursive_find_sum(int *mtrx, int num);
+	int* return_sum_array(int *mtrx);
 	//int result;
 	//result = loop_recursive(4);
 	//printf("%d\n", result );
 	//for_loop();
-	int mtrx[N] = {0};
-	array_operation(mtrx);
+	/*array_operation(mtrx);
 	printf("\n\n");
 
 	for (int i = 0; i < N; i++)
@@ -21,8 +21,20 @@ int main(){
 	recursive_array_operation(mtrx,0);
 	for (int i = 0; i < N; i++)
       printf("%d  ", mtrx[i]);
-	printf("\n\n");
+	printf("\n\n");*/
 
+	int mtrx[N] = {1,2,3,4};
+	int *res= (int *) malloc(N*sizeof(int));
+	//find_sum(mtrx);
+	int result = recursive_find_sum(mtrx,4);
+	//printf("%d\n", result );
+
+
+	res = return_sum_array(mtrx);
+	for(int k=0; k < N; k++){
+		printf("%d\n", res[k] );
+
+	}
 	return 0;
 }
 
@@ -42,7 +54,7 @@ void matrixMultiply(int mtrx1[][N], int mtrx2[][N], int result[][N]){
 
 
 //recursive
-/*void multiplyMatrix(int A[][N],
+void multiplyMatrix(int A[][N],
                     int B[][N],
                   	int C[][N])
 {
@@ -98,7 +110,7 @@ void multiplyMatrix(int row1, int col1, int A[][MAX],
 }
 
 // Driven Program
-int main()
+/*int main()
 {
     int A[][MAX] = { {1, 2, 3},
                     {4, 5, 6},
@@ -118,37 +130,47 @@ int main()
 
 void array_operation(int *mtrx){
 			//takes a N*N matrix and adds one to each element
-			int i;
-			for(i = 0; i<N; i++){
+			//int i;
+
+			//this is a data parallel loop; no data is being reused and the loop is just for traversing the array
+
+			/*for(i = 0; i<N; i++){
 				mtrx[i] += 1;
-			}
+			}*/
+
+			mtrx[0] += 1;
+			mtrx[1] += 1;
+			mtrx[2] += 1;
+			mtrx[3] += 1;
+
 
 			for (int i = 0; i < N; i++)
 		      printf("%d  ", mtrx[i]);
 
 }
 
-int* recursive_array_operation(int mtrx[], int i){
-            //takes a N*N matrix and adds one to each element
-            //static int i = 0;
-            if(i>N-1)
-                return mtrx;
-								//return mtrx[0]; AGP
-								//return mtrx[1]; AGP
-								//return mtrx[2]; AGP
-								//return mtrx[3]; AGP
-            else{
-                mtrx[i] += 1;
-								//if(i == 0) mtrx[0] = mtrx[0] + 1 AGP
-								//if(i == 1) mtrx[1] = mtrx[1] + 1 AGP
-								//if(i == 2) mtrx[2] = mtrx[2] + 1 AGP
-								//if(i == 3) mtrx[3] = mtrx[3] + 1 AGP
-                i++;
-                return recursive_array_operation(mtrx,i);
-            }
+
+int find_sum(int *mtrx){
+
+			int acc = 0;
+
+			//This is processing loop. it is doing the same memory to do some computation
+			for(int i = 0; i<N; i++){
+				acc += mtrx[i];
+			}
+
+			printf("%d\n", acc);
+			return acc;
 }
 
 
+int recursive_find_sum(int *mtrx, int num){
+
+		if (num <= 0)
+				return 0;
+		return recursive_find_sum(mtrx, num-1) + mtrx[num-1];
+
+}
 
 
 /*

@@ -45,10 +45,10 @@ SUBGRAPH(sum_mtrx)
     OPERATOR(iis1,op_ISEQUAL,i,one);
     OPERATOR(iis2,op_ISEQUAL,i,two);
     OPERATOR(iis3,op_ISEQUAL,i,three);
-    OPERATOR(x0true,op_IF, isg, x0);
-    OPERATOR(x1true,op_IF, isg, x1);
-    OPERATOR(x2true,op_IF, isg, x2);
-    OPERATOR(x3true,op_IF, isg, x3);
+    OPERATOR(x0true,op_IF, iis0, x0);
+    OPERATOR(x1true,op_IF, iis1, x1);
+    OPERATOR(x2true,op_IF, iis2, x2);
+    OPERATOR(x3true,op_IF, iis3, x3);
     OPERATOR(x0plus1cond,op_ELSE, iis0, x0plus1);
     OPERATOR(x1plus1cond,op_ELSE, iis1, x1plus1);
     OPERATOR(x2plus1cond,op_ELSE, iis2, x2plus1);
