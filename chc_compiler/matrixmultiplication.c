@@ -45,7 +45,7 @@ void matrixMultiply(int mtrx1[][N], int mtrx2[][N], int result[][N]){
 		for(j=0; j < N; j++){
 			result[i][j] = 0;
 			for(k=0; k < N; k++){
-				result[i][j] += result[i][k]*result[k][j];
+				result[i][j] += mtrx1[i][k]*mtrx2[k][j];
 
 			}
 		}
