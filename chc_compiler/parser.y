@@ -1,5 +1,7 @@
 %{
 #include <stdio.h>
+#include<string.h>
+  #include<stdlib.h>
 #include "parser.tab.h"
 #include "ast.h"
 
@@ -17,6 +19,7 @@ extern struct ast_node *ast;
         char *var;
         int val;
         struct ast_node *ast_ptr;
+        struct var_list *var_list_ptr;
 };
 %token <var> operators
 %token <val> values
@@ -33,6 +36,7 @@ extern struct ast_node *ast;
 %token TOKEN_CONST
 %token SEMICOLON
 %token TOKEN_SUBGRAPH
+%token TOKEN_TERMINATE
 %token <var> variable
 %start prog
 
@@ -49,6 +53,10 @@ extern struct ast_node *ast;
 %type <ast_ptr> Scopes
 %type <ast_ptr> Mapping
 %type <ast_ptr> Mappings
+%type <ast_ptr> termination
+
+%type <var_list_ptr> terminators
+
 %type <val> map_operator
 %%
 
@@ -98,6 +106,7 @@ Stmt:
   |   Expand    { $$ = $1; }
   |   Input     { $$ = $1; }
   |   Output    { $$ = $1; }
+  |   termination { $$ = $1; }
 	;
 
 Subgraph:
@@ -106,6 +115,24 @@ Subgraph:
     $$ = new_subgraph_ast_node($3);
   }
   ;
+
+termination: TOKEN_TERMINATE TOKEN_OP variable TOKEN_COMMA terminators TOKEN_CL SEMICOLON 
+  {
+    $$ = new_terminator_ast_node($3,$5);
+  };
+
+terminators:  variable 
+              {
+                $$ = (struct var_list *)malloc(sizeof(struct var_list));
+                $$->next = (struct var_list*)0;
+                $$->id = strdup($1);
+              }
+          |   variable TOKEN_COMMA terminators 
+              {
+                $$ = (struct var_list *)malloc(sizeof(struct var_list));
+                $$->next = $3;
+                $$->id = strdup($1);
+              };
 
 Datum:
   TOKEN_DATUM TOKEN_OP variable TOKEN_CL SEMICOLON  

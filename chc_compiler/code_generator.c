@@ -311,6 +311,8 @@ int get_code_operation(char *operation)
 		return code_identity;
 	if(strcmp(operation,"END")==0)
 		return code_end;
+	if(strcmp(operation,"terminate")==0)
+		return code_end;
 	return 0;
 }
 

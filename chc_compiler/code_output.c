@@ -38,6 +38,7 @@ void generate_output()
   }
 	/////////////////////////////////////////////
 
+
 	struct code_scope *main_finder = program_code;
 
 	int main_addr;
@@ -74,6 +75,7 @@ void generate_output()
 		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
 		fprintf(temp_H_fp,"//End %s:\n",code_ptr->scope_name);
 
+
 		while(length > 0)
 		{
 			if((code_ptr->next == (struct code_scope *)0) && (length == 1)){
@@ -90,7 +92,6 @@ void generate_output()
 		fprintf(fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 		fprintf(temp_H_fp,"//Start %s @(%d):\n",code_ptr->scope_name,code_ptr->address);
 
-
 		code_ptr = code_ptr->next;
 	}
 
@@ -101,6 +102,7 @@ void generate_output()
 
 	fprintf(temp_H_fp,"int main_addr = %d;\n",main_addr);
 	fprintf(temp_H_fp,"int main_num_nodes = %d;\n",main_finder->num_nodes);
+
 
 	//create subgraph dictionary
 	fprintf(fp,"int dictionary[][3] = {");

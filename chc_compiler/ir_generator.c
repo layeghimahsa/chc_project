@@ -308,6 +308,64 @@ int generate_scope_ir(struct ast_node *ast)
 
 	//Re-order IR here?
 
+
+	//terminator here
+	ast_nodes = ast->down;
+	/*
+		for every operator, fill in destination in nodes
+			and operation in destination
+	*/
+	while(ast_nodes != (struct ast_node *)0)
+	{
+		if(ast_nodes->type == TERMINATOR)
+		{
+			//used arg 1 and 2 in AST, 0 and 1 in IR.... to refactor later
+			char *dest = ast_nodes->op_exp.op_args.dest;
+			
+
+			//fill in operation in corresponding destination
+			struct datum_ir *found_datum= find_IR_node_by_name(dest,IR->nodes);
+			if(found_datum->operation != (char *)0)
+			{
+				free(found_datum->operation);
+			}
+			found_datum->operation = (char *)malloc(strlen("terminate")+1);
+			strcpy(found_datum->operation,"terminate");
+
+			int source_cnt = 0;
+			struct var_list *list = ast_nodes->end_vars;
+			while(list != (struct var_list *)0)
+			{
+				source_cnt++;
+				list = list->next;
+			}
+
+			//number of arguments
+			found_datum->created_count = source_cnt;
+
+			//fill in destinations
+			list = ast_nodes->end_vars;
+
+			while(list != (struct var_list *)0)
+			{
+				found_datum= find_IR_node_by_name(list->id,IR->nodes);
+
+				struct destination_node *tmp_destination = (struct destination_node *)malloc(sizeof(struct destination_node));
+				tmp_destination->next = found_datum->destination;
+				found_datum->destination = tmp_destination;
+
+				found_datum->destination->destination = (char *)malloc(strlen(list->id)+1+5);
+				strcpy(found_datum->destination->destination,"arg0_");
+				strcat(found_datum->destination->destination,dest);
+				list = list->next;
+			}
+		}
+		ast_nodes = ast_nodes->side;
+	}
+
+
+
+
 	return errors;
 }
 

@@ -27,6 +27,7 @@ comment		"//".*
 "INPUT"         return(TOKEN_INPUT);
 "OUTPUT"        return(TOKEN_OUTPUT);
 "SUBGRAPH"		return(TOKEN_SUBGRAPH);
+"TERMINATE"		return(TOKEN_TERMINATE);
 {operators}     {
                 	yylval.var = strdup(yytext); 
 					return(operators);

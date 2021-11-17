@@ -121,6 +121,35 @@ struct ast_node *new_operator_ast_node(enum operator op, char *d, char *s1, char
 	return result;
 }
 
+
+
+struct ast_node *new_terminator_ast_node(char * n,struct var_list *list)
+{
+	
+	struct ast_node *result = (struct ast_node *)malloc(sizeof(struct ast_node));
+
+	result->type = TERMINATOR;
+
+
+	result->op_exp.op_args.dest = (char *)malloc(strlen(n)+1);
+	strcpy(result->op_exp.op_args.dest,n);
+	
+	result->op_exp.op_args.arg1 = (char *)0;
+	
+	result->op_exp.op_args.arg2 = (char *)0;
+		
+	result->down = (struct ast_node *)0;
+	result->side = (struct ast_node *)0;
+
+	result->end_vars = list;
+
+	return result;
+}
+
+
+
+
+
 //always returns pointer to newly created ast_node so we can propagate it during parsing
 //arguments match content of ast_node structure required for specific node
 struct ast_node *new_mapping_ast_node(enum node_type map, char *i, char *o)

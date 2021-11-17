@@ -65,4 +65,4 @@ SUBGRAPH(plus1)
 
 
         DATUM(end);
-        OPERATOR(end,op_END,z,z2);
+        TERMINATE(end,z,z2);
