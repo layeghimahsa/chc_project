@@ -1,0 +1,27 @@
+Some rules in AGP:
+
+1. No variable reuse -> That means if we want to re-assign a new value to an existed variable, we cannot. Instead, we should define a new variable and put
+the updated value in the new variable.
+
+Example in C:
+              x = x + 1
+
+Equivalent AGP code:
+              x2 = x1 + 1
+
+So we need to define a new variable (x2) and put the result of plus 1 to that.
+
+2. There is no if/else statement in AGP. Instead there is a MERGE operator which merges the results of either an if or else statement in a variable.
+
+
+3. There are no loops (like for/while loop in c) in AGP. Before going into the conversion of loop in AGP, let's find out how many types of loops we have:
+- A data parallel loop; no data is being reused and the loop is just for traversing something (e.g. the array). Therefore, for converting these types of
+loops to an AGP code, a method called loop unrolling is being used. In the example of matrix multiplication which consists of three nested for loops, we
+see that the resultant matrix which is the product of two matrix, can be computed with parallel addition and multiplication.
+-A processing loop; in this type of loop, it is using the same memory to do some computation. In other word, the computation which is done in the
+next iteration of the loop is dependent on the current iteration of the loop. So for example, when calculating a sum from 1 to n, the while loop iteration
+is completely dependent to n. Therefore, the computations are not going to be parallelized due to reusing of the same memory in the next iterations of the
+loop.
+
+
+4. The processing loops can be converted to recursion.
