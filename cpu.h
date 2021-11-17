@@ -28,6 +28,16 @@
 #define FND 17
 #define IDLE 18
 #define LFN 19
+#define SSU 20
+#define COM 21
+#define code_if_else_fail 22
+#define code_expansion_add 23
+#define code_expansion_remap 24
+#define code_expansion_input 25
+#define EXP_add 26
+#define EXP_remap 27
+#define EXP_input 28
+
 
 //#define code_output		0xFFFFFFFF	//convenient to have it set to a special value that can be tested at runtime
 #define NAV			0xFFFFFFFC
@@ -57,7 +67,8 @@ struct CPU_SA{
 };
 
 void *CPU_SA_start();
-struct Message*  Message_packing(int cpu_num, int rw, int addr, int data );
+struct Message*  Message_packing(int cpu_num, int addr, int data );
+void pack_and_sendMessage(struct FIFO *fifo,int cpu_num, int addr, int data );
 int getSize(int entry);
 int getOffset(int entry);
 #endif

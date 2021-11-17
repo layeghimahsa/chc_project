@@ -1,0 +1,23 @@
+
+SUBGRAPH(add)
+  DATUM(x);
+  INPUT(x);
+  DATUM(y);
+  INPUT(y);
+  DATUM(out);
+  OUTPUT(out);
+  OPERATOR(out,op_PLUS,x,y);
+
+
+
+SUBGRAPH(main)
+  CONST(x,7);
+  CONST(y,9);
+  DATUM(result);
+  OUTPUT(result);
+  EXPAND(add,MAP_IN(x,x);MAP_IN(y,y);MAP_OUT(out,result););
+
+
+
+  DATUM(end);
+  OPERATOR(end,op_END,result,x);
