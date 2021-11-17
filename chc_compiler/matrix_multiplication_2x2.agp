@@ -67,7 +67,5 @@ SUBGRAPH(mtrx_multiply)
       OUTPUT(c01);
       OUTPUT(c10);
       OUTPUT(c11);
-      DATUM(end1);
-      OPERATOR(end1,op_END,c00,c01);
-      DATUM(end2);
-      OPERATOR(end2,op_END,c10,c11);
+      DATUM(end);
+      TERMINATE(end,c00,c01,c10,c11);

@@ -421,19 +421,8 @@ SUBGRAPH(main)
     OUTPUT(c31);
     OUTPUT(c32);
     OUTPUT(c33);
-    DATUM(end1);
-    OPERATOR(end1,op_END,c00,c01);
-    DATUM(end2);
-    OPERATOR(end2,op_END,c02,c03);
-    DATUM(end3);
-    OPERATOR(end3,op_END,c10,c11);
-    DATUM(end4);
-    OPERATOR(end4,op_END,c12,c13);
-    DATUM(end5);
-    OPERATOR(end5,op_END,c20,c21);
-    DATUM(end6);
-    OPERATOR(end6,op_END,c22,c23);
-    DATUM(end7);
-    OPERATOR(end7,op_END,c30,c31);
-    DATUM(end8);
-    OPERATOR(end8,op_END,c32,c33);
+    DATUM(end);
+    TERMINATE(end,c00,c01,c02,c03,
+                  c10,c11,c12,c13,
+                  c20,c21,c22,c23,
+                  c30,c31,c32,c33);
