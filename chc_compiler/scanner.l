@@ -38,7 +38,8 @@ comment		"//".*
 				}
 {alpha}         {
                 	yylval.var = (char *)malloc(strlen(yytext)+1);
-					strncpy(yylval.var, yytext, strlen(yytext));
+					//strncpy(yylval.var, yytext, strlen(yytext));
+					strcpy(yylval.var, yytext);
 					return(variable);
 				}
 

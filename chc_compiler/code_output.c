@@ -38,7 +38,6 @@ void generate_output()
   }
 	/////////////////////////////////////////////
 
-
 	struct code_scope *main_finder = program_code;
 
 	int main_addr;
@@ -74,7 +73,6 @@ void generate_output()
 
 		fprintf(fp,"//End %s:\n",code_ptr->scope_name);
 		fprintf(temp_H_fp,"//End %s:\n",code_ptr->scope_name);
-
 
 		while(length > 0)
 		{
@@ -124,6 +122,7 @@ void generate_output()
 	}
 
 	fprintf(fp,"};\n");
+
 	fprintf(temp_H_fp,"};\n");
 
 	fprintf(temp_H_fp,"int num_dict_entries = %d;\n",count);
@@ -156,6 +155,7 @@ void generate_output()
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
+
 
 	char tmp;
 	do

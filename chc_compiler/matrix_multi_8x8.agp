@@ -22,6 +22,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(a12);
     INPUT(a12);
     DATUM(a13);
+    INPUT(a13);
     DATUM(a14);
     INPUT(a14);
     DATUM(a15);
@@ -85,6 +86,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(a52);
     INPUT(a52);
     DATUM(a53);
+    INPUT(a53);
     DATUM(a54);
     INPUT(a54);
     DATUM(a55);
@@ -148,6 +150,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(b12);
     INPUT(b12);
     DATUM(b13);
+    INPUT(b13);
     DATUM(b14);
     INPUT(b14);
     DATUM(b15);
@@ -211,6 +214,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(b52);
     INPUT(b52);
     DATUM(b53);
+    INPUT(b53);
     DATUM(b54);
     INPUT(b54);
     DATUM(b55);
@@ -274,6 +278,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(c12);
     OUTPUT(c12);
     DATUM(c13);
+    OUTPUT(c13);
     DATUM(c14);
     OUTPUT(c14);
     DATUM(c15);
@@ -337,6 +342,7 @@ SUBGRAPH(mtrx_multiply)
     DATUM(c52);
     OUTPUT(c52);
     DATUM(c53);
+    OUTPUT(c53);
     DATUM(c54);
     OUTPUT(c54);
     DATUM(c55);
@@ -2232,6 +2238,7 @@ SUBGRAPH(mtrx_multiply)
     OPERATOR(a74timesb47, op_TIMES, a74, b47);
     OPERATOR(a75timesb57, op_TIMES, a75, b57);
     OPERATOR(a76timesb67, op_TIMES, a76, b67);
+    OPERATOR(a77timesb77, op_TIMES, a77, b77);
 
 
     SUBGRAPH(main)
